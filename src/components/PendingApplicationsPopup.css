@@ -1,0 +1,67 @@
+        @keyframes se-fadeIn { from{opacity:0} to{opacity:1} }
+        @keyframes se-slideUp {
+          from{transform:translateY(24px);opacity:0}
+          to{transform:translateY(0);opacity:1}
+        }
+        @keyframes se-pulse { 0%,100%{opacity:1} 50%{opacity:.2} }
+        .se-overlay {
+          position:fixed;inset:0;
+          background:rgba(15,30,50,.65);
+          display:flex;align-items:center;justify-content:center;
+          z-index:9999;animation:se-fadeIn .3s ease;
+        }
+       .se-box{
+  background:#fff;
+  border-radius:18px;
+
+  width:700px;        /* increased */
+  max-width:95vw;
+
+  /* min-height:520px;   taller */
+  overflow:hidden;
+
+  animation:se-slideUp .35s cubic-bezier(.22,1,.36,1);
+}
+        .se-hdr {
+          background:#1a3550;padding:14px 20px;
+          display:flex;align-items:center;justify-content:space-between;
+        }
+        .se-bell {
+          width:34px;height:34px;background:#d97234;border-radius:8px;
+          display:flex;align-items:center;justify-content:center;flex-shrink:0;
+        }
+        .se-meta {
+          background:#fdf5ec;padding:9px 20px;
+          display:flex;gap:16px;flex-wrap:wrap;
+          border-bottom:1px solid #eddfc8;font-size:12px;color:#1e293b;
+        }
+.se-body{
+  padding:18px 30px 28px;
+  max-height:360px;   /* taller body */
+  overflow-y:auto;
+}
+        .se-tbl{width:100%;border-collapse:collapse;font-size:12px;margin-top:10px}
+
+        .se-tbl th{text-align:left;padding:9px 12px;background:#f4f6fa;color:#444;
+          font-weight:700;font-size:11px;border-bottom:1.5px solid #e5e9f2}
+
+        .se-tbl td{padding:9px 12px;border-bottom:1px solid #f1f3f8;color:#334}
+
+        .se-tbl tr:hover td{background:#fdf5ec}
+
+        .se-badge{display:inline-flex;align-items:center;gap:5px;
+          background:#fff4e5;color:#a85400;border:1px solid #ffd099;
+          border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700}
+
+        .se-pdot{width:6px;height:6px;border-radius:50%;background:#d97234;
+          display:inline-block;animation:se-pulse 1.3s infinite}
+
+        .se-foot{padding:11px 20px;background:#f7f9fb;border-top:1px solid #eee;
+          display:flex;align-items:center;justify-content:space-between}
+
+        .se-tbadge{background:#1a3550;color:#fff;font-size:11px;
+          padding:4px 12px;border-radius:20px;font-weight:700}
+
+        .se-dismiss{background:#d97234;color:#fff;border:none;border-radius:7px;
+          padding:8px 18px;font-size:12px;font-weight:700;cursor:pointer}
+

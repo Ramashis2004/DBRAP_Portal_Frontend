@@ -1,0 +1,298 @@
+/* ─── Payment Verification Page ─────────────────────────────────────────────── */
+
+/* Modal overlay */
+.pv-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+/* Modal card */
+.pv-modal {
+  background: #fff;
+  border-radius: 14px;
+  padding: 28px 32px;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+/* Modal header section */
+.pv-modal__header {
+  margin-bottom: 20px;
+}
+
+.pv-modal__label {
+  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pv-modal__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.pv-modal__app-id {
+  margin: 8px 0 0;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.pv-modal__app-id-badge {
+  font-family: monospace;
+  font-weight: 700;
+  color: #92400e;
+  background: #fef3c7;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+/* Status banner */
+.pv-modal__banner {
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 18px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+/* Remark label block */
+.pv-modal__label-block {
+  display: block;
+  margin-bottom: 18px;
+}
+
+.pv-modal__label-text {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #374151;
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* Remark textarea */
+.pv-modal__textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1.5px solid #d1d5db;
+  font-size: 0.88rem;
+  resize: vertical;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+
+.pv-modal__textarea:focus {
+  border-color: #1e293b;
+}
+
+/* Modal action buttons row */
+.pv-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Base button */
+.pv-modal__btn {
+  padding: 9px 20px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.15s;
+}
+
+.pv-modal__btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Cancel button */
+.pv-modal__btn--cancel {
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #374151;
+}
+
+/* Confirm button */
+.pv-modal__btn--confirm {
+  border: none;
+  color: #fff;
+}
+
+/* ─── Payment status badge (in table) ────────────────────────────────────────── */
+
+.pv-status-badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pv-status-badge--uploaded {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.pv-status-badge--verified {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.pv-status-badge--not-verified {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* ─── Amount cell ─────────────────────────────────────────────────────────────── */
+
+.pv-amount {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* ─── Money receipt link button ───────────────────────────────────────────────── */
+
+.pv-receipt-btn {
+  display: inline-block;
+  background: #1e293b;
+  color: #fff;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+
+.pv-receipt-btn:hover {
+  background: #334155;
+}
+
+/* ─── PDF Preview Modal ──────────────────────────────────────────────────────── */
+
+.pv-preview-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: pvFadeIn 0.2s ease-out;
+  padding: 40px;
+}
+
+.pv-preview-card {
+  width: 100%;
+  max-width: 1100px;
+  height: 100%;
+  max-height: 90vh;
+  background: #fff;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+.pv-preview-header {
+  height: 60px;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.pv-preview-header__title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #334155;
+  margin: 0;
+}
+
+.pv-preview-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pv-preview-btn-download {
+  background: #10b981;
+  color: #fff;
+  border: none;
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.15s;
+  text-decoration: none;
+}
+
+.pv-preview-btn-download:hover {
+  background: #059669;
+}
+
+.pv-preview-btn-close {
+  background: #fff;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pv-preview-btn-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.pv-preview-content {
+  flex: 1;
+  background: #f1f5f9;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.pv-preview-frame {
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border: none;
+}
+
+@keyframes pvFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

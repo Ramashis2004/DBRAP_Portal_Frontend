@@ -1,0 +1,515 @@
+/* JEUpdateConnectionPage.css */
+
+.je-update-conn-main {
+  gap: 26px;
+}
+
+.je-update-conn-panel {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0;
+  border: 1px solid rgba(26, 60, 90, 0.1);
+  border-radius: 24px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(255, 250, 245, 0.9)),
+    #fff;
+  box-shadow: 0 22px 55px rgba(79, 52, 29, 0.12);
+}
+
+.je-update-conn-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 7px;
+  background: linear-gradient(90deg, #1a3c5a, #d6844b, #f0c397);
+}
+
+.je-update-conn-panel__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 32px 32px 24px;
+  border-bottom: 1px solid rgba(26, 60, 90, 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(214, 132, 75, 0.14), transparent 36%),
+    linear-gradient(180deg, rgba(255, 250, 245, 0.96), rgba(255, 255, 255, 0.88));
+}
+
+.je-update-conn-panel__icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 16px;
+  color: #fff;
+  background: linear-gradient(135deg, #1a3c5a, #2f5d7c);
+  box-shadow: 0 12px 28px rgba(26, 60, 90, 0.22);
+}
+
+.je-update-conn-panel__header h2 {
+  margin: 0 0 5px;
+  color: #4f3429;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.je-update-conn-panel__header p {
+  margin: 0;
+  color: #876653;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+/* ── Page wrapper ── */
+.je-update-conn-page {
+  width: 100%;
+  min-height: 100vh;
+  background: #f8f4ef;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header band ── */
+.je-update-conn-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 32px;
+  background: #1e293b;
+  border-bottom: 3px solid #b45309;
+  flex-shrink: 0;
+}
+
+.je-update-conn-header__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.je-update-conn-header__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 1.5px solid #475569;
+  border-radius: 8px;
+  background: transparent;
+  color: #cbd5e1;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.je-update-conn-header__back:hover {
+  border-color: #fff;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ── Body ── */
+.je-update-conn-body {
+  flex: 1;
+  padding: 32px;
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* ── Step label ── */
+.je-update-conn-step-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #b45309;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+/* ── Section card ── */
+.je-update-conn-card {
+  background: #fff;
+  border: 1px solid #e7e5e4;
+  border-radius: 14px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 4px rgba(30, 41, 59, 0.06);
+}
+
+.je-update-conn-card__head {
+  padding: 14px 20px;
+  background: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.je-update-conn-card__body {
+  padding: 20px;
+}
+
+/* ── Info grid (read-only summary) ── */
+.je-update-conn-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+.je-update-conn-info-row {
+  display: flex;
+  flex-direction: column;
+  padding: 10px 14px;
+  border-bottom: 1px dashed #e7e5e4;
+  border-right: 1px dashed #e7e5e4;
+}
+
+.je-update-conn-info-row:nth-child(2n) {
+  border-right: none;
+}
+
+.je-update-conn-info-row:nth-last-child(-n+2) {
+  border-bottom: none;
+}
+
+.je-update-conn-info-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 3px;
+}
+
+.je-update-conn-info-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* ── Badge ── */
+.je-update-conn-badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.je-update-conn-badge--single {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.je-update-conn-badge--multi {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.je-update-conn-badge--unmetered {
+  background: #fef9c3;
+  color: #854d0e;
+}
+
+.je-update-conn-badge--metered {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+
+/* ── Form fields ── */
+.je-update-conn-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  padding: 28px 26px;
+}
+
+.je-update-conn-form-grid--full {
+  grid-template-columns: 1fr;
+}
+
+.je-update-conn-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.je-update-conn-field label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+  height: 100%;
+  padding: 16px;
+  border: 1px solid rgba(26, 60, 90, 0.1);
+  border-radius: 18px;
+  background: rgba(255, 253, 251, 0.82);
+  box-shadow: 0 10px 22px rgba(79, 52, 29, 0.05);
+}
+
+.je-update-conn-field label:focus-within {
+  border-color: rgba(214, 132, 75, 0.52);
+  box-shadow: 0 0 0 4px rgba(214, 132, 75, 0.13), 0 12px 26px rgba(79, 52, 29, 0.08);
+}
+
+.je-update-conn-field span {
+  color: #4f3429;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.je-update-conn-field--full {
+  grid-column: 1 / -1;
+}
+
+.je-update-conn-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.je-update-conn-input,
+.je-update-conn-select,
+.je-update-conn-field input,
+.je-update-conn-field select {
+  width: 100%;
+  height: 56px;
+  box-sizing: border-box;
+  padding: 0 14px;
+  border: 1px solid rgba(26, 60, 90, 0.16);
+  border-radius: 12px;
+  font-size: 0.94rem;
+  color: #1e293b;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  font-family: inherit;
+}
+
+.je-update-conn-input:focus,
+.je-update-conn-select:focus,
+.je-update-conn-field input:focus,
+.je-update-conn-field select:focus {
+  border-color: rgba(26, 60, 90, 0.45);
+  box-shadow: 0 0 0 3px rgba(26, 60, 90, 0.08);
+}
+
+.je-update-conn-input--readonly {
+  background: #f4ede7;
+  color: #725f52;
+  cursor: not-allowed;
+}
+
+.je-update-conn-field input:disabled,
+.je-update-conn-field select:disabled {
+  background: #f4ede7;
+  color: #1e293b;
+  cursor: not-allowed;
+}
+
+.je-update-conn-input.is-error,
+.je-update-conn-select.is-error {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.je-update-conn-field-error {
+  font-size: 0.76rem;
+  color: #dc2626;
+  margin-top: 2px;
+}
+
+/* ── Divider ── */
+.je-update-conn-divider {
+  height: 1px;
+  background: #f1f5f9;
+  margin: 16px 0;
+}
+
+/* ── Submit row ── */
+.je-update-conn-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.je-update-conn-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 46px;
+  padding: 0 26px;
+  border-radius: 14px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s, box-shadow 0.15s, transform 0.15s, background 0.15s;
+  border: none;
+}
+
+.je-update-conn-btn--primary {
+  background: linear-gradient(135deg, #1a3c5a, #20334f);
+  color: #fff;
+  box-shadow: 0 14px 26px rgba(26, 60, 90, 0.24);
+}
+
+.je-update-conn-btn--primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #143149, #17263d);
+  box-shadow: 0 18px 34px rgba(26, 60, 90, 0.28);
+}
+
+.je-update-conn-btn--primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.je-update-conn-btn--ghost {
+  background: transparent;
+  border: 1.5px solid #cbd5e1;
+  color: #475569;
+}
+
+.je-update-conn-btn--ghost:hover {
+  border-color: #94a3b8;
+  color: #1e293b;
+}
+
+/* ── App selector ── */
+.je-update-conn-app-select-wrap {
+  margin-bottom: 24px;
+}
+
+.je-update-conn-app-id-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.je-update-conn-app-chip {
+  padding: 5px 14px;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-family: monospace;
+  cursor: pointer;
+  color: #1e293b;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+
+.je-update-conn-app-chip:hover {
+  border-color: #b45309;
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.je-update-conn-app-chip.is-selected {
+  border-color: #b45309;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* ── Loading / empty states ── */
+.je-update-conn-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 24px;
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.je-update-conn-empty {
+  padding: 56px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.9rem;
+  background: #fff;
+  border: 1px dashed #e2e8f0;
+  border-radius: 12px;
+}
+
+/* ── Success banner ── */
+.je-update-conn-success {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  background: #dcfce7;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  color: #166534;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+}
+
+/* ── Spin animation ── */
+@keyframes je-conn-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.je-conn-spin {
+  animation: je-conn-spin 1s linear infinite;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .je-update-conn-panel {
+    border-radius: 18px;
+  }
+
+  .je-update-conn-panel__header {
+    align-items: flex-start;
+    padding: 26px 18px 20px;
+  }
+
+  .je-update-conn-body {
+    padding: 16px;
+  }
+
+  .je-update-conn-form-grid,
+  .je-update-conn-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .je-update-conn-form-grid {
+    padding: 18px;
+  }
+
+  .je-update-conn-field label {
+    padding: 14px;
+  }
+
+  .je-update-conn-info-row {
+    border-right: none;
+  }
+
+  .je-update-conn-info-row:nth-last-child(-n+2) {
+    border-bottom: 1px dashed #e7e5e4;
+  }
+
+  .je-update-conn-info-row:last-child {
+    border-bottom: none;
+  }
+}

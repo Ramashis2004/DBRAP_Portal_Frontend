@@ -1,0 +1,373 @@
+/* CEDashboardOverduePieChart.css */
+
+.ce-overdue-card {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 30px;
+  border: 1px solid rgba(26, 60, 90, 0.08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 40px rgba(79, 52, 29, 0.08);
+}
+
+.ce-overdue-card__head {
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.ce-overdue-card__title {
+  margin: 0 0 3px;
+  color: #1e293b;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.ce-overdue-card__sub {
+  margin: 0;
+  color: #7c6557;
+  font-size: 0.82rem;
+}
+
+.ce-overdue-body {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.ce-overdue-canvas {
+  flex: 0 0 auto;
+  width: 470px;
+  max-width: 100%;
+}
+
+.ce-overdue-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 0;
+  color: #94a3b8;
+  font-size: 0.88rem;
+}
+
+.ce-overdue-error {
+  padding: 40px;
+  text-align: center;
+  color: #c0392b;
+  font-size: 0.88rem;
+}
+
+.ce-overdue-spin {
+  animation: ce-spin 1s linear infinite;
+}
+
+@keyframes ce-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Legend ── */
+.ce-overdue-legend {
+  flex: 1;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ce-overdue-leg-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 13px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: rgba(0,0,0,0.03);
+  font-family: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: default;
+  transition: border-color .18s, transform .15s;
+}
+
+.ce-overdue-leg-row.active {
+  border-color: var(--lc);
+}
+
+.ce-overdue-leg-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--lc);
+  flex-shrink: 0;
+}
+
+.ce-overdue-leg-label {
+  flex: 1;
+  color: #334155;
+  font-weight: 600;
+}
+
+.ce-overdue-leg-count {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  background: var(--lpb);
+  color: var(--lpt);
+}
+
+.ce-overdue-hint {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 6px;
+  font-style: italic;
+}
+
+/* ── Division panel ── */
+.ce-overdue-panel {
+  margin-top: 18px;
+  border: 0.5px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.ce-overdue-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 2.5px solid;
+  background: #f8fafc;
+}
+
+.ce-overdue-panel__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.ce-overdue-panel__bdot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.ce-overdue-panel__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.ce-overdue-panel__close {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0.5px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.ce-overdue-panel__close:hover { background: #f1f5f9; }
+
+.ce-overdue-panel__body {
+  background: #fff;
+  overflow-x: auto;
+}
+
+/* ── Table ── */
+.ce-overdue-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.ce-overdue-table thead tr { background: #1e293b; }
+
+.ce-overdue-table th {
+  padding: 8px 12px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-align: left;
+}
+
+.ce-overdue-table td {
+  padding: 9px 12px;
+  border-bottom: 0.5px solid #f1f5f9;
+  color: #475569;
+  vertical-align: middle;
+}
+
+.ce-overdue-table tbody tr:nth-child(even) td { background: #f8fafc; }
+.ce-overdue-table tbody tr:hover td { background: #f1f5f9; }
+
+.ce-overdue-table tfoot td {
+  border-top: 1px solid #e2e8f0;
+  font-weight: 700;
+  color: #1e293b;
+  padding: 9px 12px;
+}
+
+.ce-overdue-table__idx { color: #94a3b8; font-size: 11px; width: 28px; }
+.ce-overdue-table__name { font-weight: 700; color: #1a3c5a; }
+.ce-overdue-table__foot-label { font-weight: 700; color: #1e293b; }
+
+.ce-overdue-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.ce-overdue-pill--button {
+  border: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.ce-overdue-pill--button:hover {
+  filter: brightness(0.96);
+  text-decoration: underline;
+}
+
+.ce-overdue-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 90px;
+}
+
+.ce-overdue-bar {
+  height: 6px;
+  border-radius: 999px;
+  min-width: 3px;
+  transition: width 0.4s cubic-bezier(.22,1,.36,1);
+}
+
+.ce-overdue-pct {
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.ce-overdue-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.ce-overdue-modal__card {
+  width: min(1040px, 96vw);
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+}
+
+.ce-overdue-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.ce-overdue-modal__header h3 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 16px;
+}
+
+.ce-overdue-modal__header p {
+  margin: 4px 0 0;
+  color: #113ee9;
+  font-size: 12px;
+}
+
+.ce-overdue-modal__body {
+  min-height: 180px;
+  overflow: auto;
+  background: #fff;
+}
+
+.ce-overdue-modal__table-wrap {
+  overflow-x: auto;
+}
+
+.ce-overdue-app-table {
+  min-width: 1060px;
+}
+
+.ce-overdue-history-table {
+  min-width: 760px;
+}
+
+.ce-overdue-history-cell {
+  text-align: center;
+}
+
+.ce-overdue-history-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #15803d;
+  cursor: pointer;
+}
+
+.ce-overdue-history-btn:hover {
+  background: #bbf7d0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .officer-dashboard-stats.ce-dashboard-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .ce-overdue-body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ce-overdue-canvas {
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+  }
+
+  .ce-overdue-modal {
+    padding: 12px;
+  }
+}
