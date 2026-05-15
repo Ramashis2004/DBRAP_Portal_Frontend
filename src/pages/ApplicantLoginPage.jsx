@@ -86,6 +86,29 @@ function ApplicantLoginPage() {
   // ── Captcha ───────────────────────────────────────────────────────────────
   const refreshCaptcha = () => { setCaptcha(generateCaptcha()); setCaptchaInput(""); };
 
+  const saveApplicantSession = (applicant) => {
+    localStorage.setItem("applicantSession", JSON.stringify({
+      id: applicant.id, mobileNo: applicant.mobileNo,
+      name: applicant.name, roleId: applicant.roleId,
+      loginTime: new Date().toISOString(),
+    }));
+  };
+
+  const confirmActiveSessionTakeover = async (message) => {
+    const result = await Swal.fire({
+      title: "Already logged in",
+      text: message || "This login ID is already logged in. Do you want to logout there and login here?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "OK",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+      confirmButtonColor: "#3d1f0f",
+    });
+
+    return result.isConfirmed;
+  };
+
   // ── OTP handlers ──────────────────────────────────────────────────────────
   const validateMobile = (n) => {
     if (!n) return "Mobile number is required.";
@@ -156,14 +179,28 @@ function ApplicantLoginPage() {
     try {
       const response  = await loginApplicant({ mobile_number: mobileNumber });
       const applicant = response.data?.applicant;
-      localStorage.setItem("applicantSession", JSON.stringify({
-        id: applicant.id, mobileNo: applicant.mobileNo,
-        name: applicant.name, roleId: applicant.roleId,
-        loginTime: new Date().toISOString(),
-      }));
+      saveApplicantSession(applicant);
       await swalSuccess("Login Successful", `Welcome ${applicant.name || applicant.mobileNo}.`);
       navigate("/applicant-dashboard");
     } catch (error) {
+      if (error.response?.status === 409 && error.response?.data?.code === "ALREADY_LOGGED_IN") {
+        const shouldContinue = await confirmActiveSessionTakeover(error.response.data.error);
+        if (!shouldContinue) return;
+
+        try {
+          const response = await loginApplicant({ mobile_number: mobileNumber, forceLogin: true });
+          const applicant = response.data?.applicant;
+          broadcastLogout(applicant.id); // ← ADD
+
+          saveApplicantSession(applicant);
+          await swalSuccess("Login Successful", `Welcome ${applicant.name || applicant.mobileNo}.`);
+          navigate("/applicant-dashboard");
+        } catch (retryError) {
+          await swalError("Login Failed", retryError.response?.data?.error || "Something went wrong.");
+        }
+        return;
+      }
+
       await swalError("Login Failed", error.response?.data?.error || "Something went wrong.");
     } finally {
       setIsSubmitting(false);
@@ -197,14 +234,32 @@ function ApplicantLoginPage() {
     try {
       const response  = await loginApplicantWithPassword({ login_id: userId.trim(), password });
       const applicant = response.data?.applicant;
-      localStorage.setItem("applicantSession", JSON.stringify({
-        id: applicant.id, mobileNo: applicant.mobileNo,
-        name: applicant.name, roleId: applicant.roleId,
-        loginTime: new Date().toISOString(),
-      }));
+      saveApplicantSession(applicant);
       await swalSuccess("Login Successful", `Welcome ${applicant.name || applicant.loginId}.`);
       navigate("/applicant-dashboard");
     } catch (error) {
+      if (error.response?.status === 409 && error.response?.data?.code === "ALREADY_LOGGED_IN") {
+        const shouldContinue = await confirmActiveSessionTakeover(error.response.data.error);
+        if (!shouldContinue) return;
+
+        try {
+          const response = await loginApplicantWithPassword({
+            login_id: userId.trim(),
+            password,
+            forceLogin: true,
+          });
+          const applicant = response.data?.applicant;
+          broadcastLogout(applicant.id); // ← ADD
+
+          saveApplicantSession(applicant);
+          await swalSuccess("Login Successful", `Welcome ${applicant.name || applicant.loginId}.`);
+          navigate("/applicant-dashboard");
+        } catch (retryError) {
+          await swalError("Login Failed", retryError.response?.data?.error || "Invalid User ID or password.");
+        }
+        return;
+      }
+
       await swalError("Login Failed", error.response?.data?.error || "Invalid User ID or password.");
     } finally {
       setIsSubmitting(false);

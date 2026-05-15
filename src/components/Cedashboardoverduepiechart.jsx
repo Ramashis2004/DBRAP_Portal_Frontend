@@ -12,7 +12,7 @@ import { formatApplicationStatus } from "../utils/applicationStatus";
 import "./Cedashboardoverduepiechart.css";
 
 const BUCKETS = [
-  { key: "0_2", label: "0 - 2 days", color: "#22c55e", bg: "#dcfce7", text: "#166534" },
+  { key: "0_2", label: "1 - 2 days", color: "#f2db7d", bg: "#dcfce7", text: "#713f12" },
   { key: "2_5", label: "2 - 5 days", color: "#eab308", bg: "#fef9c3", text: "#713f12" },
   { key: "5_10", label: "5 - 10 days", color: "#f97316", bg: "#ffedd5", text: "#7c2d12" },
   { key: "10_plus", label: "10+ days", color: "#ef4444", bg: "#fee2e2", text: "#7f1d1d" },
@@ -26,7 +26,7 @@ const getApplicationStatusStyle = (applicationStatus) => {
   switch (String(applicationStatus || "").toUpperCase()) {
     case "APPLICATION_APPROVED":
     case "CONNECTION_DETAILS_UPDATED":
-      return { background: "#dcfce7", color: "#166534" };
+      return { background: "#f39557", color: "#070808" };
     case "APPLICATION_REJECTED":
       return { background: "#fee2e2", color: "#991b1b" };
     case "APPLICATION_SUBMITTED":
@@ -37,6 +37,32 @@ const getApplicationStatusStyle = (applicationStatus) => {
       return { background: "#ede9fe", color: "#6d28d9" };
     default:
       return { background: "#e2e8f0", color: "#475569" };
+  }
+};
+
+const getSlaTimeStatusStyle = (status) => {
+  switch (String(status || "").toUpperCase()) {
+    case "ON_TIME":
+      return { background: "#dcfce7", color: "#166534" };
+    case "DELAY":
+      return { background: "#fee2e2", color: "#991b1b" };
+    case "PENDING":
+      return { background: "#fef3c7", color: "#92400e" };
+    default:
+      return { background: "#e2e8f0", color: "#475569" };
+  }
+};
+
+const formatSlaTimeStatus = (status) => {
+  switch (String(status || "").toUpperCase()) {
+    case "ON_TIME":
+      return "On Time";
+    case "DELAY":
+      return "Delay";
+    case "PENDING":
+      return "Pending";
+    default:
+      return "-";
   }
 };
 
@@ -218,8 +244,9 @@ function ApplicationHistoryModal({ userId, applicationId, fetchApplicationHistor
                     <th>Stage</th>
                     <th>Start Time</th>
                     <th>Assigned</th>
+                    <th>Due Time</th>
                     <th>Completion Time</th>
-                    <th>Application Status</th>
+                    <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -228,10 +255,11 @@ function ApplicationHistoryModal({ userId, applicationId, fetchApplicationHistor
                       <td className="ce-overdue-table__name">{row.stage || "-"}</td>
                       <td>{formatDateTime(row.start_time)}</td>
                       <td>{row.assigned_to || "-"}</td>
+                      <td>{formatDateTime(row.due_time)}</td>
                       <td>{formatDateTime(row.completed_time)}</td>
                       <td>
-                        <span className="ce-overdue-pill" style={getApplicationStatusStyle(row.application_status)}>
-                          {formatApplicationStatus(row.application_status)}
+                        <span className="ce-overdue-pill" style={getSlaTimeStatusStyle(row.sla_time_status)}>
+                          {formatSlaTimeStatus(row.sla_time_status)}
                         </span>
                       </td>
                     </tr>

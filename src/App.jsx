@@ -20,11 +20,13 @@ import PaymentVerificationPage from "./pages/PaymentVerificationPage";
 import JEUpdateConnectionPage from "./pages/JEUpdateConnectionPage";
 import ApplicantPaymentPage from "./pages/ApplicantPaymentPage";
 import SLAConfigPage from "./pages/SLAConfigPage";
+import SessionWatcher from "./components/SessionWatcher";
 // In your <Routes>:
 
 function App() {
   return (
     <Router>
+      <SessionWatcher />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<OfficerLoginPage />} />

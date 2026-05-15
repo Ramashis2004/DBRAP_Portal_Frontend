@@ -26,14 +26,14 @@ import "./PaymentVerificationPage.css";
 
 const daysBetween = (from, to) => {
   if (!from) return 0;
-  const start = new Date(from); const end = to ? new Date(to) : new Date();
-  start.setHours(0,0,0,0); end.setHours(0,0,0,0);
-  return Math.max(0, Math.floor((end - start) / 86400000));
+  const s = new Date(from); s.setHours(0, 0, 0, 0);
+  const e = to ? new Date(to) : new Date(); e.setHours(0, 0, 0, 0);
+  return Math.max(0, Math.floor((e - s) / (1000 * 60 * 60 * 24)));
 };
 
 const buildDayLabel = (prefix, from, to) => {
-  const days = daysBetween(from, to);
-  return `${prefix} ${days} ${days === 1 ? "day" : "days"}`;
+  const d = daysBetween(from, to);
+  return `${prefix} ${d} ${d === 1 ? "day" : "days"}`;
 };
 
 const getApplicationStatusStyle = (status) => {
@@ -46,28 +46,55 @@ const getApplicationStatusStyle = (status) => {
   }
 };
 
+// const getActionStatusMeta = (app) => {
+//   const status = String(app.application_status || "").toUpperCase();
+//   if (status === "APPLICATION_SUBMITTED")
+//     return { background: "#fef3c7", color: "#92400e",
+//       text: buildDayLabel("Pending since", app.created_at) };
+//   if (status === "APPLICATION_FORWARDED_TO_JE")
+//     return { background: "#dcfce7", color: "#166534",
+//       text: buildDayLabel("Action taken in", app.created_at, app.forward_on) };
+//   if (status === "JE_VERIFIED_REPORT_UPLOADED")
+//     return { background: "#fef3c7", color: "#92400e",
+//       text: buildDayLabel("Pending since", app.site_visit_report_upload_on) };
+//   if (status === "APPLICATION_APPROVED")
+//     return { background: "#dcfce7", color: "#166534",
+//       text: buildDayLabel("Action taken in", app.site_visit_report_upload_on, app.approved_on) };
+//   return { background: "#e2e8f0", color: "#475569", text: "—" };
+// };
+
 const getActionStatusMeta = (app) => {
   const status = String(app.application_status || "").toUpperCase();
-  if (status === "APPLICATION_SUBMITTED")
-    return { background: "#fef3c7", color: "#92400e",
-      text: buildDayLabel("Pending since", app.created_at) };
-  if (status === "APPLICATION_FORWARDED_TO_JE")
-    return { background: "#dcfce7", color: "#166534",
-      text: buildDayLabel("Action taken in", app.created_at, app.forward_on) };
-  if (status === "JE_VERIFIED_REPORT_UPLOADED")
-    return { background: "#fef3c7", color: "#92400e",
-      text: buildDayLabel("Pending since", app.site_visit_report_upload_on) };
-  if (status === "APPLICATION_APPROVED")
-    return { background: "#dcfce7", color: "#166534",
-      text: buildDayLabel("Action taken in", app.site_visit_report_upload_on, app.approved_on) };
-  return { background: "#e2e8f0", color: "#475569", text: "—" };
-};
 
+  if (status === "CONNECTION_DETAILS_UPDATED") {
+    return {
+      background: "#dcfce7",
+      color: "#166534",
+      text: buildDayLabel("Action taken in", app.created_at, app.update_on),
+    };
+  }
+
+  if (status === "APPLICATION_REJECTED") {
+    return {
+      background: "#fee2e2",
+      color: "#991b1b",
+      text: buildDayLabel("Action taken in", app.created_at, app.rejected_on),
+    };
+  }
+
+  // All pending statuses — Pending since update_on, fallback to created_at
+  return {
+    background: "#fef3c7",
+    color: "#92400e",
+    text: buildDayLabel("Pending since", app.update_on || app.created_at),
+  };
+};
 const getReceivedDate = (app) => {
   const status = String(app.application_status || "").toUpperCase();
-  return (status === "JE_VERIFIED_REPORT_UPLOADED" || status === "APPLICATION_APPROVED")
-    ? app.site_visit_report_upload_on ?? app.created_at ?? null
-    : app.created_at ?? null;
+  if (status === "APPLICATION_SUBMITTED") {
+    return app.created_at || null;
+  }
+  return app.update_on || app.created_at || null;
 };
 
 const getActionTakenDate = (app) => {

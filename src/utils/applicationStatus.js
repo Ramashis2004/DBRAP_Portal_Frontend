@@ -107,12 +107,18 @@ export const getDaysSince = (value, now = new Date()) => {
   return Math.max(0, Math.floor((endDate - startDate) / DAY_IN_MS));
 };
 
-export const formatDayProgress = (prefix, referenceDate, now = new Date()) => {
-  const days = getDaysSince(referenceDate, now);
+// utils/applicationStatus.js
 
-  if (days === null) {
-    return "—";
-  }
+const daysBetween = (from, to) => {
+  if (!from) return 0;
+  const start = new Date(from);
+  const end = to ? new Date(to) : new Date();   // defaults to today if no `to`
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+  return Math.max(0, Math.floor((end - start) / (1000 * 60 * 60 * 24)));
+};
 
-  return `${prefix} ${days} day${days === 1 ? "" : "s"}`;
+export const formatDayProgress = (prefix, from, to) => {
+  const days = daysBetween(from, to);
+  return `${prefix} ${days} ${days === 1 ? "day" : "days"}`;
 };

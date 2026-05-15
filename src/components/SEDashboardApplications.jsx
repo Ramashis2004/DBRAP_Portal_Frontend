@@ -34,54 +34,106 @@ const DOCUMENT_ROWS = [
   ["Owner Indemnity Bond", "owner_indemnity_bond"],
   ["Identity Proof", "identity_proof"],
 ];
-
-const getApplicationStatusStyle = (applicationStatus) => {
-  switch (String(applicationStatus || "").toUpperCase()) {
-    case "APPLICATION_SUBMITTED":
-      return { background: "#dbeafe", color: "#1d4ed8" };
-    case "APPLICATION_FORWARDED_TO_JE":
-      return { background: "#fef3c7", color: "#92400e" };
-    case "JE_VERIFIED_REPORT_UPLOADED":
-      return { background: "#ede9fe", color: "#6d28d9" };
-    case "APPLICATION_APPROVED":
-      return { background: "#dcfce7", color: "#166534" };
-    default:
-      return { background: "#e2e8f0", color: "#475569" };
-  }
+const daysBetween = (from, to) => {
+  if (!from) return 0;
+  const s = new Date(from); s.setHours(0, 0, 0, 0);
+  const e = to ? new Date(to) : new Date(); e.setHours(0, 0, 0, 0);
+  return Math.max(0, Math.floor((e - s) / (1000 * 60 * 60 * 24)));
 };
 
+const buildDayLabel = (prefix, from, to) => {
+  const d = daysBetween(from, to);
+  return `${prefix} ${d} ${d === 1 ? "day" : "days"}`;
+};
+// const getApplicationStatusStyle = (applicationStatus) => {
+//   switch (String(applicationStatus || "").toUpperCase()) {
+//     case "APPLICATION_SUBMITTED":
+//       return { background: "#dbeafe", color: "#1d4ed8" };
+//     case "APPLICATION_FORWARDED_TO_JE":
+//       return { background: "#fef3c7", color: "#92400e" };
+//     case "JE_VERIFIED_REPORT_UPLOADED":
+//       return { background: "#ede9fe", color: "#6d28d9" };
+//     case "APPLICATION_APPROVED":
+//       return { background: "#dcfce7", color: "#166534" };
+//     default:
+//       return { background: "#e2e8f0", color: "#475569" };
+//   }
+// };
+const getApplicationStatusStyle = (applicationStatus) => {
+  switch (String(applicationStatus || "").toUpperCase()) {
+    case "APPLICATION_SUBMITTED":       return { background: "#dbeafe", color: "#1d4ed8" };
+    case "APPLICATION_FORWARDED_TO_JE": return { background: "#fef3c7", color: "#92400e" };
+    case "JE_VERIFIED_REPORT_UPLOADED": return { background: "#ede9fe", color: "#6d28d9" };
+    case "APPLICATION_APPROVED":        return { background: "#dcfce7", color: "#166534" };
+    case "APPLICATION_REJECTED":        return { background: "#fee2e2", color: "#b91c1c" };
+    case "PAYMENT_RECEIPT_UPLOADED":    return { background: "#fef3c7", color: "#92400e" };
+    case "PAYMENT_RECEIPT_VERIFIED":    return { background: "#dcfce7", color: "#166534" };
+    case "CONNECTION_DETAILS_UPDATED":  return { background: "#fef3c7", color: "#166534" };
+    default:                            return { background: "#e2e8f0", color: "#475569" };
+  }
+};
+// const getActionStatusMeta = (app) => {
+//   const status = String(app.application_status || "").toUpperCase();
+//   const referenceDate =
+//     status === "APPLICATION_FORWARDED_TO_JE"
+//       ? app.forward_on || app.created_at
+//       : status === "JE_VERIFIED_REPORT_UPLOADED"
+//         ? app.site_visit_report_upload_on || app.created_at
+//         : status === "APPLICATION_APPROVED"
+//           ? app.approved_on || app.created_at
+//           : app.created_at;
+
+//   if (status === "APPLICATION_APPROVED") {
+//     return {
+//       background: "#dcfce7",
+//       color: "#166534",
+//       text: formatDayProgress("Action taken in", referenceDate),
+//     };
+//   }
+
+//   if (["APPLICATION_SUBMITTED", "APPLICATION_FORWARDED_TO_JE", "JE_VERIFIED_REPORT_UPLOADED"].includes(status)) {
+//     return {
+//       background: "#fef3c7",
+//       color: "#92400e",
+//       text: formatDayProgress("Pending since", referenceDate),
+//     };
+//   }
+
+//   return { background: "#e2e8f0", color: "#475569", text: "-" };
+// };
 const getActionStatusMeta = (app) => {
   const status = String(app.application_status || "").toUpperCase();
-  const referenceDate =
-    status === "APPLICATION_FORWARDED_TO_JE"
-      ? app.forward_on || app.created_at
-      : status === "JE_VERIFIED_REPORT_UPLOADED"
-        ? app.site_visit_report_upload_on || app.created_at
-        : status === "APPLICATION_APPROVED"
-          ? app.approved_on || app.created_at
-          : app.created_at;
 
-  if (status === "APPLICATION_APPROVED") {
+  if (status === "CONNECTION_DETAILS_UPDATED") {
     return {
       background: "#dcfce7",
       color: "#166534",
-      text: formatDayProgress("Action taken in", referenceDate),
+      text: buildDayLabel("Action taken in", app.update_on, app.update_on),
     };
   }
 
-  if (["APPLICATION_SUBMITTED", "APPLICATION_FORWARDED_TO_JE", "JE_VERIFIED_REPORT_UPLOADED"].includes(status)) {
+  if (status === "APPLICATION_REJECTED") {
     return {
-      background: "#fef3c7",
-      color: "#92400e",
-      text: formatDayProgress("Pending since", referenceDate),
+      background: "#fee2e2",
+      color: "#991b1b",
+      text: buildDayLabel("Action taken in", app.update_on, app.update_on),
     };
   }
 
-  return { background: "#e2e8f0", color: "#475569", text: "-" };
+  // All pending statuses — Pending since update_on, fallback to created_at
+  return {
+    background: "#fef3c7",
+    color: "#92400e",
+    text: buildDayLabel("Pending since", app.update_on || app.created_at),
+  };
 };
-
-const getReceivedDate = (app) => app.created_at || app.createdAt || null;
-
+const getReceivedDate = (app) => {
+  const status = String(app.application_status || "").toUpperCase();
+  if (status === "APPLICATION_SUBMITTED") {
+    return app.created_at || null;
+  }
+  return app.update_on || app.created_at || null;
+};
 
 
 export function SEDashboardApplicationCountCard({ userId, onOpen }) {
@@ -323,14 +375,16 @@ const filtered = applications.filter((app) => {
       </div>
  <div className="se-dashboard-app-table-controls">
  <select className="se-status-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                  <option value="all">All Status</option>
-                  <option value="APPLICATION_SUBMITTED">Application Pending</option>
-                  <option value="APPLICATION_FORWARDED_TO_JE">Application Forwarded To JE</option>
-                  <option value="JE_VERIFIED_REPORT_UPLOADED">Verify JE Upload Report</option>
-                  <option value="APPLICATION_APPROVED">Application Approved</option>
-                  <option value="APPLICATION_REJECTED">Application Rejected</option>
-                  
-                </select>
+  <option value="all">All Status</option>
+  <option value="APPLICATION_SUBMITTED">Application Pending</option>
+  <option value="APPLICATION_FORWARDED_TO_JE">Application Forwarded To JE</option>
+  <option value="JE_VERIFIED_REPORT_UPLOADED">Verify JE Upload Report</option>
+  <option value="APPLICATION_APPROVED">Application Approved</option>
+  <option value="APPLICATION_REJECTED">Application Rejected</option>
+  <option value="PAYMENT_RECEIPT_UPLOADED">Payment Receipt Uploaded</option>
+  <option value="PAYMENT_RECEIPT_VERIFIED">Payment Receipt Verified</option>
+  <option value="CONNECTION_DETAILS_UPDATED">Connection Details Updated</option>
+</select>
         <div className="se-dashboard-app-search">
           <Search size={15} />
           <input

@@ -329,6 +329,9 @@ export const fetchConnectionApplications = (blockCode) =>
 export const submitConnectionDetails = (payload) =>
   API.post("/officer/connection-details/update", payload);
 
+export const checkSessionValid = (userId) =>
+  API.get(`/api/users/check-session`, { params: { userId } });
+
 export const fetchSlaStages = () => API.get("/sla-config/stages");
 
 export const saveSlaStage = (payload) => API.post("/sla-config/save", payload);

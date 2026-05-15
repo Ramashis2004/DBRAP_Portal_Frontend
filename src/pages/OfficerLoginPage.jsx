@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Lock, LogIn, User, Eye, EyeOff } from "lucide-react";
+import Swal from "sweetalert2";
 import { loginOfficer } from "../api/api";
 import "./OfficerLoginPage.css";
 
@@ -23,6 +24,27 @@ function OfficerLoginPage() {
     }));
   };
 
+  const openDashboard = (user) => {
+    localStorage.setItem(
+      "officerSession",
+      JSON.stringify({
+        id: user.id,
+        username: user.loginId,
+        name: user.name,
+        roleName: user.roleName,
+        loginTime: new Date().toISOString(),
+      })
+    );
+
+    if (user.roleName === "SE") {
+      navigate("/se-dashboard");
+    } else if (user.roleName === "JE") {
+      navigate("/je-dashboard");
+    } else {
+      navigate("/dashboard");
+    }
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setIsSubmitting(true);
@@ -37,33 +59,36 @@ function OfficerLoginPage() {
       }
 
       const response = await loginOfficer({ username, password });
-      const user = response.data.user;
-
-      localStorage.setItem(
-        "officerSession",
-        JSON.stringify({
-          id: user.id,
-          username: user.loginId,
-          name: user.name,
-          roleName: user.roleName,
-          loginTime: new Date().toISOString(),
-        })
-      );
-      // navigate("/dashboard");
-
-      if (user.roleName === "SE") {
-  navigate("/se-dashboard");
-} 
- else if (user.roleName === "JE") {
-   navigate("/je-dashboard");
- }
-// } else if (user.roleName === "VERIFIER") {
-//   navigate("/verifier-dashboard");
-// } 
-else {
-  navigate("/dashboard"); // fallback
-}
+      openDashboard(response.data.user);
     } catch (error) {
+      if (error.response?.status === 409 && error.response?.data?.code === "ALREADY_LOGGED_IN") {
+        const result = await Swal.fire({
+          title: "Already logged in",
+          text: error.response.data.error || "This login ID is already logged in. Do you want to logout there and login here?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "OK",
+          cancelButtonText: "Cancel",
+          reverseButtons: true,
+        });
+
+        if (result.isConfirmed) {
+          try {
+            const retryResponse = await loginOfficer({
+              username: formData.username.trim(),
+              password: formData.password.trim(),
+              forceLogin: true,
+            });
+                broadcastLogout(retryResponse.data.user.id); // ← ADD
+
+            openDashboard(retryResponse.data.user);
+          } catch (retryError) {
+            setErrorMessage(retryError.response?.data?.error || "Login failed. Please try again.");
+          }
+        }
+        return;
+      }
+
       setErrorMessage(error.response?.data?.error || "Login failed. Please try again.");
     } finally {
       setIsSubmitting(false);

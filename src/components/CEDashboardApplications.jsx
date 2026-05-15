@@ -45,6 +45,8 @@ const applicationColumns = [
   { label: "Application Status", width: 180 },
   { label: "Application Received", width: 160 },
   { label: "Action Status", width: 190 },
+    { label: "Pending With",         width: 180 }, // ← ADD
+
 ];
 
 const DEFAULT_CE_FETCHERS = {
@@ -62,54 +64,90 @@ const DOCUMENT_ROWS = [
   ["Identity Proof", "identity_proof"],
 ];
 
-const getReceivedDate = (app) => app.created_at || app.createdAt || null;
-
+const getReceivedDate = (app) => {
+  const status = String(app.application_status || "").toUpperCase();
+  if (status === "APPLICATION_SUBMITTED") {
+    return app.created_at || null;
+  }
+  return app.update_on || app.created_at || null;
+};
 const getApplicationStatusStyle = (applicationStatus) => {
   switch (String(applicationStatus || "").toUpperCase()) {
-    case "APPLICATION_APPROVED":
-    case "CONNECTION_DETAILS_UPDATED":
-      return { background: "#dcfce7", color: "#166534" };
-    case "APPLICATION_REJECTED":
-      return { background: "#fee2e2", color: "#991b1b" };
-    case "APPLICATION_SUBMITTED":
-      return { background: "#dbeafe", color: "#1d4ed8" };
-    case "APPLICATION_FORWARDED_TO_JE":
-      return { background: "#fef3c7", color: "#92400e" };
-    case "JE_VERIFIED_REPORT_UPLOADED":
-      return { background: "#ede9fe", color: "#6d28d9" };
-    default:
-      return { background: "#e2e8f0", color: "#475569" };
+    case "APPLICATION_SUBMITTED":       return { background: "#dbeafe", color: "#1d4ed8" };
+    case "APPLICATION_FORWARDED_TO_JE": return { background: "#fef3c7", color: "#92400e" };
+    case "JE_VERIFIED_REPORT_UPLOADED": return { background: "#ede9fe", color: "#6d28d9" };
+    case "APPLICATION_APPROVED":        return { background: "#dcfce7", color: "#166534" };
+    case "APPLICATION_REJECTED":        return { background: "#fee2e2", color: "#b91c1c" };
+    case "PAYMENT_RECEIPT_UPLOADED":    return { background: "#fef3c7", color: "#92400e" };
+    case "PAYMENT_RECEIPT_VERIFIED":    return { background: "#dcfce7", color: "#166534" };
+    case "CONNECTION_DETAILS_UPDATED":  return { background: "#fef3c7", color: "#166534" };
+    default:                            return { background: "#e2e8f0", color: "#475569" };
   }
 };
 
 const getActionStatusMeta = (app) => {
   const status = String(app.application_status || "").toUpperCase();
-  const referenceDate =
-    status === "APPLICATION_FORWARDED_TO_JE"
-      ? app.forward_on || app.created_at
-      : status === "JE_VERIFIED_REPORT_UPLOADED"
-        ? app.site_visit_report_upload_on || app.created_at
-        : status === "APPLICATION_APPROVED"
-          ? app.approved_on || app.created_at
-          : status === "APPLICATION_REJECTED"
-            ? app.rejected_on || app.created_at
-            : app.created_at;
 
-  if (status === "APPLICATION_APPROVED" || status === "CONNECTION_DETAILS_UPDATED") {
-    return { background: "#dcfce7", color: "#166534", text: formatDayProgress("Action taken in", referenceDate) };
+  // ── Terminal / completed → "Action taken in X days" (frozen, created_at → update_on) ──
+  if (status === "CONNECTION_DETAILS_UPDATED") {
+    return {
+      background: "#dcfce7",
+      color: "#166534",
+      text: formatDayProgress("Action taken in", app.update_on, app.update_on),
+    };
   }
 
   if (status === "APPLICATION_REJECTED") {
-    return { background: "#fee2e2", color: "#991b1b", text: formatDayProgress("Action taken in", referenceDate) };
+    return {
+      background: "#fee2e2",
+      color: "#991b1b",
+      text: formatDayProgress("Action taken in", app.update_on, app.update_on),
+    };
   }
 
-  if (PENDING_STATUSES.includes(status)) {
-    return { background: "#fef3c7", color: "#92400e", text: formatDayProgress("Pending since", referenceDate) };
-  }
-
-  return { background: "#e2e8f0", color: "#475569", text: "-" };
+  // ── All pending statuses → "Pending since X days" (update_on → today) ──
+  // Covers: APPLICATION_SUBMITTED, APPLICATION_FORWARDED_TO_JE,
+  //         JE_VERIFIED_REPORT_UPLOADED, APPLICATION_APPROVED,
+  //         PAYMENT_RECEIPT_UPLOADED, PAYMENT_RECEIPT_VERIFIED
+  return {
+    background: "#fef3c7",
+    color: "#92400e",
+    text: formatDayProgress("Pending since", app.update_on || app.created_at),
+  };
 };
 
+const getPendingWith = (app) => {
+  const status = String(app.application_status || "").toUpperCase();
+
+  switch (status) {
+    // Pending with SE
+    case "APPLICATION_SUBMITTED":
+    case "JE_VERIFIED_REPORT_UPLOADED":
+      return app.division_name
+        ? `${app.division_name} : SE`
+        : "SE";
+
+    // Pending with JE
+    case "APPLICATION_FORWARDED_TO_JE":
+    case "PAYMENT_RECEIPT_UPLOADED":
+          case "PAYMENT_RECEIPT_VERIFIED":
+      return app.block
+        ? `${app.block} : JE`
+        : "JE";
+
+    // Pending with Applicant
+    case "APPLICATION_APPROVED":
+      return app.applicant_user_id
+        ? `${app.applicant_user_id} : Applicant`
+        : "Applicant";
+
+    // No pending — terminal statuses
+    case "CONNECTION_DETAILS_UPDATED":
+    case "APPLICATION_REJECTED":
+    default:
+      return null;
+  }
+};
 const toNumber = (value) => Number(value || 0);
 
 
@@ -441,18 +479,17 @@ const finalFilteredApplications = applications.filter((app) => {
   return (
     <>
     <div className="ce-table-controls">
-                <select className="ce-status-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                  <option value="all">All Status</option>
-                  <option value="APPLICATION_SUBMITTED">Application Pending</option>
-                  <option value="APPLICATION_FORWARDED_TO_JE">Application Forwarded To JE</option>
-                  <option value="JE_VERIFIED_REPORT_UPLOADED">Verify JE Upload Report</option>
-                  <option value="APPLICATION_APPROVED">Application Approved</option>
-                  <option value="APPLICATION_REJECTED">Application Rejected</option>
-                  {/* <option value="PAYMENT_RECEIPT_UPLOADED">Payment Receipt Uploaded</option>
-                  <option value="PAYMENT_RECEIPT_VERIFIED">Payment Receipt Verified</option>
-                  <option value="PAYMENT_RECEIPT_REJECTED">Payment Receipt Rejected</option>
-                  <option value="CONNECTION_DETAILS_UPDATED">Connection Details Updated</option> */}
-                </select>
+                <select className="se-status-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+  <option value="all">All Status</option>
+  <option value="APPLICATION_SUBMITTED">Application Pending</option>
+  <option value="APPLICATION_FORWARDED_TO_JE">Application Forwarded To JE</option>
+  <option value="JE_VERIFIED_REPORT_UPLOADED">Verify JE Upload Report</option>
+  <option value="APPLICATION_APPROVED">Application Approved</option>
+  <option value="APPLICATION_REJECTED">Application Rejected</option>
+  <option value="PAYMENT_RECEIPT_UPLOADED">Payment Receipt Uploaded</option>
+  <option value="PAYMENT_RECEIPT_VERIFIED">Payment Receipt Verified</option>
+  <option value="CONNECTION_DETAILS_UPDATED">Connection Details Updated</option>
+</select>
       <div className="ce-dashboard-report__search">
         <Search size={15} />
         <input
@@ -476,7 +513,7 @@ const finalFilteredApplications = applications.filter((app) => {
           </thead>
           <tbody>
 {finalFilteredApplications.length === 0 ? (
-                <tr><td colSpan={9} className="ce-dashboard-report__empty">No applications found.</td></tr>
+                <tr><td colSpan={10} className="ce-dashboard-report__empty">No applications found.</td></tr>
             ) : (
               finalFilteredApplications.map((app) => (
                 <tr key={app.application_id}>
@@ -497,6 +534,15 @@ const finalFilteredApplications = applications.filter((app) => {
                   <td><span className="ce-dashboard-report__pill" style={getApplicationStatusStyle(app.application_status)}>{formatApplicationStatus(app.application_status)}</span></td>
                   <td>{formatDisplayDate(getReceivedDate(app))}</td>
                   <td><span className="ce-dashboard-report__pill" style={getActionStatusMeta(app)}>{getActionStatusMeta(app).text}</span></td>
+                  <td>
+      {getPendingWith(app)
+        ? <span className="ce-dashboard-report__pill"
+            style={{ background: "#eff6ff", color: "#1e40af", fontSize: "0.75rem", fontWeight: 600 }}>
+            {getPendingWith(app)}
+          </span>
+        : <span style={{ color: "#94a3b8" }}>—</span>
+      }
+    </td>
                 </tr>
               ))
             )}
