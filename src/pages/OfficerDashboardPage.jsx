@@ -301,7 +301,21 @@ function OfficerDashboardPage() {
       navigate("/login");
     }
   };
-
+useEffect(() => {
+  const channel = new BroadcastChannel("officer_session");
+  channel.onmessage = (event) => {
+    if (event.data?.type === "FORCE_LOGOUT") {
+      // Get the CURRENT session at time of message, not stale closure
+      const currentSession = JSON.parse(localStorage.getItem("officerSession") || "null");
+      // Only logout if we still have the OLD session (new tab already set new session)
+      if (!currentSession || event.data?.userId === currentSession?.id) {
+        localStorage.removeItem("officerSession");
+        navigate("/login", { replace: true });
+      }
+    }
+  };
+  return () => channel.close();
+}, [navigate]);
   if (isLoading) {
     return (
       <div className="officer-dashboard-page">
@@ -342,7 +356,7 @@ function OfficerDashboardPage() {
   const dashboardTitle = isLoggedInCE
     ? "CE Dashboard"
     : isLoggedInEIC
-      ? "EIC Dashboard"
+      ? "State Dashboard"
       : "Officer Dashboard";
 
   // ── Derived form state ──────────────────────────────────────────────────────
@@ -781,7 +795,8 @@ function OfficerDashboardPage() {
                       Login ID will be generated automatically. For JE users, it will be saved as
                       JE{`<block_code>`}{`<serial_no>`} like JE363901. For CE users, the selected
                       subtype name will be used as the login ID and the mapped circle will be filled
-                      automatically from the subtype master. Password will be created automatically
+                      automatically from the subtype master. For AEE users, it will be saved as
+                      AEE{`<district_code>`}{`<division_serial>`}{`<serial_no>`} like AEE3090101. Password will be created automatically
                       and sent to the entered mobile number.
                     </p>
                   ) : null}

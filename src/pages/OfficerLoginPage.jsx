@@ -5,6 +5,17 @@ import Swal from "sweetalert2";
 import { loginOfficer } from "../api/api";
 import "./OfficerLoginPage.css";
 
+const getOfficerDashboardPath = (user) => {
+  const roleName = String(user?.roleName || "").trim().toUpperCase();
+  const userTypeId = Number(user?.userTypeId);
+
+  if (roleName === "SE" || userTypeId === 2) return "/se-dashboard";
+  if (roleName === "AEE") return "/aee-dashboard";
+  if (roleName === "JE" || userTypeId === 4) return "/je-dashboard";
+
+  return "/dashboard";
+};
+
 function OfficerLoginPage() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -30,21 +41,22 @@ function OfficerLoginPage() {
       JSON.stringify({
         id: user.id,
         username: user.loginId,
+        loginId: user.loginId,
+        login_id: user.loginId,
         name: user.name,
         roleName: user.roleName,
+        userTypeId: user.userTypeId,
         loginTime: new Date().toISOString(),
       })
     );
 
-    if (user.roleName === "SE") {
-      navigate("/se-dashboard");
-    } else if (user.roleName === "JE") {
-      navigate("/je-dashboard");
-    } else {
-      navigate("/dashboard");
-    }
+    navigate(getOfficerDashboardPath(user));
   };
-
+const broadcastLogout = (userId) => {
+  const channel = new BroadcastChannel("officer_session");
+  channel.postMessage({ type: "FORCE_LOGOUT", userId });
+  channel.close();
+};
   const handleSubmit = async (event) => {
     event.preventDefault();
     setIsSubmitting(true);
@@ -79,9 +91,10 @@ function OfficerLoginPage() {
               password: formData.password.trim(),
               forceLogin: true,
             });
-                broadcastLogout(retryResponse.data.user.id); // ← ADD
 
             openDashboard(retryResponse.data.user);
+            broadcastLogout(retryResponse.data.user.id); // ← ADD
+            
           } catch (retryError) {
             setErrorMessage(retryError.response?.data?.error || "Login failed. Please try again.");
           }

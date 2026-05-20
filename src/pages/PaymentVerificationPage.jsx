@@ -53,13 +53,13 @@ const ACTION_LABELS = {
 };
 
 const ACTION_MESSAGES = {
-  PAYMENT_RECEIPT_VERIFIED: "Payment receipt will be marked as Verified.",
-  PAYMENT_NOT_VERIFIED:     "Payment receipt will be marked as Not Verified.",
+  PAYMENT_RECEIPT_VERIFIED: "Payment receipt will be marked as Accepted.",
+  PAYMENT_NOT_VERIFIED:     "Payment receipt will be marked as Rejected.",
 };
 
 const SUCCESS_MESSAGES = {
-  PAYMENT_RECEIPT_VERIFIED: "Payment receipt verified successfully.",
-  PAYMENT_NOT_VERIFIED:     "Payment marked as not verified.",
+  PAYMENT_RECEIPT_VERIFIED: "Payment receipt accepted successfully.",
+  PAYMENT_NOT_VERIFIED:     "Payment receipt rejected successfully.",
 };
 
 const tableColumns = [
@@ -213,8 +213,8 @@ function PaymentVerificationPage() {
       }}
     >
       <option value="">Select Action</option>
-      <option value="PAYMENT_RECEIPT_VERIFIED">Verify</option>
-      <option value="PAYMENT_NOT_VERIFIED">Not Verify</option>
+      <option value="PAYMENT_RECEIPT_VERIFIED">Accept</option>
+      <option value="PAYMENT_NOT_VERIFIED">Reject</option>
     </select>
   );
 
@@ -579,11 +579,11 @@ function PaymentVerificationPage() {
                         whiteSpace: "nowrap",
                       }}>
                         {app.money_receipt_verify_on
-                          ? `Verified on ${formatDisplayDate(app.money_receipt_verify_on)}`
+                          ? `Verified on ${formatDisplayDate(app.update_on)}`
                           : (() => {
-                              if (!app.money_receipt_upload_on) return "Pending";
+                              if (!app.update_on) return "Pending";
                               const days = Math.max(0, Math.floor(
-                                (new Date() - new Date(app.money_receipt_upload_on)) / 86400000
+                                (new Date() - new Date(app.update_on)) / 86400000
                               ));
                               return `Pending since ${days} ${days === 1 ? "day" : "days"}`;
                             })()

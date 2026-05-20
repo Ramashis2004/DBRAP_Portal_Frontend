@@ -9,6 +9,7 @@ import {
   fetchDistricts,
   fetchPanchayats,
   registerApplicantOrganisation,
+  updateReturnedApplicantOrganisation,
   getOrganisationDocumentUrl,
 } from "../api/api";
 import {
@@ -246,8 +247,9 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
   const [blocks, setBlocks]                           = useState([]);
   const [panchayats, setPanchayats]                   = useState([]);
   const [existingApplication, setExistingApplication] = useState(null);
+  const [returnedApplication, setReturnedApplication] = useState(null);
   const [loading, setLoading]                         = useState(true);
-
+const [pdfPreview, setPdfPreview] = useState(null);
   useEffect(() => {
     const session = JSON.parse(localStorage.getItem("applicantSession") || "null");
     if (!session?.id) {
@@ -263,23 +265,49 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
           fetchApplicantApplication(session.id).catch(() => null),
         ]);
 
-        if (applicationResponse?.data?.exists && applicationResponse?.data?.application) {
-          setExistingApplication(applicationResponse.data.application);
+        const applicant = profileResponse.data.applicant;
+        const application = applicationResponse?.data?.application || null;
+        const isReturnedApplication =
+          String(application?.application_status || "").toUpperCase() === "APPLICATION_RETURNED_TO_APPLICANT";
+
+        if (application && !isReturnedApplication) {
+          setExistingApplication(application);
           setLoading(false);
           return;
         }
 
-        const applicant = profileResponse.data.applicant;
         setFormData((current) => ({
           ...current,
           applicant_user_id: applicant.id,
           name:              applicant.name              || "",
-          organisation_name: applicant.organisation_name || "",
+          organisation_name: application?.organisation_name || applicant.organisation_name || "",
           gender:            applicant.gender            || "",
           email:             applicant.email             || "",
           mobile_number:     applicant.mobile_number     || "",
+          establishment_type: application?.establishment_type || "",
+          district_code: application?.district_code || "",
+          district: application?.district || "",
+          block_code: application?.block_code || "",
+          block: application?.block || "",
+          gram_panchayat: application?.gram_panchayat || "",
+          village: application?.village || "",
+          habitation: application?.habitation || "",
+          type_of_connection: application?.type_of_connection || "",
+          water_requirement: application?.water_requirement || "",
         }));
         setDistricts(districtResponse.data || []);
+
+        if (isReturnedApplication) {
+          setReturnedApplication(application);
+          if (application.district_code) {
+            const blockResponse = await fetchBlocks(application.district_code);
+            setBlocks(blockResponse.data || []);
+          }
+          if (application.block_code) {
+            const panchayatResponse = await fetchPanchayats(application.block_code);
+            setPanchayats(panchayatResponse.data || []);
+          }
+        }
       } catch (error) {
         console.error("Applicant organisation form load failed:", error);
         await swalError(
@@ -360,7 +388,9 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
   const validateStep = (index) => {
     if (index === 0) return ["name", "gender", "email", "mobile_number"].every((f) => formData[f]);
     if (index === 1) return ["organisation_name", "establishment_type", "district_code", "block_code", "gram_panchayat", "village"].every((f) => formData[f]);
-    if (index === 2) return Object.values(files).every(Boolean);
+    if (index === 2) {
+      return DOCUMENT_ROWS.every(([, key]) => Boolean(files[key] || returnedApplication?.[key]));
+    }
     if (index === 3) return Boolean(formData.type_of_connection && formData.water_requirement);
     return true;
   };
@@ -406,11 +436,13 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
     });
 
     try {
-      const response = await registerApplicantOrganisation(payload);
+      const response = returnedApplication?.application_id
+        ? await updateReturnedApplicantOrganisation(returnedApplication.application_id, payload)
+        : await registerApplicantOrganisation(payload);
       const applicationId = response.data?.data?.application_id;
       await Swal.fire({
         icon: "success",
-        title: "Application Submitted",
+        title: returnedApplication ? "Application Resubmitted" : "Application Submitted",
         html: `Application ID:<br/><b style="font-family:monospace;font-size:1.2rem;">${applicationId}</b>`,
         confirmButtonColor: "#3d1f0f",
       });
@@ -453,6 +485,17 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
           &larr; Back to Dashboard
         </button>
         <h2>Organisation Registration</h2>
+        {returnedApplication ? (
+          <div className="aor-existing-banner" style={{ marginBottom: "18px" }}>
+            <div className="aor-existing-banner-icon">!</div>
+            <div>
+              <div className="aor-existing-banner-title">Application Returned to Applicant</div>
+              <div className="aor-existing-banner-sub">
+                Please update the details and resubmit the same application ID: {returnedApplication.application_id}
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         {!isPreview ? (
           <>
@@ -529,11 +572,11 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
 
             {step === 2 && (
               <div className="applicant-org-panel">
-                <FileField name="property_proof"       label="Property Proof"       onChange={handleFileChange} />
-                <FileField name="registration_proof"   label="Registration Proof"   onChange={handleFileChange} />
-                <FileField name="ownership_proof"      label="Ownership Proof"      onChange={handleFileChange} />
-                <FileField name="owner_indemnity_bond" label="Owner Indemnity Bond" onChange={handleFileChange} />
-                <FileField name="identity_proof"       label="Identity Proof"       onChange={handleFileChange} />
+                <FileField name="property_proof"       label="Property Proof"       onChange={handleFileChange} existing={returnedApplication?.property_proof} />
+                <FileField name="registration_proof"   label="Registration Proof"   onChange={handleFileChange} existing={returnedApplication?.registration_proof} />
+                <FileField name="ownership_proof"      label="Ownership Proof"      onChange={handleFileChange} existing={returnedApplication?.ownership_proof} />
+                <FileField name="owner_indemnity_bond" label="Owner Indemnity Bond" onChange={handleFileChange} existing={returnedApplication?.owner_indemnity_bond} />
+                <FileField name="identity_proof"       label="Identity Proof"       onChange={handleFileChange} existing={returnedApplication?.identity_proof} />
               </div>
             )}
 
@@ -579,24 +622,28 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
                       <div key={label}>
                         <span>{displayLabel}</span>
                         {title === "Documents" && files[label] ? (
-                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const url = URL.createObjectURL(files[label]);
-                                window.open(url, "_blank");
-                              }}
-                              style={{
-                                padding: "2px 10px", fontSize: "0.75rem",
-                                background: "#3d1f0f", color: "#fff",
-                                border: "none", borderRadius: "4px",
-                                cursor: "pointer", whiteSpace: "nowrap",
-                              }}
-                            >
-                              View File
-                            </button>
-                          </div>
-                        ) : (
+  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+    <button
+      type="button"
+      onClick={() => {
+        const url = URL.createObjectURL(files[label]);  // ✅ local File object
+        setPdfPreview({
+          url,
+          title: label.replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+          fileName: files[label].name,
+        });
+      }}
+      style={{
+        padding: "2px 10px", fontSize: "0.75rem",
+        background: "#3d1f0f", color: "#fff",
+        border: "none", borderRadius: "4px",
+        cursor: "pointer", whiteSpace: "nowrap",
+      }}
+    >
+      View File
+    </button>
+  </div>
+) : (
                           <strong>{value || "-"}</strong>
                         )}
                       </div>
@@ -611,6 +658,44 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
             </div>
           </div>
         )}
+          {/* ── PDF Preview Overlay ── */}
+        {pdfPreview && (
+          <div className="pv-preview-overlay">
+            <div className="pv-preview-card">
+              <div className="pv-preview-header">
+                <h2 className="pv-preview-header__title">{pdfPreview.title}</h2>
+                <div className="pv-preview-header__actions">
+                  
+                   <a href={pdfPreview.url}
+                    download={pdfPreview.fileName}
+                    className="pv-preview-btn-download"
+                  >
+                    <Download size={14} />
+                    Download PDF
+                  </a>
+                  <button
+                    type="button"
+                    className="pv-preview-btn-close"
+                    onClick={() => {
+                      URL.revokeObjectURL(pdfPreview.url); // ✅ cleanup
+                      setPdfPreview(null);
+                    }}
+                    title="Close Preview"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+              <div className="pv-preview-content">
+                <iframe
+                  src={`${pdfPreview.url}#toolbar=0`}
+                  className="pv-preview-frame"
+                  title="PDF Preview"
+                />
+              </div>
+            </div>
+            </div>
+          )}
       </form>
     </div>
   );
@@ -625,12 +710,12 @@ function Field({ label, required, children }) {
   );
 }
 
-function FileField({ name, label, onChange }) {
+function FileField({ name, label, onChange, existing }) {
   return (
     <label className="applicant-org-field">
       <RequiredLabel>{label}</RequiredLabel>
       <input type="file" name={name} accept=".pdf" onChange={onChange} />
-      <small>Max size: 2MB. Only PDF files are allowed.</small>
+      <small>{existing ? "Existing file will be kept if you do not upload a new PDF." : "Max size: 2MB. Only PDF files are allowed."}</small>
     </label>
   );
 }

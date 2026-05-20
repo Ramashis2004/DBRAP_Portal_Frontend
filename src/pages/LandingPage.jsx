@@ -22,33 +22,8 @@ import {
   ChevronDown,
   Info
 } from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer, 
-  PieChart, 
-  Pie, 
-  Cell 
-} from 'recharts';
+import { fetchPublicDashboardSummary } from '../api/api';
 import './LandingPage.css';
-
-// Mock data for charts
-const dashboardStats = [
-  { name: 'Jan', total: 450, approved: 380, pending: 50, rejected: 20 },
-  { name: 'Feb', total: 520, approved: 420, pending: 70, rejected: 30 },
-  { name: 'Mar', total: 610, approved: 510, pending: 60, rejected: 40 },
-  { name: 'Apr', total: 580, approved: 490, pending: 70, rejected: 20 },//deepak check
-];
-
-const pieData = [
-  { name: 'Approved', value: 75, color: '#1a3c5a' },
-  { name: 'Pending', value: 15, color: '#d4af37' },
-  { name: 'Rejected', value: 10, color: '#c0392b' },
-];
 
 const FeatureCard = ({ icon: Icon, title, description, delay }) => (
   <motion.div 
@@ -85,44 +60,112 @@ const ProcessStep = ({ number, title, description, isEven, delay }) => (
   </motion.div>
 );
 
-const StatCard = ({ value, label, delay }) => {
-  const [count, setCount] = useState(0);
-  
-  useEffect(() => {
-    let start = 0;
-    const end = parseInt(value);
-    if (start === end) return;
+const formatDashboardValue = (value) => value ?? 0;
 
-    let totalMiliseconds = 2000;
-    let incrementTime = (totalMiliseconds / end);
-    
-    let timer = setInterval(() => {
-      start += 1;
-      setCount(start);
-      if (start === end) clearInterval(timer);
-    }, incrementTime);
-
-    return () => clearInterval(timer);
-  }, [value]);
-
-  return (
-    <motion.div 
-      initial={{ scale: 0.9, opacity: 0 }}
-      whileInView={{ scale: 1, opacity: 1 }}
-      transition={{ duration: 0.5, delay }}
-      className="stat-card glass"
-    >
-      <span className="stat-value">{count}{value.includes('%') ? '%' : '+'}</span>
-      <span className="stat-label">{label}</span>
-    </motion.div>
-  );
-};
+const PublicDashboardTable = ({ title, columns, rows }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 24 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true }}
+    transition={{ duration: 0.45 }}
+    className="public-dashboard-card glass"
+  >
+    <h3>{title}</h3>
+    <div className="public-dashboard-table-wrap">
+      <table className="public-dashboard-table">
+        <thead>
+          <tr>
+            {columns.map((column) => (
+              <th key={column.key}>{column.label}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={columns.length} className="public-dashboard-empty">No data available</td>
+            </tr>
+          ) : (
+            rows.map((row, index) => (
+              <tr key={row.id || index}>
+                {columns.map((column) => (
+                  <td key={column.key}>{formatDashboardValue(row[column.key])}</td>
+                ))}
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  </motion.div>
+);
 
 const LandingPage = () => {
   const navigate = useNavigate();
   const { scrollYProgress } = useScroll();
   const backgroundY = useTransform(scrollYProgress, [0, 1], ['0%', '20%']);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
+  const [publicDashboard, setPublicDashboard] = useState({
+    applications: [],
+    inspections: null,
+    inspectionReports: null,
+  });
+  const [isDashboardLoading, setIsDashboardLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetchPublicDashboardSummary()
+      .then((response) => {
+        if (!isMounted) return;
+        setPublicDashboard({
+          applications: Array.isArray(response.data?.applications) ? response.data.applications : [],
+          inspections: response.data?.inspections || null,
+          inspectionReports: response.data?.inspectionReports || null,
+        });
+      })
+      .catch((error) => {
+        console.error("Public dashboard load failed:", error);
+        if (isMounted) setDashboardError("Unable to load public dashboard data.");
+      })
+      .finally(() => {
+        if (isMounted) setIsDashboardLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const applicationColumns = [
+    { key: "sl_no", label: "Sl.No" },
+    { key: "service_name", label: "Name of the Service" },
+    { key: "district_name", label: "District" },
+    { key: "applications_received", label: "No. of applications received" },
+    { key: "applications_processed_approved", label: "No. of applications processed / approved" },
+    { key: "applications_pending", label: "No. of applications pending" },
+    { key: "ortpsa_timeline", label: "ORTPSA timeline in (Days)" },
+    { key: "applications_approved_within_timeline", label: "No. of applications approved within timeline / 30 days" },
+    { key: "avg_time_taken", label: "Avg. time taken  in (Days)" },
+    { key: "min_time_taken", label: "Min. time taken in (Days)" },
+    { key: "max_time_taken", label: "Max. time taken in (Days)" },
+  ];
+
+  const inspectionColumns = [
+    { key: "inspections_to_be_conducted", label: "Total no. of inspections to be conducted" },
+    { key: "inspections_conducted_within_timeline", label: "Total number of inspections conducted within timeline" },
+    { key: "inspections_conducted_beyond_timeline", label: "Total number of inspections conducted beyond timeline" },
+    { key: "pending_inspections", label: "Total number of pending inspections" },
+    { key: "enterprises_exempted_self_certification", label: "Number of enterprises exempted based on self-certification" },
+    { key: "enterprises_exempted_third_party_certification", label: "Number of enterprises exempted based on third-party certification" },
+  ];
+
+  const inspectionReportColumns = [
+    { key: "inspections_conducted", label: "Total number of inspections conducted" },
+    { key: "reports_uploaded_within_24_hours", label: "Total number of inspections' report uploaded within 24 hours" },
+    { key: "reports_uploaded_beyond_24_hours", label: "Total number of inspections' report uploaded beyond 24 hours" },
+  ];
 
   return (
     <div className="landing-container">
@@ -219,7 +262,7 @@ const LandingPage = () => {
           </motion.div>
           <h1 className="drop-shadow-2xl">JAL CONNECT</h1>
           <h3  className="drop-shadow-2xl">Digital Water Connection Management System</h3>
-          <p className="drop-shadow-md text-accent-blue/90 font-medium">Transparent, Efficient & Time-Bound Water Supply Services for Citizens of Odisha. Empowering through digital governance.</p>
+          <p className="drop-shadow-md text-accent-blue/90 font-medium">Transparent, Efficient & Time-Bound Water Supply Connection.<br/> Empowering through digital governance.</p>
           
           <div className="hero-buttons">
             <button onClick={() => navigate("/register")} className="btn btn-primary">
@@ -300,67 +343,32 @@ const LandingPage = () => {
       <section className="dashboard-section">
         <div className="section-header">
           <h2>Operational Intelligence</h2>
-          <p>Real-time analytics for government oversight and transparency</p>
-        </div>
-        
-        <div className="stats-grid">
-          <StatCard value="12840" label="Total Applications" delay={0.1} />
-          <StatCard value="9850" label="Approved" delay={0.2} />
-          <StatCard value="2450" label="Pending" delay={0.3} />
-          <StatCard value="94" label="SLA Compliance %" delay={0.4} />
+          <p>Public dashboard for online applications and inspection transparency</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <motion.div 
-            initial={{ opacity: 0, x: -30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="chart-container glass"
-          >
-            <h3 className="text-xl font-bold mb-6 text-accent-blue flex items-center gap-2">
-              <BarChart3 size={20} /> Monthly Trend
-            </h3>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={dashboardStats}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="approved" fill="#1a3c5a" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="pending" fill="#d4af37" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </motion.div>
-
-          <motion.div 
-            initial={{ opacity: 0, x: 30 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="chart-container glass"
-          >
-            <h3 className="text-xl font-bold mb-6 text-accent-blue flex items-center gap-2">
-              <PieChart size={20} /> Application Status
-            </h3>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </motion.div>
-        </div>
+        {isDashboardLoading ? (
+          <div className="public-dashboard-state glass">Loading public dashboard data...</div>
+        ) : dashboardError ? (
+          <div className="public-dashboard-state glass is-error">{dashboardError}</div>
+        ) : (
+          <div className="public-dashboard-stack">
+            <PublicDashboardTable
+              title="Public Dashboard for Online Applications with District Level Data"
+              columns={applicationColumns}
+              rows={publicDashboard.applications}
+            />
+            <PublicDashboardTable
+              title="Public Dashboard for Inspections Data"
+              columns={inspectionColumns}
+              rows={[publicDashboard.inspections || {}]}
+            />
+            <PublicDashboardTable
+              title="Public Dashboard for Online Inspections Reports"
+              columns={inspectionReportColumns}
+              rows={[publicDashboard.inspectionReports || {}]}
+            />
+          </div>
+        )}
       </section>
 
       {/* Transparency Section */}

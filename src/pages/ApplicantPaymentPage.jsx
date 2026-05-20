@@ -4,7 +4,7 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
-import { ExternalLink, ReceiptText, Upload } from "lucide-react";
+import { Download, ExternalLink, ReceiptText, Upload, X } from "lucide-react";
 import axios from "axios";
 import "./ApplicantPaymentPage.css";
 
@@ -50,6 +50,9 @@ function ApplicantPaymentPage() {
   const [dateOfPayment, setDateOfPayment] = useState("");
   const [receiptFile, setReceiptFile]     = useState(null);
   const [message, setMessage]             = useState({ text: "", type: "" });
+
+  // ── PDF preview state (mirrors PaymentVerificationPage) ───────────────────
+  const [pdfPreview, setPdfPreview] = useState(null);
 
   const fileRef = useRef(null);
 
@@ -143,9 +146,9 @@ function ApplicantPaymentPage() {
       String(appData?.application_status || "").toUpperCase()
     ) || !!appData?.money_receipt;
 
-    const canUploadReceipt =
-  String(appData?.application_status || "").toUpperCase() ===
-  "APPLICATION_APPROVED";
+  const canUploadReceipt =
+    String(appData?.application_status || "").toUpperCase() ===
+    "APPLICATION_APPROVED";
 
   if (loading) {
     return <div style={{ padding: "40px", color: "#64748b" }}>Loading payment details…</div>;
@@ -197,18 +200,34 @@ function ApplicantPaymentPage() {
                   value={new Date(appData.date_of_payment).toLocaleDateString("en-IN")}
                 />
               )}
+              {/* ── Money Receipt — opens PDF preview overlay ── */}
               {appData.money_receipt && (
                 <InfoItem
                   label="Money Receipt"
                   value={
-                    <a
-                      href={getReceiptUrl(appData.application_id)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="appl-receipt-link"
+                    <button
+                      onClick={() =>
+                        setPdfPreview({
+                          url: getReceiptUrl(appData.application_id),
+                          title: `Money Receipt — ${appData.application_id}`,
+                        })
+                      }
+                      style={{
+                        background: "none",
+                        border: "none",
+                        color: "#2563eb",
+                        textDecoration: "underline",
+                        cursor: "pointer",
+                        padding: 0,
+                        fontSize: "inherit",
+                        fontWeight: "inherit",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                      }}
                     >
                       <ExternalLink size={14} /> View Receipt
-                    </a>
+                    </button>
                   }
                 />
               )}
@@ -216,100 +235,137 @@ function ApplicantPaymentPage() {
           </div>
 
           {/* Upload form */}
-{canUploadReceipt || alreadyUploaded ? (
-  <div className="appl-payment-card">
-    <div className="appl-payment-card__header">
-      <Upload size={22} />
-      <div>
-        <h2>Upload Money Receipt</h2>
-        <p>
-          {alreadyUploaded
-            ? "Receipt already submitted."
-            : "Upload your payment receipt to proceed."}
-        </p>
-      </div>
-    </div>
+          {canUploadReceipt || alreadyUploaded ? (
+            <div className="appl-payment-card">
+              <div className="appl-payment-card__header">
+                <Upload size={22} />
+                <div>
+                  <h2>Upload Money Receipt</h2>
+                  <p>
+                    {alreadyUploaded
+                      ? "Receipt already submitted."
+                      : "Upload your payment receipt to proceed."}
+                  </p>
+                </div>
+              </div>
 
-    {alreadyUploaded ? (
-      <div className="appl-uploaded-notice">
-        ✅ Payment receipt already uploaded. You can view it above.
-      </div>
-    ) : (
-      <form onSubmit={handleSubmit} className="appl-payment-form">
-        <div className="appl-form-field">
-          <label>Application ID</label>
-          <input type="text" value={appData.application_id} readOnly />
-        </div>
+              {alreadyUploaded ? (
+                <div className="appl-uploaded-notice">
+                  ✅ Payment receipt already uploaded. You can view it above.
+                </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="appl-payment-form">
+                  <div className="appl-form-field">
+                    <label>Application ID</label>
+                    <input type="text" value={appData.application_id} readOnly />
+                  </div>
 
-        <div className="appl-form-field">
-          <label>Connection Type</label>
-          <input type="text" value={appData.type_of_connection || ""} readOnly />
-        </div>
+                  <div className="appl-form-field">
+                    <label>Connection Type</label>
+                    <input type="text" value={appData.type_of_connection || ""} readOnly />
+                  </div>
 
-        <div className="appl-form-field">
-          <label>Amount (₹)</label>
-          <input
-            type="number"
-            min="1"
-            step="0.01"
-            placeholder="Enter amount paid"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            required
-          />
-        </div>
+                  <div className="appl-form-field">
+                    <label>Amount (₹)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      step="0.01"
+                      placeholder="Enter amount paid"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      required
+                    />
+                  </div>
 
-        <div className="appl-form-field">
-          <label>Date of Payment</label>
-          <input
-            type="date"
-            value={dateOfPayment}
-            onChange={(e) => setDateOfPayment(e.target.value)}
-            max={new Date().toISOString().slice(0, 10)}
-            required
-          />
-        </div>
+                  <div className="appl-form-field">
+                    <label>Date of Payment</label>
+                    <input
+                      type="date"
+                      value={dateOfPayment}
+                      onChange={(e) => setDateOfPayment(e.target.value)}
+                      max={new Date().toISOString().slice(0, 10)}
+                      required
+                    />
+                  </div>
 
-        <div className="appl-form-field appl-payment-form__full">
-          <label>Money Receipt (PDF / JPG / PNG — max 2 MB)</label>
-          <input
-            type="file"
-            accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-            ref={fileRef}
-            onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
-            required
-          />
-        </div>
+                  <div className="appl-form-field appl-payment-form__full">
+                    <label>Money Receipt (PDF / JPG / PNG — max 2 MB)</label>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                      ref={fileRef}
+                      onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                      required
+                    />
+                  </div>
 
-        {message.text && (
-          <div
-            className={`appl-payment-message appl-payment-form__full appl-payment-message--${message.type}`}
-          >
-            {message.text}
-          </div>
-        )}
+                  {message.text && (
+                    <div
+                      className={`appl-payment-message appl-payment-form__full appl-payment-message--${message.type}`}
+                    >
+                      {message.text}
+                    </div>
+                  )}
 
-        <div className="appl-payment-form__full">
-          <button
-            type="submit"
-            className="appl-payment-submit"
-            disabled={submitting}
-          >
-            <Upload size={16} />
-            {submitting ? "Uploading…" : "Submit Payment Receipt"}
-          </button>
-        </div>
-      </form>
-    )}
-  </div>
-) : (
-  <div className="appl-payment-card">
-    <div className="appl-uploaded-notice">
-      Payment receipt upload is available only after application approval.
-    </div>
-  </div>
-)}
+                  <div className="appl-payment-form__full">
+                    <button
+                      type="submit"
+                      className="appl-payment-submit"
+                      disabled={submitting}
+                    >
+                      <Upload size={16} />
+                      {submitting ? "Uploading…" : "Submit Payment Receipt"}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          ) : (
+            <div className="appl-payment-card">
+              <div className="appl-uploaded-notice">
+                Payment receipt upload is available only after application approval.
+              </div>
+            </div>
+          )}
         </>
+      )}
+
+      {/* ── PDF Preview Overlay (mirrors PaymentVerificationPage) ──────────── */}
+      {pdfPreview && (
+        <div className="pv-preview-overlay">
+          <div className="pv-preview-card">
+            <div className="pv-preview-header">
+              <h2 className="pv-preview-header__title">{pdfPreview.title}</h2>
+              <div className="pv-preview-header__actions">
+                <a
+                  href={pdfPreview.url}
+                  download
+                  className="pv-preview-btn-download"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Download size={14} />
+                  Download PDF
+                </a>
+                <button
+                  className="pv-preview-btn-close"
+                  onClick={() => setPdfPreview(null)}
+                  title="Close Preview"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+            <div className="pv-preview-content">
+              <iframe
+                src={`${pdfPreview.url}#toolbar=0`}
+                className="pv-preview-frame"
+                title="PDF Preview"
+              />
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

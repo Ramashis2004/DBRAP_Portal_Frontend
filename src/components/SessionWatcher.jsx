@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { sessionChannel } from "../utils/sessionChannel";
 import { checkSessionValid } from "../api/api";
 
-const POLL_INTERVAL_MS = 15000; // check every 15 seconds
+const POLL_INTERVAL_MS = 15000;
+const LOGIN_GRACE_MS = 3000; // ignore FORCE_LOGOUT for 3s after login
 
 function SessionWatcher() {
-  const navigate   = useNavigate();
-  const timerRef   = useRef(null);
+  const navigate     = useNavigate();
+  const timerRef     = useRef(null);
+  const loginTimeRef = useRef(null); // tracks when session was written
 
   const getActiveSession = () => {
     const officerRaw   = localStorage.getItem("officerSession");
@@ -16,14 +18,14 @@ function SessionWatcher() {
     if (officerRaw) {
       try {
         const s = JSON.parse(officerRaw);
-        return { id: s.id, type: "officer", redirectTo: "/login" };
+        return { id: s.id, type: "officer", redirectTo: "/login", loginTime: s.loginTime };
       } catch {}
     }
 
     if (applicantRaw) {
       try {
         const s = JSON.parse(applicantRaw);
-        return { id: s.id, type: "applicant", redirectTo: "/applicant-login" };
+        return { id: s.id, type: "applicant", redirectTo: "/applicant-login", loginTime: s.loginTime };
       } catch {}
     }
 
@@ -33,10 +35,9 @@ function SessionWatcher() {
   const forceLogout = (redirectTo) => {
     localStorage.removeItem("officerSession");
     localStorage.removeItem("applicantSession");
-    navigate(redirectTo);
+    navigate(redirectTo, { replace: true });
   };
 
-  // ── Polling — works across browsers ──────────────────────────────────────
   const startPolling = () => {
     stopPolling();
     timerRef.current = setInterval(async () => {
@@ -50,7 +51,6 @@ function SessionWatcher() {
           forceLogout(session.redirectTo);
         }
       } catch (err) {
-        // Network error — don't logout, just wait for next poll
         console.warn("Session check failed:", err.message);
       }
     }, POLL_INTERVAL_MS);
@@ -71,6 +71,12 @@ function SessionWatcher() {
       const session = getActiveSession();
       if (!session) return;
 
+      // ✅ Ignore if this session was just created (within grace period)
+      if (session.loginTime) {
+        const loginAge = Date.now() - new Date(session.loginTime).getTime();
+        if (loginAge < LOGIN_GRACE_MS) return; // new tab — ignore
+      }
+
       if (String(session.id) === String(event.data.userId)) {
         stopPolling();
         forceLogout(session.redirectTo);
@@ -81,25 +87,18 @@ function SessionWatcher() {
     return () => sessionChannel.removeEventListener("message", handleMessage);
   }, [navigate]);
 
-  // ── Start polling when session exists, stop when it doesn't ──────────────
+  // ── Start/stop polling on session changes ─────────────────────────────────
   useEffect(() => {
     const session = getActiveSession();
-    if (session) {
-      startPolling();
-    }
+    if (session) startPolling();
 
-    // Also restart polling on storage changes (login/logout in same browser)
     const handleStorage = () => {
       const s = getActiveSession();
-      if (s) {
-        startPolling();
-      } else {
-        stopPolling();
-      }
+      if (s) startPolling();
+      else stopPolling();
     };
 
     window.addEventListener("storage", handleStorage);
-
     return () => {
       stopPolling();
       window.removeEventListener("storage", handleStorage);

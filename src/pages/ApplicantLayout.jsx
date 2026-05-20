@@ -83,33 +83,30 @@ function ApplicantLayout() {
 
   
 
-  const handleLogout = async () => {
-    const result = await Swal.fire({
-      title: "Logout?",
-      text: "Do you want to logout from this account?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonText: "OK",
-      cancelButtonText: "Cancel",
-      reverseButtons: true,
-    });
+const handleLogout = async () => {
+  const result = await Swal.fire({
+    title: "Logout?",
+    text: "Do you want to logout from this account?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "OK",
+    cancelButtonText: "Cancel",
+    reverseButtons: true,
+  });
 
-    if (!result.isConfirmed) {
-      return;
+  if (!result.isConfirmed) return;
+
+  try {
+    if (applicantSession?.id) {
+      await logoutOfficer({ userId: applicantSession.id }); // or your applicant logout API
     }
-
-    try {
-      if (session?.id) {
-        await logoutOfficer({ userId: session.id });
-      }
-    } catch (error) {
-      console.error("Logout failed:", error);
-    } finally {
-      localStorage.removeItem("officerSession");
-      navigate("/login");
-    }
-  };
-
+  } catch (error) {
+    console.error("Logout failed:", error);
+  } finally {
+    localStorage.removeItem("applicantSession"); // ✅ correct key
+    navigate("/applicant-login");                // ✅ correct route
+  }
+};
   if (!applicantSession?.id) return null;
 
   return (

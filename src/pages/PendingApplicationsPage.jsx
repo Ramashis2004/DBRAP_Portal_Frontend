@@ -39,6 +39,7 @@ const buildDayLabel = (prefix, from, to) => {
 const getApplicationStatusStyle = (status) => {
   switch (status) {
     case "APPLICATION_SUBMITTED":       return { background: "#dbeafe", color: "#1d4ed8" };
+    case "APPLICATION_RETURNED_TO_APPLICANT": return { background: "#fee2e2", color: "#991b1b" };
     case "APPLICATION_FORWARDED_TO_JE": return { background: "#fef3c7", color: "#92400e" };
     case "JE_VERIFIED_REPORT_UPLOADED": return { background: "#ede9fe", color: "#6d28d9" };
     case "APPLICATION_APPROVED":        return { background: "#dcfce7", color: "#166534" };
@@ -111,6 +112,22 @@ const DOCUMENT_ROWS = [
   ["Owner Indemnity Bond","owner_indemnity_bond"],
   ["Identity Proof",      "identity_proof"],
 ];
+
+const getActionModalTitle = (action, isApprovalMode) => ({
+  APPLICATION_APPROVED: "Approve Application",
+  APPLICATION_REJECTED: "Reject Application",
+  APPLICATION_FORWARDED_TO_JE: isApprovalMode ? "Return to JE" : "Forward to JE",
+  APPLICATION_RETURNED_TO_APPLICANT: "Return to Applicant",
+}[action] || "Confirm Action");
+
+const getActionModalMessage = (action, isApprovalMode) => ({
+  APPLICATION_APPROVED: "This application will be marked as Approved.",
+  APPLICATION_REJECTED: "This application will be marked as Rejected.",
+  APPLICATION_FORWARDED_TO_JE: isApprovalMode
+    ? "This application will be returned to JE for review."
+    : "This application will be forwarded to JE for site visit.",
+  APPLICATION_RETURNED_TO_APPLICANT: "This application will be returned to the applicant for correction.",
+}[action] || "Please confirm this action.");
 
 // ─── Page config per mode ─────────────────────────────────────────────────────
 
@@ -259,6 +276,25 @@ function PendingApplicationsPage({ mode }) {
 
   const renderActionButton = (app) => {
     if (!config.showApproveButton) {
+      return (
+        <select
+          defaultValue=""
+          onChange={(e) => {
+            if (!e.target.value) return;
+            setActionModal({ app, action: e.target.value });
+            setRemarkInput("");
+            e.target.value = "";
+          }}
+          style={selectActionStyle}
+        >
+          <option value="">Select Action</option>
+          <option value="APPLICATION_FORWARDED_TO_JE">Forward to JE</option>
+          <option value="APPLICATION_RETURNED_TO_APPLICANT">Return to Applicant</option>
+        </select>
+      );
+    }
+
+    if (!config.showApproveButton) {
       const isActioning = sendingAppId === app.application_id;
       return (
         <button onClick={() => handleSendToJe(app)} disabled={isActioning}
@@ -314,7 +350,8 @@ function PendingApplicationsPage({ mode }) {
         app.application_id,
         action,
         remarkInput.trim(),
-        isReturnToJE
+        isReturnToJE,
+        session?.id || null
       );
 
       setApplications((prev) => prev.filter((a) => a.application_id !== app.application_id));
@@ -324,7 +361,8 @@ function PendingApplicationsPage({ mode }) {
       const labels = {
         APPLICATION_APPROVED:        "Application approved successfully.",
         APPLICATION_REJECTED:        "Application rejected.",
-        APPLICATION_FORWARDED_TO_JE: "Application returned to JE.",
+        APPLICATION_FORWARDED_TO_JE: config.showApproveButton ? "Application returned to JE." : "Application forwarded to JE for site visit.",
+        APPLICATION_RETURNED_TO_APPLICANT: "Application returned to applicant.",
       };
       await Swal.fire({ title: "Done", text: labels[action], icon: "success", confirmButtonText: "OK" });
     } catch (e) {
@@ -692,11 +730,7 @@ function PendingApplicationsPage({ mode }) {
                 Confirm Action
               </p>
               <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, color: "#1e293b" }}>
-                {{
-                  APPLICATION_APPROVED:        "✅ Approve Application",
-                  APPLICATION_REJECTED:        "❌ Reject Application",
-                  APPLICATION_FORWARDED_TO_JE: "↩️ Return to JE",
-                }[actionModal.action]}
+                {getActionModalTitle(actionModal.action, config.showApproveButton)}
               </h3>
               <p style={{ margin: "8px 0 0", fontSize: "0.82rem", color: "#64748b" }}>
                 Application ID:{" "}
@@ -712,15 +746,11 @@ function PendingApplicationsPage({ mode }) {
               fontSize: "0.82rem", fontWeight: 600,
               ...(actionModal.action === "APPLICATION_APPROVED"
                 ? { background: "#dcfce7", color: "#166534" }
-                : actionModal.action === "APPLICATION_REJECTED"
+                : actionModal.action === "APPLICATION_REJECTED" || actionModal.action === "APPLICATION_RETURNED_TO_APPLICANT"
                 ? { background: "#fee2e2", color: "#991b1b" }
                 : { background: "#fef3c7", color: "#92400e" }),
             }}>
-              {{
-                APPLICATION_APPROVED:        "This application will be marked as Approved.",
-                APPLICATION_REJECTED:        "This application will be marked as Rejected.",
-                APPLICATION_FORWARDED_TO_JE: "This application will be returned to JE for review.",
-              }[actionModal.action]}
+              {getActionModalMessage(actionModal.action, config.showApproveButton)}
             </div>
 
             <label style={{ display: "block", marginBottom: "18px" }}>
@@ -765,7 +795,7 @@ function PendingApplicationsPage({ mode }) {
                     ? "#94a3b8"
                     : actionModal.action === "APPLICATION_APPROVED"
                     ? "#166534"
-                    : actionModal.action === "APPLICATION_REJECTED"
+                    : actionModal.action === "APPLICATION_REJECTED" || actionModal.action === "APPLICATION_RETURNED_TO_APPLICANT"
                     ? "#dc2626"
                     : "#92400e",
                 }}
@@ -828,6 +858,19 @@ function btnStyle(bg, disabled) {
   };
 }
 
+const selectActionStyle = {
+  padding: "6px 10px",
+  borderRadius: "6px",
+  border: "1px solid #d1d5db",
+  fontSize: "0.78rem",
+  fontWeight: 600,
+  background: "#fff",
+  color: "#1e293b",
+  cursor: "pointer",
+  outline: "none",
+  minWidth: "145px",
+};
+
 function SectionBox({ title, children }) {
   return (
     <div style={{ background: "#fff", border: "1px solid #ddd6ce", borderRadius: "12px", overflow: "hidden" }}>
@@ -847,3 +890,4 @@ function Row({ label, value }) {
     </div>
   );
 }
+

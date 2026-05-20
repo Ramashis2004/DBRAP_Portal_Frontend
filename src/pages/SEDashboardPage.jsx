@@ -919,7 +919,7 @@ const [dashboardReady, setDashboardReady] = useState(false);
         <main className="officer-dashboard-main">
           <header className="officer-dashboard-header">
             <div className="officer-dashboard-header__copy">
-              <h1>SE Dashboard</h1>
+              <h1>SE/EE Dashboard</h1>
             </div>
             <div className="officer-dashboard-user">
               <div>

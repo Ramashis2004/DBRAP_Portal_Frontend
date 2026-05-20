@@ -143,7 +143,7 @@ function ApplicantLoginPage() {
       data.append("sms_content",
         `Your OTP for Gramsewa Nidhi Portal is ${otp}. Please do not share this with anyone. Panchayati Raj & Drinking Water Dept. - Govt. of Odisha`
       );
-
+console.log("Sending OTP to SMS gateway:", { mobileNumber, otp });
       await axios.post("https://govtsms.odisha.gov.in/api/api.php", data);
       setIsOtpSent(true);
       await swalSuccess("OTP Sent", `OTP has been sent to ${mobileNumber}.`);
@@ -486,5 +486,9 @@ function ApplicantLoginPage() {
     </div>
   );
 }
-
+const broadcastLogout = (userId) => {
+  const channel = new BroadcastChannel("applicant_session");
+  channel.postMessage({ type: "FORCE_LOGOUT", userId });
+  channel.close();
+};
 export default ApplicantLoginPage;

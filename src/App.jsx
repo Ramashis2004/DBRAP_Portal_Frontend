@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import OfficerDashboardPage from "./pages/OfficerDashboardPage";
 import SEDashboardPage from "./pages/SEDashboardPage";
+import AEEDashboardPage from "./pages/AEEDashboardPage";
 import JEDashboardPage from "./pages/JEDashboardPage";
 import JEApplicationReceivedPage from "./pages/JEApplicationReceivedPage";
 import ApplicationReceivedPage from "./pages/ApplicationReceivedPage";
@@ -42,6 +43,7 @@ function App() {
 
         <Route path="/dashboard" element={<OfficerDashboardPage />} />
         <Route path="/se-dashboard" element={<SEDashboardPage />} />
+        <Route path="/aee-dashboard" element={<AEEDashboardPage />} />
         <Route path="/se-application-received" element={<ApplicationReceivedPage />} />
         <Route path="/applicationreceived" element={<ApplicationReceivedPage />} />
         <Route path="/je-dashboard" element={<JEDashboardPage />} />
@@ -55,7 +57,11 @@ function App() {
 
         <Route path="/se-pending-forward-to-je"
   element={<PendingApplicationsPage mode="forward-to-je" />} />
+        <Route path="/applicationpendingforwardtoje"
+  element={<PendingApplicationsPage mode="forward-to-je" />} />
 <Route path="/se-pending-approval"
+  element={<PendingApplicationsPage mode="pending-approval" />} />
+        <Route path="/applicationpendingapproval"
   element={<PendingApplicationsPage mode="pending-approval" />} />
   <Route path="/je-payment-verification" element={<PaymentVerificationPage />} />
 <Route path="/je-update-connection" element={<JEUpdateConnectionPage />} />

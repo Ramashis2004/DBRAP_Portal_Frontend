@@ -1,0 +1,10 @@
+.se-dashboard-app-link {
+  border: none;
+  background: transparent;
+  color: #0000ee;
+  padding: 0;
+  font: inherit;
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: pointer;
+}

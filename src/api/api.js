@@ -4,6 +4,10 @@ const API = axios.create({
   baseURL: "http://localhost:5000/api"
 });
 
+export const fetchPublicDashboardSummary = () => {
+  return API.get("/public-dashboard/summary");
+};
+
 export const registerOrganisation = (data) => {
   return API.post("/organisation/register", data);
 };
@@ -144,6 +148,21 @@ export const fetchSEDashboardApplications = (userId, application_status) => {
   });
 };
 
+export const fetchAEEDashboardApplicationSummary = (userId) => {
+  return API.get("/aee-dashboard-applications/summary", {
+    params: { userId },
+  });
+};
+
+export const fetchAEEDashboardApplications = (userId, application_status) => {
+  return API.get("/aee-dashboard-applications/applications", {
+    params: {
+      userId,
+      application_status,
+    },
+  });
+};
+
 export const fetchCEDashboardApplicationSummary = (userId) =>
   API.get("/ce-dashboard-applications/summary", { params: { userId } });
 
@@ -245,11 +264,15 @@ export const updateOrganisationStatus = (applicationId, application_status) => {
   );
 };
 
-export const updateOrganisationStatusWithRemarks = (applicationId, application_status, remarks, is_return_to_je = false) => {
+export const updateOrganisationStatusWithRemarks = (applicationId, application_status, remarks, is_return_to_je = false, userId = null) => {
   return API.patch(
     `/organisation/organisations/${applicationId}/application-status`,
-    { application_status, remarks, is_return_to_je }
+    { application_status, remarks, is_return_to_je, userId }
   );
+};
+
+export const updateReturnedApplicantOrganisation = (applicationId, data) => {
+  return API.patch(`/applicant-application/returned-organisation/${applicationId}`, data);
 };
 
 export const fetchSEPaymentBlocks = (userId) => {
@@ -330,7 +353,7 @@ export const submitConnectionDetails = (payload) =>
   API.post("/officer/connection-details/update", payload);
 
 export const checkSessionValid = (userId) =>
-  API.get(`/api/users/check-session`, { params: { userId } });
+  API.get(`/applicant-application/check-session`, { params: { userId } });
 
 export const fetchSlaStages = () => API.get("/sla-config/stages");
 
