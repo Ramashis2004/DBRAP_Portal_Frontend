@@ -8,6 +8,7 @@ import {
   fetchEICDashboardBlocks,
   fetchEICDashboardCircles,
   fetchEICDashboardDivisions,
+  fetchEICDashboardPanchayats, // ← NEW
   fetchEICOverdueApplicationHistory,
   fetchEICOverdueApplicationsByDivision,
   fetchEICOverdueByDivision,
@@ -17,9 +18,10 @@ import { CEDashboardOverduePieChart } from "./Cedashboardoverduepiechart";
 import "./EICDashboardApplications.css";
 
 const EIC_FETCHERS = {
-  circles: fetchEICDashboardCircles,
-  divisions: fetchEICDashboardDivisions,
-  blocks: fetchEICDashboardBlocks,
+  circles:      fetchEICDashboardCircles,
+  divisions:    fetchEICDashboardDivisions,
+  blocks:       fetchEICDashboardBlocks,
+  panchayats:   fetchEICDashboardPanchayats, // ← NEW
   applications: fetchEICDashboardApplications,
 };
 

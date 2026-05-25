@@ -213,7 +213,7 @@ function ApplicationReceivedTable() {
   const handleSendToJe = async (app) => {
     const confirmation = await Swal.fire({
       title: "Forward application?",
-      text: "Do you want to forward application to JE for site visit?",
+      text: "Do you want to forward application to " + app.block + " JE for site visit?",
       icon: "question",
       showCancelButton: true,
       confirmButtonText: "OK",
@@ -235,7 +235,7 @@ function ApplicationReceivedTable() {
       }
       await Swal.fire({
         title: "Forwarded",
-        text: "Application has been forwarded to JE for site visit.",
+        text: "Application has been forwarded to " + app.block + " JE for site visit.",
         icon: "success",
         confirmButtonText: "OK",
       });
@@ -937,13 +937,7 @@ const [dashboardReady, setDashboardReady] = useState(false);
           {/* Default stats — hide when a panel is active */}
           {!shouldShowCreateUserForm && !shouldShowApplicationTable && !showDashboardApplications ? (
             <section className="officer-dashboard-stats se-dashboard-stats">
-              <article className="officer-stat-card">
-                <div className="officer-stat-card__icon">
-                  <Users size={20} />
-                </div>
-                <strong>{dashboard.summary.userCount}</strong>
-                <span>Total Users</span>
-              </article>
+              
               <SEDashboardApplicationCountCard
                 userId={user.id}
                 onOpen={() => {

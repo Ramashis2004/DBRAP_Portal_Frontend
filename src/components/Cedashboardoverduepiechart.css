@@ -1,9 +1,11 @@
 /* CEDashboardOverduePieChart.css */
 
+
 .ce-overdue-card {
   width: 100%;
   box-sizing: border-box;
-  padding: 30px;
+  min-width: 0;
+  padding: 32px;
   border: 1px solid rgba(26, 60, 90, 0.08);
   border-radius: 22px;
   background: rgba(255, 255, 255, 0.9);
@@ -29,17 +31,18 @@
 }
 
 .ce-overdue-body {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 24px;
   align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
+  justify-items: stretch;
 }
 
 .ce-overdue-canvas {
-  flex: 0 0 auto;
-  width: 470px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  justify-self: center;
 }
 
 .ce-overdue-state {
@@ -70,11 +73,11 @@
 
 /* ── Legend ── */
 .ce-overdue-legend {
-  flex: 1;
-  min-width: 180px;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
 .ce-overdue-leg-row {
@@ -82,6 +85,7 @@
   align-items: center;
   gap: 10px;
   width: 100%;
+  box-sizing: border-box;
   padding: 9px 13px;
   border: 1px solid transparent;
   border-radius: 10px;

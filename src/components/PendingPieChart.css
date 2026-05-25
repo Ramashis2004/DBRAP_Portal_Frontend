@@ -1,0 +1,394 @@
+/* PendingPieChart.css */
+
+/* ── Card shell ─────────────────────────────────────────────────────────────── */
+.pending-card {
+  width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 32px;
+  border: 1px solid rgba(26, 60, 90, 0.08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 40px rgba(79, 52, 29, 0.08);
+}
+
+.pending-card__head {
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.pending-card__title {
+  margin: 0 0 3px;
+  color: #1e293b;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.pending-card__sub {
+  margin: 0;
+  color: #7c6557;
+  font-size: 0.82rem;
+}
+
+/* ── Body: canvas + legend ──────────────────────────────────────────────────── */
+.pending-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: center;
+  justify-items: stretch;
+}
+
+.pending-canvas {
+  cursor: pointer;
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  justify-self: center;
+}
+
+
+
+/* ── States ─────────────────────────────────────────────────────────────────── */
+.pending-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 0;
+  color: #94a3b8;
+  font-size: 0.88rem;
+}
+
+.pending-error {
+  padding: 40px;
+  text-align: center;
+  color: #c0392b;
+  font-size: 0.88rem;
+}
+
+.pending-spin {
+  animation: pending-spin 1s linear infinite;
+}
+
+@keyframes pending-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── Legend ─────────────────────────────────────────────────────────────────── */
+.pending-legend {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pending-leg-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 13px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.03);
+  font-size: 13px;
+  cursor: default;
+  transition: border-color 0.18s;
+}
+
+.pending-leg-row.active {
+  border-color: var(--lc);
+}
+
+.pending-leg-dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--lc);
+  flex-shrink: 0;
+}
+
+.pending-leg-label {
+  flex: 1;
+  color: #334155;
+  font-weight: 600;
+}
+
+.pending-leg-pct {
+  font-size: 11px;
+  color: var(--lpt);
+  margin-right: 4px;
+}
+
+.pending-leg-count {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  background: var(--lpb);
+  color: var(--lpt);
+}
+
+.pending-hint {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 6px;
+  font-style: italic;
+}
+
+/* ── Division panel ─────────────────────────────────────────────────────────── */
+.pending-panel {
+  margin-top: 18px;
+  border: 0.5px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.pending-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 2.5px solid;
+  background: #f8fafc;
+}
+
+.pending-panel__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.pending-panel__bdot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.pending-panel__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.pending-panel__close {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0.5px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pending-panel__close:hover { background: #f1f5f9; }
+
+.pending-panel__body {
+  background: #fff;
+  overflow-x: auto;
+}
+
+/* ── Shared table ───────────────────────────────────────────────────────────── */
+.pending-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.pending-table thead tr { background: #1e293b; }
+
+.pending-table th {
+  padding: 8px 12px;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.pending-table td {
+  padding: 9px 12px;
+  border-bottom: 0.5px solid #f1f5f9;
+  color: #475569;
+  vertical-align: middle;
+}
+
+.pending-table tbody tr:nth-child(even) td { background: #f8fafc; }
+.pending-table tbody tr:hover td { background: #f1f5f9; }
+
+.pending-table tfoot td {
+  border-top: 1px solid #e2e8f0;
+  font-weight: 700;
+  color: #1e293b;
+  padding: 9px 12px;
+}
+
+.pending-table__idx  { color: #94a3b8; font-size: 11px; width: 28px; }
+.pending-table__name { font-weight: 700; color: #1a3c5a; }
+
+/* ── Pills ──────────────────────────────────────────────────────────────────── */
+.pending-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.pending-pill--btn {
+  border: 0;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.pending-pill--btn:hover {
+  filter: brightness(0.94);
+  text-decoration: underline;
+}
+
+/* ── Bar ────────────────────────────────────────────────────────────────────── */
+.pending-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 90px;
+}
+
+.pending-bar {
+  height: 6px;
+  border-radius: 999px;
+  min-width: 3px;
+  transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pending-pct {
+  font-size: 11px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+/* ── Apps modal ─────────────────────────────────────────────────────────────── */
+.pending-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.42);
+}
+
+.pending-modal__card {
+  width: min(1100px, 96vw);
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.24);
+}
+
+.pending-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.pending-modal__header h3 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 16px;
+}
+
+.pending-modal__header p {
+  margin: 4px 0 0;
+  color: #113ee9;
+  font-size: 12px;
+}
+
+.pending-modal__body {
+  min-height: 180px;
+  overflow: auto;
+  background: #fff;
+}
+
+.pending-modal__table-wrap { overflow-x: auto; }
+
+.pending-app-table    { min-width: 1060px; }
+.pending-history-table { min-width: 760px; }
+
+/* pending-with pill inside app table */
+.pending-with-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #eff6ff;
+  color: #1e40af;
+  white-space: nowrap;
+}
+
+/* history button */
+.pending-history-cell { text-align: center; }
+
+.pending-history-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #15803d;
+  cursor: pointer;
+}
+
+.pending-history-btn:hover { background: #bbf7d0; }
+
+/* sla status inside history table */
+.pending-sla-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .pending-body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+ 
+
+  .pending-modal { padding: 12px; }
+}

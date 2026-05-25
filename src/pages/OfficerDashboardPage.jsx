@@ -18,7 +18,17 @@ import {
   fetchDivisionsByDistrict,
   fetchOfficerDashboardConfig,
   logoutOfficer,
+  fetchCEPendingSummary,
+  fetchCEPendingByDivision,
+  fetchCEPendingApplicationsByDivision,
+  fetchCEPendingApplicationHistory,
+  fetchEICPendingSummary,
+  fetchEICPendingByDivision,
+  fetchEICPendingApplicationsByDivision,
+  fetchEICPendingApplicationHistory,
 } from "../api/api";
+import { PendingPieChart } from "../components/PendingPieChart";
+
 import "./OfficerDashboardPage.css";
 import {
   CEDashboardApplicationCountCard,
@@ -728,15 +738,10 @@ useEffect(() => {
             </div>
           </header>
 
-          {!shouldShowCreateUserForm && !showCEDashboardApplications ? (
+              {!shouldShowCreateUserForm && !showCEDashboardApplications ? (
             <section className="officer-dashboard-stats ce-dashboard-stats">
-              <article className="officer-stat-card">
-                <div className="officer-stat-card__icon">
-                  <Users size={20} />
-                </div>
-                <strong>{dashboard.summary.userCount}</strong>
-                <span>Total Users</span>
-              </article>
+
+              {/* ── Count card ── */}
               {isLoggedInCE ? (
                 <CEDashboardApplicationCountCard
                   userId={user.id}
@@ -747,7 +752,7 @@ useEffect(() => {
                   }}
                 />
               ) : null}
-              {isLoggedInCE ? <CEDashboardOverduePieChart userId={user.id} /> : null}
+
               {isLoggedInEIC ? (
                 <EICDashboardApplicationCountCard
                   userId={user.id}
@@ -758,9 +763,40 @@ useEffect(() => {
                   }}
                 />
               ) : null}
-              {isLoggedInEIC ? <EICDashboardOverduePieChart userId={user.id} /> : null}
+
+              {/* ── CE: Overdue + Pending side by side ── */}
+              {isLoggedInCE ? (
+                <div className="ce-dashboard-charts-row officer-dashboard-charts-wide">
+                  <CEDashboardOverduePieChart userId={user.id} />
+                  <PendingPieChart
+                    userId={user.id}
+                    titlePrefix="CE"
+                    fetchPendingSummary={fetchCEPendingSummary}
+                    fetchPendingByDivision={fetchCEPendingByDivision}
+                    fetchApplicationsByDivision={fetchCEPendingApplicationsByDivision}
+                    fetchApplicationHistory={fetchCEPendingApplicationHistory}
+                  />
+                </div>
+              ) : null}
+
+              {/* ── EIC: Overdue + Pending side by side ── */}
+              {isLoggedInEIC ? (
+                <div className="ce-dashboard-charts-row officer-dashboard-charts-wide">
+                  <EICDashboardOverduePieChart userId={user.id} />
+                  <PendingPieChart
+                    userId={user.id}
+                    titlePrefix="EIC"
+                    fetchPendingSummary={fetchEICPendingSummary}
+                    fetchPendingByDivision={fetchEICPendingByDivision}
+                    fetchApplicationsByDivision={fetchEICPendingApplicationsByDivision}
+                    fetchApplicationHistory={fetchEICPendingApplicationHistory}
+                  />
+                </div>
+              ) : null}
+
             </section>
           ) : null}
+
 
           {showCEDashboardApplications && isLoggedInCE ? (
             <CEDashboardApplicationsDrilldown

@@ -173,6 +173,8 @@ cursor:pointer;
   display: flex;
   flex-direction: column;
   gap: 24px;
+  width: 100%;
+  min-width: 0;
 }
 
 .officer-dashboard-header {
@@ -467,6 +469,70 @@ cursor:pointer;
   margin: 0 0 18px;
   color: #7c6557;
 }
+.officer-dashboard-stats.ce-dashboard-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0;
+  max-width: none;
+  margin: 0;
+}
+
+
+.ce-dashboard-charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  align-items: start;
+}
+
+.ce-dashboard-charts-row > * {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.ce-dashboard-charts-row .ce-overdue-card,
+.ce-dashboard-charts-row .pending-card {
+  width: 100%;
+  max-width: none;
+  padding: 32px;
+}
+
+
+
+.ce-dashboard-charts-row .ce-overdue-legend,
+.ce-dashboard-charts-row .pending-legend {
+  width: 100%;
+  min-width: 0;
+}
+
+.ce-dashboard-charts-row .ce-overdue-leg-row,
+.ce-dashboard-charts-row .pending-leg-row {
+  box-sizing: border-box;
+}
+
+@media (max-width: 900px) {
+  .ce-dashboard-charts-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .ce-dashboard-charts-row .ce-overdue-body,
+  .ce-dashboard-charts-row .pending-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Tablet: stack vertically */
+
+
 
 @keyframes officer-dashboard-spin {
   from {

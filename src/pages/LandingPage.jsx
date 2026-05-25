@@ -146,14 +146,14 @@ const LandingPage = () => {
     { key: "applications_processed_approved", label: "No. of applications processed / approved" },
     { key: "applications_pending", label: "No. of applications pending" },
     { key: "ortpsa_timeline", label: "ORTPSA timeline in (Days)" },
-    { key: "applications_approved_within_timeline", label: "No. of applications approved within timeline / 30 days" },
+    { key: "applications_approved_within_timeline", label: "No. of applications approved within timeline / 9 days" },
     { key: "avg_time_taken", label: "Avg. time taken  in (Days)" },
     { key: "min_time_taken", label: "Min. time taken in (Days)" },
     { key: "max_time_taken", label: "Max. time taken in (Days)" },
   ];
 
   const inspectionColumns = [
-    { key: "inspections_to_be_conducted", label: "Total no. of inspections to be conducted" },
+    { key: "inspections_to_be_conducted", label: "Total no. of Application Received" },
     { key: "inspections_conducted_within_timeline", label: "Total number of inspections conducted within timeline" },
     { key: "inspections_conducted_beyond_timeline", label: "Total number of inspections conducted beyond timeline" },
     { key: "pending_inspections", label: "Total number of pending inspections" },
@@ -262,7 +262,7 @@ const LandingPage = () => {
           </motion.div>
           <h1 className="drop-shadow-2xl">JAL CONNECT</h1>
           <h3  className="drop-shadow-2xl">Digital Water Connection Management System</h3>
-          <p className="drop-shadow-md text-accent-blue/90 font-medium">Transparent, Efficient & Time-Bound Water Supply Connection.<br/> Empowering through digital governance.</p>
+          <p className="drop-shadow-md text-accent-blue/90 font-medium">Transparent, Efficient & Time-Bound Rural Water Supply Connection.<br/> Empowering through digital governance.</p>
           
           <div className="hero-buttons">
             <button onClick={() => navigate("/register")} className="btn btn-primary">

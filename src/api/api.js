@@ -29,6 +29,7 @@ export const loginApplicant = (payload) => {
 export const loginApplicantWithPassword = (payload) => {
   return API.post("/applicant-auth/login-password", payload);
 };
+
 export const fetchApplicantNavigation = (roleId = 7) => {
   return API.get(`/applicant-application/navigation/${roleId}`);
 };
@@ -113,26 +114,18 @@ export const resetPassword = (data) => {
 
 export const fetchOrganisations = (application_status, userId) => {
   return API.get("/organisation/organisations", {
-    params: {
-      application_status,
-      userId
-    }
+    params: { application_status, userId }
   });
 };
 
-// ── SE / JE application received (existing) ───────────────────────────────────
+// ── SE / JE application received ─────────────────────────────────────────────
 export const fetchApplicationReceivedApplications = (userId, application_status) => {
   return API.get("/application-received/applications", {
-    params: {
-      userId,
-      application_status,
-    },
+    params: { userId, application_status },
   });
 };
 
-// ── CE application received (new) ─────────────────────────────────────────────
-// Calls the dedicated CE endpoint which joins through circle mapping
-// to ensure CE only sees applications from their own circle(s).
+// ── SE ────────────────────────────────────────────────────────────────────────
 export const fetchSEDashboardApplicationSummary = (userId) => {
   return API.get("/se-dashboard-applications/summary", {
     params: { userId },
@@ -141,13 +134,11 @@ export const fetchSEDashboardApplicationSummary = (userId) => {
 
 export const fetchSEDashboardApplications = (userId, application_status) => {
   return API.get("/se-dashboard-applications/applications", {
-    params: {
-      userId,
-      application_status,
-    },
+    params: { userId, application_status },
   });
 };
 
+// ── AEE ───────────────────────────────────────────────────────────────────────
 export const fetchAEEDashboardApplicationSummary = (userId) => {
   return API.get("/aee-dashboard-applications/summary", {
     params: { userId },
@@ -156,13 +147,11 @@ export const fetchAEEDashboardApplicationSummary = (userId) => {
 
 export const fetchAEEDashboardApplications = (userId, application_status) => {
   return API.get("/aee-dashboard-applications/applications", {
-    params: {
-      userId,
-      application_status,
-    },
+    params: { userId, application_status },
   });
 };
 
+// ── CE ────────────────────────────────────────────────────────────────────────
 export const fetchCEDashboardApplicationSummary = (userId) =>
   API.get("/ce-dashboard-applications/summary", { params: { userId } });
 
@@ -175,11 +164,22 @@ export const fetchCEDashboardDivisions = (userId, circleCode) =>
 export const fetchCEDashboardBlocks = (userId, divisionCode) =>
   API.get("/ce-dashboard-applications/blocks", { params: { userId, divisionCode } });
 
-export const fetchCEDashboardApplications = (userId, blockCode, application_status) =>
-  API.get("/ce-dashboard-applications/applications", {
+export const fetchCEDashboardPanchayats = (userId, blockCode, application_status = "") =>
+  API.get("/ce-dashboard-applications/panchayats", {
     params: { userId, blockCode, application_status },
   });
 
+export const fetchCEDashboardApplications = (
+  userId,
+  blockCode,
+  application_status = "",
+  gramPanchayatCode = ""
+) =>
+  API.get("/ce-dashboard-applications/applications", {
+    params: { userId, blockCode, application_status, gramPanchayatCode },
+  });
+
+// ── CE Overdue ────────────────────────────────────────────────────────────────
 export const fetchCEOverdueSummary = (userId) =>
   API.get("/ce-dashboard/overdue-summary", { params: { userId } });
 
@@ -196,6 +196,37 @@ export const fetchCEOverdueApplicationHistory = (userId, applicationId) =>
     params: { userId, applicationId },
   });
 
+// ── EIC ───────────────────────────────────────────────────────────────────────
+export const fetchEICDashboardApplicationSummary = (userId) =>
+  API.get("/eic-dashboard-applications/summary", { params: { userId } });
+
+export const fetchEICDashboardCircles = (userId) =>
+  API.get("/eic-dashboard-applications/circles", { params: { userId } });
+
+export const fetchEICDashboardDivisions = (userId, circleCode) =>
+  API.get("/eic-dashboard-applications/divisions", { params: { userId, circleCode } });
+
+export const fetchEICDashboardBlocks = (userId, divisionCode) =>
+  API.get("/eic-dashboard-applications/blocks", { params: { userId, divisionCode } });
+
+// ← NEW: panchayat-wise counts inside a block
+export const fetchEICDashboardPanchayats = (userId, blockCode, application_status = "") =>
+  API.get("/eic-dashboard-applications/panchayats", {
+    params: { userId, blockCode, application_status },
+  });
+
+// ← UPDATED: added gramPanchayatCode param
+export const fetchEICDashboardApplications = (
+  userId,
+  blockCode,
+  application_status = "",
+  gramPanchayatCode = ""
+) =>
+  API.get("/eic-dashboard-applications/applications", {
+    params: { userId, blockCode, application_status, gramPanchayatCode },
+  });
+
+// ── EIC Overdue ───────────────────────────────────────────────────────────────
 export const fetchEICOverdueSummary = (userId) =>
   API.get("/eic-dashboard/overdue-summary", { params: { userId } });
 
@@ -212,51 +243,20 @@ export const fetchEICOverdueApplicationHistory = (userId, applicationId) =>
     params: { userId, applicationId },
   });
 
-export const fetchEICDashboardApplicationSummary = (userId) =>
-  API.get("/eic-dashboard-applications/summary", { params: { userId } });
-
-export const fetchEICDashboardCircles = (userId) =>
-  API.get("/eic-dashboard-applications/circles", { params: { userId } });
-
-export const fetchEICDashboardDivisions = (userId, circleCode) =>
-  API.get("/eic-dashboard-applications/divisions", { params: { userId, circleCode } });
-
-export const fetchEICDashboardBlocks = (userId, divisionCode) =>
-  API.get("/eic-dashboard-applications/blocks", { params: { userId, divisionCode } });
-
-export const fetchEICDashboardApplications = (userId, blockCode, application_status) =>
-  API.get("/eic-dashboard-applications/applications", {
-    params: { userId, blockCode, application_status },
-  });
-
-export const fetchCEApplicationReceivedApplications = (
-  userId,
-  block_code,
-  application_status
-) => {
+// ── CE / EIC Application Received ────────────────────────────────────────────
+export const fetchCEApplicationReceivedApplications = (userId, block_code, application_status) => {
   return API.get("/ce-application-received/applications", {
-    params: {
-      userId,
-      block_code,
-      application_status,
-    },
+    params: { userId, block_code, application_status },
   });
 };
 
-export const fetchEICApplicationReceivedApplications = (
-  userId,
-  block_code,
-  application_status
-) => {
+export const fetchEICApplicationReceivedApplications = (userId, block_code, application_status) => {
   return API.get("/eic-application-received/applications", {
-    params: {
-      userId,
-      block_code,
-      application_status,
-    },
+    params: { userId, block_code, application_status },
   });
 };
 
+// ── Organisation ──────────────────────────────────────────────────────────────
 export const updateOrganisationStatus = (applicationId, application_status) => {
   return API.patch(
     `/organisation/organisations/${applicationId}/application-status`,
@@ -264,7 +264,13 @@ export const updateOrganisationStatus = (applicationId, application_status) => {
   );
 };
 
-export const updateOrganisationStatusWithRemarks = (applicationId, application_status, remarks, is_return_to_je = false, userId = null) => {
+export const updateOrganisationStatusWithRemarks = (
+  applicationId,
+  application_status,
+  remarks,
+  is_return_to_je = false,
+  userId = null
+) => {
   return API.patch(
     `/organisation/organisations/${applicationId}/application-status`,
     { application_status, remarks, is_return_to_je, userId }
@@ -275,6 +281,7 @@ export const updateReturnedApplicantOrganisation = (applicationId, data) => {
   return API.patch(`/applicant-application/returned-organisation/${applicationId}`, data);
 };
 
+// ── SE Payment ────────────────────────────────────────────────────────────────
 export const fetchSEPaymentBlocks = (userId) => {
   return API.get("/se-payment-details/blocks", { params: { userId } });
 };
@@ -291,6 +298,7 @@ export const createSEPaymentDetail = (payload) => {
   return API.post("/se-payment-details/payments", payload);
 };
 
+// ── JE Payment ────────────────────────────────────────────────────────────────
 export const fetchJEPaymentBlocks = (userId) => {
   return API.get("/je-payment-details/blocks", { params: { userId } });
 };
@@ -307,10 +315,10 @@ export const createJEPaymentDetail = (payload) => {
   return API.post("/je-payment-details/payments", payload);
 };
 
+// ── Documents / Reports ───────────────────────────────────────────────────────
 export const uploadSiteVisitReport = (applicationId, file) => {
   const formData = new FormData();
   formData.append("site_visit_report", file);
-
   return API.patch(
     `/organisation/organisations/${applicationId}/site-visit-report`,
     formData,
@@ -318,43 +326,70 @@ export const uploadSiteVisitReport = (applicationId, file) => {
   );
 };
 
-export const getSiteVisitReportUrl = (applicationId) => {
-  return `${API.defaults.baseURL}/organisation/organisations/${applicationId}/site-visit-report`;
-};
+export const getSiteVisitReportUrl = (applicationId) =>
+  `${API.defaults.baseURL}/organisation/organisations/${applicationId}/site-visit-report`;
 
-export const getOrganisationDocumentUrl = (applicationId, documentType) => {
-  return `${API.defaults.baseURL}/organisation/organisations/${applicationId}/documents/${documentType}`;
-};
+export const getOrganisationDocumentUrl = (applicationId, documentType) =>
+  `${API.defaults.baseURL}/organisation/organisations/${applicationId}/documents/${documentType}`;
 
+// ── Applicant ─────────────────────────────────────────────────────────────────
 export const fetchApplicantApplicationCount = (userId) =>
   API.get(`/applicant-application/application-count/${userId}`);
 
 export const fetchApplicantApplication = (userId) =>
   API.get(`/applicant-application/application/${userId}`);
 
+export const checkSessionValid = (userId) =>
+  API.get(`/applicant-application/check-session`, { params: { userId } });
+
+// ── Pending / Approval ────────────────────────────────────────────────────────
 export const fetchPendingForwardToJE = (userId) =>
   API.get("/pending-applications/forward-to-je", { params: { userId } });
 
 export const fetchPendingApproval = (userId) =>
   API.get("/pending-applications/approval", { params: { userId } });
 
+// ── Payment Verification ──────────────────────────────────────────────────────
 export const fetchPaymentVerificationApplications = (userId) =>
   API.get("/payment-verification/applications", { params: { userId } });
 
 export const verifyPaymentReceipt = (applicationId, action, remarks) =>
   API.patch(`/payment-verification/${applicationId}/verify`, { action, remarks });
 
-
-
+// ── Connection Details ────────────────────────────────────────────────────────
 export const fetchConnectionApplications = (blockCode) =>
   API.get("/officer/connection-details/applications", { params: { blockCode } });
 
 export const submitConnectionDetails = (payload) =>
   API.post("/officer/connection-details/update", payload);
 
-export const checkSessionValid = (userId) =>
-  API.get(`/applicant-application/check-session`, { params: { userId } });
-
+// ── SLA Config ────────────────────────────────────────────────────────────────
 export const fetchSlaStages = () => API.get("/sla-config/stages");
 
 export const saveSlaStage = (payload) => API.post("/sla-config/save", payload);
+
+// CE pending pie chart
+export const fetchCEPendingSummary = (userId) =>
+  API.get("/ce-pending/summary", { params: { userId } });
+
+export const fetchCEPendingByDivision = (userId, bucket) =>
+  API.get("/ce-pending/by-division", { params: { userId, bucket } });
+
+export const fetchCEPendingApplicationsByDivision = (userId, divisionCode, bucket) =>
+  API.get("/ce-pending/applications-by-division", { params: { userId, divisionCode, bucket } });
+
+export const fetchCEPendingApplicationHistory = (userId, applicationId) =>
+  API.get("/ce-pending/application-history", { params: { userId, applicationId } });
+
+// EIC pending pie chart
+export const fetchEICPendingSummary = (userId) =>
+  API.get("/eic-pending/summary", { params: { userId } });
+
+export const fetchEICPendingByDivision = (userId, bucket) =>
+  API.get("/eic-pending/by-division", { params: { userId, bucket } });
+
+export const fetchEICPendingApplicationsByDivision = (userId, divisionCode, bucket) =>
+  API.get("/eic-pending/applications-by-division", { params: { userId, divisionCode, bucket } });
+
+export const fetchEICPendingApplicationHistory = (userId, applicationId) =>
+  API.get("/eic-pending/application-history", { params: { userId, applicationId } });

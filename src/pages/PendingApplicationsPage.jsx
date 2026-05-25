@@ -250,7 +250,7 @@ function PendingApplicationsPage({ mode }) {
       setApplications((prev) => prev.filter((a) => a.application_id !== app.application_id));
       if (detailView?.application_id === app.application_id) setDetailView(null);
       await Swal.fire({ title: "Forwarded", icon: "success", confirmButtonText: "OK",
-        text: "Application forwarded to JE for site visit." });
+        text: "Application forwarded to " + app.block + " JE for site visit." });
     } catch (e) {
       await Swal.fire({ title: "Failed", icon: "error", confirmButtonText: "OK",
         text: e.response?.data?.error || "Unable to forward application." });
@@ -358,11 +358,12 @@ function PendingApplicationsPage({ mode }) {
       setActionModal(null);
       setRemarkInput("");
 
+      const applicantName = app.name || "applicant";
       const labels = {
-        APPLICATION_APPROVED:        "Application approved successfully.",
+        APPLICATION_APPROVED:        "Application approved successfully. Application forwarded to applicant:  " + applicantName + " for money receipt upload.",
         APPLICATION_REJECTED:        "Application rejected.",
-        APPLICATION_FORWARDED_TO_JE: config.showApproveButton ? "Application returned to JE." : "Application forwarded to JE for site visit.",
-        APPLICATION_RETURNED_TO_APPLICANT: "Application returned to applicant.",
+        APPLICATION_FORWARDED_TO_JE: config.showApproveButton ? "Application returned to JE." : "Application forwarded to "+app.block+" JE for site visit.",
+        APPLICATION_RETURNED_TO_APPLICANT: "Application returned to applicant: " + applicantName + ".",
       };
       await Swal.fire({ title: "Done", text: labels[action], icon: "success", confirmButtonText: "OK" });
     } catch (e) {

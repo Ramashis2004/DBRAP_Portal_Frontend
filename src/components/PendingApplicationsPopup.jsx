@@ -58,15 +58,14 @@ export default function PendingApplicationsPopup({ session, dashboardReady }) {
   // ← KEY FIX: if not visible, render nothing at all
   if (!visible) return null;
 
-  // Group by block
-  const blockMap = {};
-  pendingApps.forEach((app) => {
-    const block = app.block || app.block_name || "Unknown";
-    blockMap[block] = (blockMap[block] || 0) + 1;
-  });
-  const blockRows = Object.entries(blockMap).map(([block, count], idx) => ({
-    sl: idx + 1, block, count,
+  const pendingRows = pendingApps.map((app, idx) => ({
+    sl: idx + 1,
+    applicationId: app.application_id || "-",
+    block: app.block_name || app.block || "-",
+    district: app.district_name || app.district || "-",
+    division: app.division_name || "-",
   }));
+  const uniqueBlocks = new Set(pendingRows.map((row) => row.block).filter((block) => block !== "-"));
 
   return (
     <>
@@ -96,7 +95,7 @@ export default function PendingApplicationsPopup({ session, dashboardReady }) {
           </div>
 
           <div className="se-meta">
-            <span>Pending blocks: <strong style={{color:"#e24b4a"}}>{blockRows.length}</strong></span>
+            <span>Pending blocks: <strong style={{color:"#e24b4a"}}>{uniqueBlocks.size}</strong></span>
             <span>Total applications: <strong style={{color:"#d97234"}}>{pendingApps.length}</strong></span>
             <span>Status: <strong style={{color:"#1a3550"}}>APPLICATION SUBMITTED</strong></span>
           </div>
@@ -106,16 +105,25 @@ export default function PendingApplicationsPopup({ session, dashboardReady }) {
               <thead>
                 <tr>
                   <th style={{width:"50px"}}>Sl. No.</th>
+                  <th style={{width:"150px"}}>Application ID</th>
                   <th>Block</th>
-                  <th style={{width:"160px"}}>Application Pending</th>
+                  <th>District</th>
+                  <th>Division</th>
                 </tr>
               </thead>
               <tbody>
-                {blockRows.map((row) => (
-                  <tr key={row.block}>
+                {pendingRows.map((row) => (
+                  <tr key={row.applicationId}>
                     <td style={{color:"#bbb",fontSize:"11px"}}>{row.sl}</td>
+                    <td>
+                      <span className="se-badge">
+                        <span className="se-pdot" />
+                        {row.applicationId}
+                      </span>
+                    </td>
                     <td style={{fontWeight:600,color:"#1a3550"}}>{row.block}</td>
-                    <td><span className="se-badge"><span className="se-pdot"/>{row.count} Pending</span></td>
+                    <td>{row.district}</td>
+                    <td>{row.division}</td>
                   </tr>
                 ))}
               </tbody>

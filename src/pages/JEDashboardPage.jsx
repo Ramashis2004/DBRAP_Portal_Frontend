@@ -308,13 +308,23 @@ const renderDocumentLink = (app, documentType, label = "View File") => {
     setUploadError("");
 
     try {
-      await uploadSiteVisitReport(uploadTargetApp.application_id, selectedReportFile);
+      const uploadResponse = await uploadSiteVisitReport(uploadTargetApp.application_id, selectedReportFile);
+      const forwardedDivisionName =
+        uploadTargetApp.division_name ||
+        uploadResponse.data?.data?.division_name ||
+        "";
+      const successMessage = forwardedDivisionName
+        ? "Site visit report uploaded successfully. Application forwarded to " +
+          forwardedDivisionName +
+          " SE for approval"
+        : "Site visit report uploaded successfully. Application forwarded to SE for approval";
+
       setApplications((current) => current.filter((item) => item.application_id !== uploadTargetApp.application_id));
       setUploadTargetApp(null);
       setSelectedReportFile(null);
       await Swal.fire({
-        title: "Uploaded",
-        text: "Site visit report uploaded successfully.",
+        title: "Success",
+        text: successMessage,
         icon: "success",
         confirmButtonText: "OK",
       });
@@ -1316,13 +1326,7 @@ const handleDashboardHomeClick = () => {
 
 {showDashboardHome && !shouldShowCreateUserForm ? (
               <section className="officer-dashboard-stats">
-              <article className="officer-stat-card">
-                <div className="officer-stat-card__icon">
-                  <Users size={20} />
-                </div>
-                <strong>{dashboard.summary.userCount}</strong>
-                <span>Total Users</span>
-              </article>
+              
             </section>
           ) : null}
 

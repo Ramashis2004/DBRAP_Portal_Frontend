@@ -565,9 +565,9 @@ export function CEDashboardOverduePieChart({
   return (
     <div className="ce-overdue-card">
       <div className="ce-overdue-card__head">
-        <h3 className="ce-overdue-card__title">{titlePrefix} Pending applications</h3>
+        <h3 className="ce-overdue-card__title">SLA Compliance Report</h3>
         <p className="ce-overdue-card__sub">
-          From <code>sla_tracking</code>: completed_time − due_time &nbsp;·&nbsp; Click a slice for division details
+         All Connection Provided Applications : &nbsp; Click a slice for division details
         </p>
       </div>
 

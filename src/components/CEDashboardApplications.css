@@ -1,5 +1,5 @@
 .ce-dashboard-app-card {
-  width: 100%;
+  width: min(100%, 400px);
   min-height: 150px;
   display: flex;
   align-items: center;
@@ -47,15 +47,38 @@
 
 .officer-dashboard-stats.ce-dashboard-stats {
   grid-template-columns: repeat(2, minmax(260px, 360px));
-  align-items: start;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: stretch;
   width: 100%;
+}
+
+.officer-dashboard-stats.ce-dashboard-stats .ce-dashboard-charts-row {
+  align-self: stretch;
+  width: 100%;
+}
+
+.officer-dashboard-stats.ce-dashboard-stats .officer-dashboard-charts-wide {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(160%, 1fr));
+  align-self: stretch;
+  width: 100%;
+  max-width: 100%;
 }
 
 .officer-dashboard-stats.ce-dashboard-stats .ce-overdue-card {
   grid-column: 1 / -1;
-  justify-self: center;
-  max-width: 820px;
+  justify-self: stretch;
+  max-width: none;
+}
+
+.officer-dashboard-stats.ce-dashboard-stats .officer-dashboard-charts-wide .ce-overdue-card {
+  grid-column: auto;
+}
+
+@media (max-width: 1500px) {
+  .officer-dashboard-stats.ce-dashboard-stats .officer-dashboard-charts-wide {
+    grid-template-columns: 1fr;
+  }
 }
 
 .ce-dashboard-report {

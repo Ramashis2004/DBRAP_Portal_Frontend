@@ -124,7 +124,7 @@ function ApplicantPaymentPage() {
       fd.append("money_receipt", receiptFile);
 
       await uploadPaymentReceipt(fd);
-      await Swal.fire("Success", "Payment receipt uploaded successfully!", "success");
+      await Swal.fire("Success", "Payment receipt uploaded successfully. Application forwarded to " + appData.block + " JE for verification.", "success");
 
       const refreshed = await fetchPaymentDetails(applicantSession.id);
       setAppData(refreshed.data?.data || appData);

@@ -221,6 +221,7 @@ const initialFormData = {
   district: "",
   block_code: "",
   block: "",
+  gram_panchayat_code: "",
   gram_panchayat: "",
   village: "",
   habitation: "",
@@ -289,6 +290,7 @@ const [pdfPreview, setPdfPreview] = useState(null);
           district: application?.district || "",
           block_code: application?.block_code || "",
           block: application?.block || "",
+          gram_panchayat_code: application?.gram_panchayat_code || "",
           gram_panchayat: application?.gram_panchayat || "",
           village: application?.village || "",
           habitation: application?.habitation || "",
@@ -343,6 +345,7 @@ const [pdfPreview, setPdfPreview] = useState(null);
       district:       districtName,
       block_code:     "",
       block:          "",
+      gram_panchayat_code: "",
       gram_panchayat: "",
     }));
     setBlocks([]);
@@ -360,6 +363,7 @@ const [pdfPreview, setPdfPreview] = useState(null);
       ...current,
       block_code:     blockCode,
       block:          blockName,
+      gram_panchayat_code: "",
       gram_panchayat: "",
     }));
     setPanchayats([]);
@@ -423,7 +427,7 @@ const [pdfPreview, setPdfPreview] = useState(null);
     const payload = new FormData();
     ["applicant_user_id", "organisation_name", "establishment_type",
       "district_code", "block_code", "district", "block",
-      "gram_panchayat", "village", "habitation",
+      "gram_panchayat_code", "gram_panchayat", "village", "habitation",
       "type_of_connection", "water_requirement",
     ].forEach((key) => payload.append(key, formData[key]));
     Object.entries(files).forEach(([key, file]) => payload.append(key, file));
@@ -548,16 +552,20 @@ const [pdfPreview, setPdfPreview] = useState(null);
                 </Field>
                 <Field label="Gram Panchayat" required>
                   <select
-                    value={panchayats.find((p) => p.panchayat_name === formData.gram_panchayat)?.panchayat_code || ""}
+                    value={formData.gram_panchayat_code}
                     onChange={(e) => {
-                      const name = panchayats.find((p) => String(p.panchayat_code) === String(e.target.value))?.panchayat_name || "";
-                      setFormData((c) => ({ ...c, gram_panchayat: name }));
+                      const selectedPanchayat = panchayats.find((p) => String(p.gram_panchayat_code) === String(e.target.value));
+                      setFormData((c) => ({
+                        ...c,
+                        gram_panchayat_code: e.target.value,
+                        gram_panchayat: selectedPanchayat?.gram_panchayat_name || "",
+                      }));
                     }}
                     disabled={!formData.block_code}
                   >
                     <option value="">Select Panchayat</option>
                     {panchayats.map((p) => (
-                      <option key={p.panchayat_code} value={p.panchayat_code}>{p.panchayat_name}</option>
+                      <option key={p.gram_panchayat_code} value={p.gram_panchayat_code}>{p.gram_panchayat_name}</option>
                     ))}
                   </select>
                 </Field>

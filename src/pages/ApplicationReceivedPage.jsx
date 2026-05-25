@@ -331,7 +331,7 @@ const handleOptionClick = (option) => {
       if (detailView?.application_id === app.application_id) setDetailView(null);
       await Swal.fire({
         title: "Forwarded",
-        text: "Application has been forwarded to JE for site visit.",
+        text: "Application has been forwarded to " + app.block + " JE for site visit report upload.",
         icon: "success",
         confirmButtonText: "OK",
       });
@@ -374,7 +374,7 @@ const handleOptionClick = (option) => {
       );
       await Swal.fire({
         title: "Approved",
-        text: "Application has been approved successfully.",
+        text: "Application has been approved successfully. Application forwarded to applicant "+app.applicant_name+" for money receipt upload.",
         icon: "success",
         confirmButtonText: "OK",
       });
