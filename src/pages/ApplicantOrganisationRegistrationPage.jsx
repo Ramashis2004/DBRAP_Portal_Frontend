@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
@@ -554,18 +555,18 @@ const [pdfPreview, setPdfPreview] = useState(null);
                   <select
                     value={formData.gram_panchayat_code}
                     onChange={(e) => {
-                      const selectedPanchayat = panchayats.find((p) => String(p.gram_panchayat_code) === String(e.target.value));
+                      const selectedPanchayat = panchayats.find((p) => String(p.panchayat_code) === String(e.target.value));
                       setFormData((c) => ({
                         ...c,
                         gram_panchayat_code: e.target.value,
-                        gram_panchayat: selectedPanchayat?.gram_panchayat_name || "",
+                        gram_panchayat: selectedPanchayat?.panchayat_name || "",
                       }));
                     }}
                     disabled={!formData.block_code}
                   >
                     <option value="">Select Panchayat</option>
                     {panchayats.map((p) => (
-                      <option key={p.gram_panchayat_code} value={p.gram_panchayat_code}>{p.gram_panchayat_name}</option>
+                      <option key={p.panchayat_code} value={p.panchayat_code}>{p.panchayat_name}</option>
                     ))}
                   </select>
                 </Field>

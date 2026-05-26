@@ -135,7 +135,9 @@ export function ForwardedApplicationsTable({
   const [uploadError, setUploadError] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [pdfPreview,      setPdfPreview]      = useState(null);
-
+const [inspectionDate, setInspectionDate] = useState("");
+const [inspectionTime, setInspectionTime] = useState("");
+const [remarks, setRemarks] = useState("");
 
   useEffect(() => {
     if (!userId) {
@@ -289,7 +291,14 @@ const renderDocumentLink = (app, documentType, label = "View File") => {
       setUploadError("File size must be 2MB or less.");
       return;
     }
-
+if (!inspectionDate) {
+  setUploadError("Please select a date of inspection.");
+  return;
+}
+if (!inspectionTime) {
+  setUploadError("Please select a time of inspection.");
+  return;
+}
     const confirmation = await Swal.fire({
       title: "Upload report?",
       text: `Do you want to upload site visit report for this "${uploadTargetApp.application_id}"?`,
@@ -308,7 +317,9 @@ const renderDocumentLink = (app, documentType, label = "View File") => {
     setUploadError("");
 
     try {
-      const uploadResponse = await uploadSiteVisitReport(uploadTargetApp.application_id, selectedReportFile);
+      const uploadResponse = await uploadSiteVisitReport(uploadTargetApp.application_id, selectedReportFile, inspectionDate,
+  inspectionTime,
+  remarks);
       const forwardedDivisionName =
         uploadTargetApp.division_name ||
         uploadResponse.data?.data?.division_name ||
@@ -322,6 +333,9 @@ const renderDocumentLink = (app, documentType, label = "View File") => {
       setApplications((current) => current.filter((item) => item.application_id !== uploadTargetApp.application_id));
       setUploadTargetApp(null);
       setSelectedReportFile(null);
+      setInspectionDate("");      
+      setInspectionTime("");     
+      setRemarks("");
       await Swal.fire({
         title: "Success",
         text: successMessage,
@@ -760,70 +774,126 @@ value={`${app.water_requirement} L/Day`}
             </p>
 
             <form onSubmit={handleUploadSubmit}>
-              <input
-                type="file"
-                accept=".pdf,application/pdf"
-                onChange={(e) => setSelectedReportFile(e.target.files?.[0] || null)}
-                style={{
-                  width: "100%",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: "10px",
-                  padding: "12px",
-                  marginBottom: "12px",
-                  background: "#fff",
-                }}
-              />
-              <p
-                style={{
-                  margin: "-2px 0 12px",
-                  fontSize: "0.8rem",
-                  color: "#64748b",
-                }}
-              >
-                (MaxSize=2MB,Only PDF files are allowed.)
-              </p>
 
-              {uploadError ? (
-                <div style={{ color: "#b91c1c", marginBottom: "12px", fontSize: "0.85rem" }}>{uploadError}</div>
-              ) : null}
+  {/* ── Date of Inspection ── */}
+  <label style={{ display:"block", fontWeight:600, fontSize:"0.85rem",
+                  color:"#334155", marginBottom:"6px" }}>
+    Date of Inspection <span style={{ color:"#dc2626" }}>*</span>
+  </label>
+  <input
+  type="date"
+  value={inspectionDate}
+  min={(() => {
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUploadTargetApp(null);
-                    setSelectedReportFile(null);
-                    setUploadError("");
-                  }}
-                  style={{
-                    border: "1px solid #cbd5e1",
-                    background: "#fff",
-                    color: "#334155",
-                    borderRadius: "8px",
-                    padding: "9px 16px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isUploading}
-                  style={{
-                    border: "none",
-                    background: isUploading ? "#94a3b8" : "#1d4ed8",
-                    color: "#fff",
-                    borderRadius: "8px",
-                    padding: "9px 16px",
-                    fontWeight: 600,
-                    cursor: isUploading ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {isUploading ? "Uploading..." : "Submit"}
-                </button>
-              </div>
-            </form>
+  const raw = uploadTargetApp?.update_on;
+
+  if (!raw) return undefined;
+
+  // Handle DD-MM-YYYY format (e.g. "21-05-2026")
+  if (/^\d{2}-\d{2}-\d{4}$/.test(raw)) {
+    const [dd, mm, yyyy] = raw.split("-");
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  // Handle ISO / other formats (e.g. "2026-05-21T..." from DB timestamps)
+  const parsed = new Date(raw);
+  return isNaN(parsed.getTime()) ? undefined : parsed.toISOString().split("T")[0];
+})()}
+  max={new Date().toISOString().split("T")[0]}
+  onChange={(e) => { setInspectionDate(e.target.value); setUploadError(""); }}
+  />
+
+  {/* ── Time of Inspection ── */}
+  <label style={{ display:"block", fontWeight:600, fontSize:"0.85rem",
+                  color:"#334155", marginBottom:"6px" }}>
+    Time of Inspection <span style={{ color:"#dc2626" }}>*</span>
+  </label>
+  <input
+    type="time"
+    value={inspectionTime}
+    onChange={(e) => { setInspectionTime(e.target.value); setUploadError(""); }}
+    style={{
+      width:"100%", border:"1px solid #cbd5e1", borderRadius:"8px",
+      padding:"10px 12px", marginBottom:"14px", fontSize:"0.9rem",
+      background:"#fff", color:"#1e293b", boxSizing:"border-box",
+    }}
+  />
+
+  {/* ── Choose File ── */}
+  <label style={{ display:"block", fontWeight:600, fontSize:"0.85rem",
+                  color:"#334155", marginBottom:"6px" }}>
+    Site Visit Report <span style={{ color:"#dc2626" }}>*</span>
+  </label>
+  <input
+    type="file"
+    accept=".pdf,application/pdf"
+    onChange={(e) => { setSelectedReportFile(e.target.files?.[0] || null); setUploadError(""); }}
+    style={{
+      width:"100%", border:"1px solid #cbd5e1", borderRadius:"10px",
+      padding:"12px", marginBottom:"6px", background:"#fff",
+      boxSizing:"border-box",
+    }}
+  />
+  <p style={{ margin:"0 0 14px", fontSize:"0.8rem", color:"#64748b" }}>
+    (Max size: 2 MB — PDF only)
+  </p>
+
+  {/* ── Remarks ── */}
+  <label style={{ display:"block", fontWeight:600, fontSize:"0.85rem",
+                  color:"#334155", marginBottom:"6px" }}>
+    Remarks
+  </label>
+  <textarea
+    value={remarks}
+    onChange={(e) => setRemarks(e.target.value)}
+    placeholder="Enter any remarks (optional)..."
+    rows={3}
+    style={{
+      width:"100%", border:"1px solid #cbd5e1", borderRadius:"8px",
+      padding:"10px 12px", marginBottom:"14px", fontSize:"0.9rem",
+      background:"#fff", color:"#1e293b", resize:"vertical",
+      boxSizing:"border-box", fontFamily:"inherit",
+    }}
+  />
+
+  {uploadError && (
+    <div style={{ color:"#b91c1c", marginBottom:"12px", fontSize:"0.85rem" }}>
+      {uploadError}
+    </div>
+  )}
+
+  <div style={{ display:"flex", justifyContent:"flex-end", gap:"10px" }}>
+    <button
+      type="button"
+      onClick={() => {
+        setUploadTargetApp(null);
+        setSelectedReportFile(null);
+        setUploadError("");
+        setInspectionDate("");
+        setInspectionTime("");
+        setRemarks("");
+      }}
+      style={{
+        border:"1px solid #cbd5e1", background:"#fff", color:"#334155",
+        borderRadius:"8px", padding:"9px 16px", fontWeight:600, cursor:"pointer",
+      }}
+    >
+      Cancel
+    </button>
+    <button
+      type="submit"
+      disabled={isUploading}
+      style={{
+        border:"none",
+        background: isUploading ? "#94a3b8" : "#1d4ed8",
+        color:"#fff", borderRadius:"8px", padding:"9px 16px",
+        fontWeight:600, cursor: isUploading ? "not-allowed" : "pointer",
+      }}
+    >
+      {isUploading ? "Uploading..." : "Submit"}
+    </button>
+  </div>
+</form>
           </div>
         </div>
       ) : null}

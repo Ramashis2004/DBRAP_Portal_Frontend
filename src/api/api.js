@@ -316,9 +316,13 @@ export const createJEPaymentDetail = (payload) => {
 };
 
 // ── Documents / Reports ───────────────────────────────────────────────────────
-export const uploadSiteVisitReport = (applicationId, file) => {
+export const uploadSiteVisitReport = (applicationId, file, inspectionDate, inspectionTime, remarks) => {
   const formData = new FormData();
   formData.append("site_visit_report", file);
+  if (inspectionDate) formData.append("inspection_date", inspectionDate);
+  if (inspectionTime) formData.append("inspection_time", inspectionTime);
+  if (remarks?.trim()) formData.append("remarks", remarks.trim());
+
   return API.patch(
     `/organisation/organisations/${applicationId}/site-visit-report`,
     formData,

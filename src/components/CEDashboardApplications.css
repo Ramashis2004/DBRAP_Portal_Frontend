@@ -59,7 +59,7 @@
 
 .officer-dashboard-stats.ce-dashboard-stats .officer-dashboard-charts-wide {
   display: grid;
-  grid-template-columns: repeat(2, minmax(160%, 1fr));
+  grid-template-columns: repeat(2, minmax(16%, 1fr));
   align-self: stretch;
   width: 100%;
   max-width: 100%;
