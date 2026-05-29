@@ -395,6 +395,9 @@ export const fetchPaymentVerificationApplications = (userId) =>
 export const verifyPaymentReceipt = (applicationId, action, remarks, userId) =>
   API.patch(`/payment-verification/${applicationId}/verify`, { action, remarks, userId });
 
+export const getMoneyReceiptUrl = (applicationId) =>
+  `${API.defaults.baseURL}/payment-verification/${applicationId}/money-receipt`;
+
 // ── Connection Details ────────────────────────────────────────────────────────
 export const fetchConnectionApplications = (blockCode) =>
   API.get("/officer/connection-details/applications", { params: { blockCode } });
@@ -438,3 +441,15 @@ export const fetchSEStatusCounts = (userId) =>
 
 export const fetchAEEStatusCounts = (userId) =>
   API.get("/aee-dashboard-applications/status-counts", { params: { userId } });
+
+// ── Applicant Payments ────────────────────────────────────────────────────────
+export const fetchPaymentDetails = (userId) =>
+  API.get("/applicant-payment/details", { params: { userId } });
+
+export const uploadPaymentReceipt = (formData) =>
+  API.post("/applicant-payment/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+
+export const getReceiptUrl = (applicationId) =>
+  `${API.defaults.baseURL}/applicant-payment/receipt/${applicationId}`;

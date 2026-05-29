@@ -20,6 +20,7 @@ import {
   logoutOfficer,
   fetchPaymentVerificationApplications,
   verifyPaymentReceipt,
+  getMoneyReceiptUrl,
 } from "../api/api";
 import {
   formatApplicationStatus,
@@ -347,7 +348,7 @@ function PaymentVerificationPage() {
               detailView.money_receipt
                 ? <button
                     onClick={() => setPdfPreview({
-                      url: `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api"}/payment-verification/${detailView.application_id}/money-receipt`,
+                  url: getMoneyReceiptUrl(detailView.application_id),
                       title: "Money Receipt"
                     })}
                     style={{
@@ -534,7 +535,7 @@ function PaymentVerificationPage() {
                       {app.money_receipt ? (
                         <button
                           onClick={() => setPdfPreview({
-                            url: `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api"}/payment-verification/${app.application_id}/money-receipt`,
+                            url: getMoneyReceiptUrl(app.application_id),
                             title: `Money Receipt - ${app.application_id}`
                           })}
                           style={{

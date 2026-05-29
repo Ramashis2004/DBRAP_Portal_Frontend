@@ -5,21 +5,8 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { Download, ExternalLink, ReceiptText, Upload, X } from "lucide-react";
-import axios from "axios";
+import { fetchPaymentDetails, uploadPaymentReceipt, getReceiptUrl } from "../api/api";
 import "./ApplicantPaymentPage.css";
-
-const API_BASE = "http://localhost:5000/api";
-
-const fetchPaymentDetails = (userId) =>
-  axios.get(`${API_BASE}/applicant-payment/details`, { params: { userId } });
-
-const uploadPaymentReceipt = (formData) =>
-  axios.post(`${API_BASE}/applicant-payment/upload`, formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-
-const getReceiptUrl = (applicationId) =>
-  `${API_BASE}/applicant-payment/receipt/${applicationId}`;
 
 // ── Status badge ──────────────────────────────────────────────────────────────
 const statusBadge = (status) => {

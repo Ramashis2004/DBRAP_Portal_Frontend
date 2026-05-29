@@ -26,6 +26,7 @@ import {
   fetchCEApplicationReceivedApplications,
   updateOrganisationStatus,
   getOrganisationDocumentUrl,
+  getSiteVisitReportUrl,
 } from "../api/api";
 import {
   formatApplicationStatus,
@@ -220,8 +221,7 @@ const getActionTakenDate = (app) => {
   return null;
 };
 
-const getSiteVisitReportUrl = (id) =>
-  `http://localhost:5000/api/organisation/organisations/${id}/site-visit-report`;
+// getSiteVisitReportUrl imported from ../api/api
 
 const filterApplications = (applications, { search = "", statusFilter = "all" }) => {
   const q = search.toLowerCase();
