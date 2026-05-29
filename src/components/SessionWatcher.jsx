@@ -1,32 +1,34 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { sessionChannel } from "../utils/sessionChannel";
-import { checkSessionValid } from "../api/api";
 
-const POLL_INTERVAL_MS = 15000;
+const SESSION_TIMEOUT_MINUTES = Number(import.meta.env.VITE_SESSION_TIMEOUT_MINUTES) || 60;
+const SESSION_TIMEOUT_MS = SESSION_TIMEOUT_MINUTES * 60 * 1000;
+const CHECK_INTERVAL_MS = 5000; // purely client-side local timer (0 API hits)
 const LOGIN_GRACE_MS = 3000; // ignore FORCE_LOGOUT for 3s after login
 
 function SessionWatcher() {
-  const navigate     = useNavigate();
-  const timerRef     = useRef(null);
+  const navigate = useNavigate();
+  const timerRef = useRef(null);
   const loginTimeRef = useRef(null); // tracks when session was written
+  const lastActivityRef = useRef(Date.now()); // tracks last user interaction
 
   const getActiveSession = () => {
-    const officerRaw   = localStorage.getItem("officerSession");
+    const officerRaw = localStorage.getItem("officerSession");
     const applicantRaw = localStorage.getItem("applicantSession");
 
     if (officerRaw) {
       try {
         const s = JSON.parse(officerRaw);
         return { id: s.id, type: "officer", redirectTo: "/login", loginTime: s.loginTime };
-      } catch {}
+      } catch { }
     }
 
     if (applicantRaw) {
       try {
         const s = JSON.parse(applicantRaw);
         return { id: s.id, type: "applicant", redirectTo: "/applicant-login", loginTime: s.loginTime };
-      } catch {}
+      } catch { }
     }
 
     return null;
@@ -40,20 +42,21 @@ function SessionWatcher() {
 
   const startPolling = () => {
     stopPolling();
-    timerRef.current = setInterval(async () => {
-      const session = getActiveSession();
-      if (!session) { stopPolling(); return; }
+    lastActivityRef.current = Date.now();
 
-      try {
-        const res = await checkSessionValid(session.id);
-        if (!res.data?.valid) {
-          stopPolling();
-          forceLogout(session.redirectTo);
-        }
-      } catch (err) {
-        console.warn("Session check failed:", err.message);
+    const session = getActiveSession();
+    if (!session) return;
+
+    timerRef.current = setInterval(() => {
+      const currentSession = getActiveSession();
+      if (!currentSession) { stopPolling(); return; }
+
+      const inactiveDuration = Date.now() - lastActivityRef.current;
+      if (inactiveDuration >= SESSION_TIMEOUT_MS) {
+        stopPolling();
+        forceLogout(currentSession.redirectTo);
       }
-    }, POLL_INTERVAL_MS);
+    }, CHECK_INTERVAL_MS);
   };
 
   const stopPolling = () => {
@@ -62,6 +65,39 @@ function SessionWatcher() {
       timerRef.current = null;
     }
   };
+
+  const handleActivity = () => {
+    lastActivityRef.current = Date.now();
+    const session = getActiveSession();
+    if (session && !timerRef.current) {
+      startPolling();
+    }
+  };
+
+  // Keep handleActivity stable using a ref so event listeners don't re-bind on every render
+  const handleActivityRef = useRef(null);
+  handleActivityRef.current = handleActivity;
+
+  // ── Listen for user activity to reset inactivity timer ─────────────────────
+  useEffect(() => {
+    const activityEvents = ["mousemove", "mousedown", "keydown", "scroll", "touchstart"];
+
+    const onActivity = () => {
+      if (handleActivityRef.current) {
+        handleActivityRef.current();
+      }
+    };
+
+    activityEvents.forEach((event) => {
+      window.addEventListener(event, onActivity, { passive: true });
+    });
+
+    return () => {
+      activityEvents.forEach((event) => {
+        window.removeEventListener(event, onActivity);
+      });
+    };
+  }, []);
 
   // ── BroadcastChannel — instant logout within same browser ────────────────
   useEffect(() => {
