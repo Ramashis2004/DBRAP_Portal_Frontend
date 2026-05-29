@@ -4,6 +4,41 @@ const API = axios.create({
   baseURL: "http://localhost:5000/api"
 });
 
+API.interceptors.request.use(
+  (config) => {
+    const officerSession = JSON.parse(localStorage.getItem("officerSession"));
+    const applicantSession = JSON.parse(localStorage.getItem("applicantSession"));
+    const token = officerSession?.token || applicantSession?.token;
+    
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      const isApplicant = !!localStorage.getItem("applicantSession");
+      // Clear sessions
+      localStorage.removeItem("officerSession");
+      localStorage.removeItem("applicantSession");
+      // Redirect to correct login page
+      if (isApplicant) {
+        window.location.href = "/applicant-login";
+      } else {
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const fetchPublicDashboardSummary = () => {
   return API.get("/public-dashboard/summary");
 };

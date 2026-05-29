@@ -35,7 +35,7 @@ function OfficerLoginPage() {
     }));
   };
 
-  const openDashboard = (user) => {
+  const openDashboard = (user, token) => {
     localStorage.setItem(
       "officerSession",
       JSON.stringify({
@@ -47,6 +47,7 @@ function OfficerLoginPage() {
         roleName: user.roleName,
         userTypeId: user.userTypeId,
         loginTime: new Date().toISOString(),
+        token: token,
       })
     );
 
@@ -71,7 +72,7 @@ const broadcastLogout = (userId) => {
       }
 
       const response = await loginOfficer({ username, password });
-      openDashboard(response.data.user);
+      openDashboard(response.data.user, response.data.token);
     } catch (error) {
       if (error.response?.status === 409 && error.response?.data?.code === "ALREADY_LOGGED_IN") {
         const result = await Swal.fire({
@@ -92,7 +93,7 @@ const broadcastLogout = (userId) => {
               forceLogin: true,
             });
 
-            openDashboard(retryResponse.data.user);
+            openDashboard(retryResponse.data.user, retryResponse.data.token);
             broadcastLogout(retryResponse.data.user.id); // ← ADD
             
           } catch (retryError) {

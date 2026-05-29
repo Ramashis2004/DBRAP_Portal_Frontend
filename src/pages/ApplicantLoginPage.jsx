@@ -86,11 +86,12 @@ function ApplicantLoginPage() {
   // ── Captcha ───────────────────────────────────────────────────────────────
   const refreshCaptcha = () => { setCaptcha(generateCaptcha()); setCaptchaInput(""); };
 
-  const saveApplicantSession = (applicant) => {
+  const saveApplicantSession = (applicant, token) => {
     localStorage.setItem("applicantSession", JSON.stringify({
       id: applicant.id, mobileNo: applicant.mobileNo,
       name: applicant.name, roleId: applicant.roleId,
       loginTime: new Date().toISOString(),
+      token: token,
     }));
   };
 
@@ -179,7 +180,7 @@ console.log("Sending OTP to SMS gateway:", { mobileNumber, otp });
     try {
       const response  = await loginApplicant({ mobile_number: mobileNumber });
       const applicant = response.data?.applicant;
-      saveApplicantSession(applicant);
+      saveApplicantSession(applicant, response.data?.token);
       await swalSuccess("Login Successful", `Welcome ${applicant.name || applicant.mobileNo}.`);
       navigate("/applicant-dashboard");
     } catch (error) {
@@ -192,7 +193,7 @@ console.log("Sending OTP to SMS gateway:", { mobileNumber, otp });
           const applicant = response.data?.applicant;
           broadcastLogout(applicant.id); // ← ADD
 
-          saveApplicantSession(applicant);
+          saveApplicantSession(applicant, response.data?.token);
           await swalSuccess("Login Successful", `Welcome ${applicant.name || applicant.mobileNo}.`);
           navigate("/applicant-dashboard");
         } catch (retryError) {
@@ -234,7 +235,7 @@ console.log("Sending OTP to SMS gateway:", { mobileNumber, otp });
     try {
       const response  = await loginApplicantWithPassword({ login_id: userId.trim(), password });
       const applicant = response.data?.applicant;
-      saveApplicantSession(applicant);
+      saveApplicantSession(applicant, response.data?.token);
       await swalSuccess("Login Successful", `Welcome ${applicant.name || applicant.loginId}.`);
       navigate("/applicant-dashboard");
     } catch (error) {
@@ -251,7 +252,7 @@ console.log("Sending OTP to SMS gateway:", { mobileNumber, otp });
           const applicant = response.data?.applicant;
           broadcastLogout(applicant.id); // ← ADD
 
-          saveApplicantSession(applicant);
+          saveApplicantSession(applicant, response.data?.token);
           await swalSuccess("Login Successful", `Welcome ${applicant.name || applicant.loginId}.`);
           navigate("/applicant-dashboard");
         } catch (retryError) {
