@@ -34,6 +34,8 @@ import {
 import "./OfficerDashboardPage.css";
 // At top with other imports
 import PendingApplicationsPopup from "../components/PendingApplicationsPopup";
+import SEStatusCards from "../components/SEStatusCards";
+
 import {
   SEDashboardApplicationCountCard,
   SEDashboardApplicationsTable,
@@ -548,6 +550,7 @@ function SEDashboardPage() {
   const [showUserManagement, setShowUserManagement] = useState(false);
   const [showDashboardApplications, setShowDashboardApplications] = useState(false);
 const [dashboardReady, setDashboardReady] = useState(false);
+const [statusFilter, setStatusFilter] = useState("all");
 
   const loadDashboard = async (userId, preserveMenuState = false) => {
     const response = await fetchOfficerDashboardConfig(userId);
@@ -935,19 +938,47 @@ const [dashboardReady, setDashboardReady] = useState(false);
           
 
           {/* Default stats — hide when a panel is active */}
-          {!shouldShowCreateUserForm && !shouldShowApplicationTable && !showDashboardApplications ? (
-            <section className="officer-dashboard-stats se-dashboard-stats">
-              
-              <SEDashboardApplicationCountCard
-                userId={user.id}
-                onOpen={() => {
-                  setActiveMenuKey("");
-                  setActiveOptionKey("");
-                  setShowDashboardApplications(true);
-                }}
-              />
-            </section>
-          ) : null}
+         {!shouldShowCreateUserForm && !shouldShowApplicationTable && !showDashboardApplications ? (
+  <section
+ className="officer-dashboard-stats se-dashboard-stats"
+ style={{
+    display:"flex",
+    justifyContent:"center",
+    width:"100%",
+    overflowX:"auto",
+    padding:"24px"
+ }}
+>
+    <SEStatusCards
+      userId={user.id}
+      /* Clicking a status card opens the full table filtered to that status */
+      onCardClick={(item) => {
+        setStatusFilter(item.status);
+        setShowDashboardApplications(true);
+        setActiveMenuKey("");
+        setActiveOptionKey("");
+      }}
+      /* Clicking the total card opens the full unfiltered table */
+      onTotalClick={() => {
+        setStatusFilter("all");
+        setShowDashboardApplications(true);
+        setActiveMenuKey("");
+        setActiveOptionKey("");
+      }}
+    />
+  </section>
+) : null}
+
+{showDashboardApplications ? (
+  <SEDashboardApplicationsTable
+    userId={user.id}
+    initialStatusFilter={statusFilter}
+    onBack={() => {
+      setShowDashboardApplications(false);
+      setStatusFilter("all");
+    }}
+  />
+) : null}
 
           {/* Create User Form */}
           {shouldShowCreateUserForm ? (
@@ -963,12 +994,12 @@ const [dashboardReady, setDashboardReady] = useState(false);
             </section>
           ) : null}
 
-          {showDashboardApplications ? (
+          {/* {showDashboardApplications ? (
             <SEDashboardApplicationsTable
               userId={user.id}
               onBack={() => setShowDashboardApplications(false)}
             />
-          ) : null}
+          ) : null} */}
 
           <PendingApplicationsPopup
             session={popupSession}

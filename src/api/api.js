@@ -357,8 +357,8 @@ export const fetchPendingApproval = (userId) =>
 export const fetchPaymentVerificationApplications = (userId) =>
   API.get("/payment-verification/applications", { params: { userId } });
 
-export const verifyPaymentReceipt = (applicationId, action, remarks) =>
-  API.patch(`/payment-verification/${applicationId}/verify`, { action, remarks });
+export const verifyPaymentReceipt = (applicationId, action, remarks, userId) =>
+  API.patch(`/payment-verification/${applicationId}/verify`, { action, remarks, userId });
 
 // ── Connection Details ────────────────────────────────────────────────────────
 export const fetchConnectionApplications = (blockCode) =>
@@ -397,3 +397,9 @@ export const fetchEICPendingApplicationsByDivision = (userId, divisionCode, buck
 
 export const fetchEICPendingApplicationHistory = (userId, applicationId) =>
   API.get("/eic-pending/application-history", { params: { userId, applicationId } });
+
+export const fetchSEStatusCounts = (userId) =>
+  API.get("/se-dashboard-applications/status-counts", { params: { userId } });
+
+export const fetchAEEStatusCounts = (userId) =>
+  API.get("/aee-dashboard-applications/status-counts", { params: { userId } });

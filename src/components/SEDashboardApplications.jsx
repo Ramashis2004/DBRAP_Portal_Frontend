@@ -172,15 +172,20 @@ export function SEDashboardApplicationCountCard({ userId, onOpen }) {
   );
 }
 
-export function SEDashboardApplicationsTable({ userId, onBack }) {
+export function SEDashboardApplicationsTable({ userId, onBack , initialStatusFilter = "all"}) {
   const [applications, setApplications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");    
+  //const [statusFilter, setStatusFilter] = useState("all");    
   const [detailView, setDetailView] = useState(null);
+const [statusFilter, setStatusFilter] = useState(initialStatusFilter);
 
+const [lockStatusFilter, setLockStatusFilter] = useState(
+  initialStatusFilter !== "all"
+);
   const [pdfPreview,      setPdfPreview]      = useState(null);
+  
 const renderDocumentLink = (app, documentType, label = "View File") => {
     if (!app?.[documentType]) return "NA";
     const url = getOrganisationDocumentUrl(app.application_id, documentType);
@@ -197,6 +202,7 @@ const renderDocumentLink = (app, documentType, label = "View File") => {
       </button>
     );
   };
+  
   useEffect(() => {
     if (!userId) return;
 
@@ -374,17 +380,43 @@ const filtered = applications.filter((app) => {
         
       </div>
  <div className="se-dashboard-app-table-controls">
- <select className="se-status-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-  <option value="all">All Status</option>
-  <option value="APPLICATION_SUBMITTED">Application Pending</option>
-  <option value="APPLICATION_FORWARDED_TO_JE">Application Forwarded To JE</option>
-  <option value="JE_VERIFIED_REPORT_UPLOADED">Verify JE Upload Report</option>
-  <option value="APPLICATION_APPROVED">Application Approved</option>
-  <option value="APPLICATION_REJECTED">Application Rejected</option>
-  <option value="PAYMENT_RECEIPT_UPLOADED">Payment Receipt Uploaded</option>
-  <option value="PAYMENT_RECEIPT_VERIFIED">Payment Receipt Verified</option>
-  <option value="CONNECTION_DETAILS_UPDATED">Connection Details Updated</option>
-</select>
+{!lockStatusFilter ? (
+  <select
+  className="se-status-select"
+  value={statusFilter}
+  onChange={(e) => {
+    setStatusFilter(e.target.value);
+  }}
+>
+    <option value="all">All Status</option>
+    <option value="APPLICATION_SUBMITTED">Application Submitted</option>
+    <option value="APPLICATION_FORWARDED_TO_JE">Application Forwarded To JE</option>
+    <option value="JE_VERIFIED_REPORT_UPLOADED">Verify JE Upload Report</option>
+    <option value="APPLICATION_APPROVED">Application Approved</option>
+    <option value="APPLICATION_REJECTED">Application Rejected</option>
+    <option value="PAYMENT_RECEIPT_UPLOADED">Payment Receipt Uploaded</option>
+    <option value="PAYMENT_RECEIPT_VERIFIED">Payment Receipt Verified</option>
+    <option value="CONNECTION_DETAILS_UPDATED">Connection Details Updated</option>
+  </select>
+) : (
+  <div
+    className="se-status-select"
+    style={{
+      display: "flex",
+      alignItems: "center",
+      padding: "0 14px",
+      background: "#f8fafc",
+      border: "1px solid #cbd5e1",
+      borderRadius: "10px",
+      fontWeight: 600,
+      color: "#334155",
+      minWidth: "240px",
+      height: "42px",
+    }}
+  >
+    {formatApplicationStatus(statusFilter)}
+  </div>
+)}
         <div className="se-dashboard-app-search">
           <Search size={15} />
           <input

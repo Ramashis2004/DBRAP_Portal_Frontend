@@ -34,7 +34,7 @@ const getApplicationStatusStyle = (status) => {
   switch (status) {
     case "PAYMENT_RECEIPT_UPLOADED":  return { background: "#ede9fe", color: "#6d28d9" };
     case "PAYMENT_RECEIPT_VERIFIED":  return { background: "#dcfce7", color: "#166534" };
-    case "PAYMENT_NOT_VERIFIED":      return { background: "#fee2e2", color: "#991b1b" };
+    case "PAYMENT_RECEIPT_REJECTED":      return { background: "#fee2e2", color: "#991b1b" };
     default:                          return { background: "#e2e8f0", color: "#475569" };
   }
 };
@@ -49,17 +49,17 @@ const DOCUMENT_ROWS = [
 
 const ACTION_LABELS = {
   PAYMENT_RECEIPT_VERIFIED: "✅ Verify Payment",
-  PAYMENT_NOT_VERIFIED:     "❌ Mark as Not Verified",
+  PAYMENT_RECEIPT_REJECTED:     "❌ Mark as Rejected",
 };
 
 const ACTION_MESSAGES = {
   PAYMENT_RECEIPT_VERIFIED: "Payment receipt will be marked as Accepted.",
-  PAYMENT_NOT_VERIFIED:     "Payment receipt will be marked as Rejected.",
+  PAYMENT_RECEIPT_REJECTED:     "Payment receipt will be marked as Rejected.",
 };
 
 const SUCCESS_MESSAGES = {
   PAYMENT_RECEIPT_VERIFIED: "Payment receipt accepted successfully.",
-  PAYMENT_NOT_VERIFIED:     "Payment receipt rejected successfully.",
+  PAYMENT_RECEIPT_REJECTED:     "Payment receipt rejected successfully.",
 };
 
 const tableColumns = [
@@ -177,7 +177,7 @@ function PaymentVerificationPage() {
 
     setIsSubmittingAction(true);
     try {
-      await verifyPaymentReceipt(app.application_id, action, remarkInput.trim());
+      await verifyPaymentReceipt(app.application_id, action, remarkInput.trim(),session.id);
       setApplications((prev) => prev.filter((a) => a.application_id !== app.application_id));
       setActionModal(null);
       setRemarkInput("");
@@ -214,7 +214,7 @@ function PaymentVerificationPage() {
     >
       <option value="">Select Action</option>
       <option value="PAYMENT_RECEIPT_VERIFIED">Accept</option>
-      <option value="PAYMENT_NOT_VERIFIED">Reject</option>
+      <option value="PAYMENT_RECEIPT_REJECTED">Reject</option>
     </select>
   );
 

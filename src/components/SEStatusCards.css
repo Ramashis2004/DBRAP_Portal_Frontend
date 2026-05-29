@@ -1,0 +1,120 @@
+.se-summary-title {
+    margin-bottom: 16px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+}
+
+/* ---------- GRID ---------- */
+.se-status-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 360px);
+    gap: 20px;
+
+    width: fit-content;
+    margin: 0 auto; /* center cards */
+}
+
+/* ---------- CARD ---------- */
+.se-status-card {
+    width: 360px;
+    height: 150px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 20px;
+    border-radius: 14px;
+    border: none;
+    box-sizing: border-box;
+    overflow: hidden;
+    cursor: pointer;
+
+    transition: all .3s ease;
+}
+
+.se-status-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+}
+
+.se-status-content {
+    flex: 1;
+    padding: 0 16px;
+    text-align: center;
+}
+
+.se-status-count {
+    margin: 0 0 8px;
+    font-size: 56px;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.se-status-label {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.se-status-icon {
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    border-radius: 12px;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+.se-status-arrow {
+    width:40px;
+    height:40px;
+    min-width:40px;
+    border-radius:50%;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+}
+
+/* Existing total card styles keep same */
+.total-card{
+    background:#1e293b;
+}
+
+.total-icon{
+    background:#334155;
+    color:#94a3b8;
+}
+
+.total-count{
+    color:#fff;
+}
+
+.total-label{
+    color:#cbd5e1;
+}
+
+.total-arrow{
+    background:#475569;
+    color:#fff;
+}
+
+/* Responsive only changes columns */
+@media(max-width:1280px){
+    .se-status-grid{
+        grid-template-columns:repeat(2,360px);
+    }
+}
+
+@media(max-width:768px){
+    .se-status-grid{
+        grid-template-columns:360px;
+    }
+}

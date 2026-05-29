@@ -55,7 +55,21 @@ function ApplicantPaymentPage() {
   const [pdfPreview, setPdfPreview] = useState(null);
 
   const fileRef = useRef(null);
+// ── Replace these two constants near the bottom of ApplicantPaymentPage ──────
 
+const appStatus = String(appData?.application_status || "").toUpperCase();
+
+const isVerified          = appStatus === "PAYMENT_RECEIPT_VERIFIED";
+const isPendingVerify     = appStatus === "PAYMENT_RECEIPT_UPLOADED";
+const isFirstRejection    = appStatus === "PAYMENT_RECEIPT_REJECTED";
+const isPermanentReject   = appStatus === "APPLICATION_REJECTED";
+
+// Uploaded & awaiting / already verified — no more upload
+const alreadyUploaded = isVerified || isPendingVerify;
+
+// Can upload on first approval OR re-upload on first rejection
+const canUploadReceipt =
+  appStatus === "APPLICATION_APPROVED" || isFirstRejection;
   useEffect(() => {
     if (!applicantSession?.id) {
       navigate("/applicant-login", { replace: true });
@@ -141,14 +155,14 @@ function ApplicantPaymentPage() {
     }
   };
 
-  const alreadyUploaded =
-    ["PAYMENT_RECEIPT_UPLOADED", "PAYMENT_RECEIPT_VERIFIED"].includes(
-      String(appData?.application_status || "").toUpperCase()
-    ) || !!appData?.money_receipt;
+  // const alreadyUploaded =
+  //   ["PAYMENT_RECEIPT_UPLOADED", "PAYMENT_RECEIPT_VERIFIED"].includes(
+  //     String(appData?.application_status || "").toUpperCase()
+  //   ) || !!appData?.money_receipt;
 
-  const canUploadReceipt =
-    String(appData?.application_status || "").toUpperCase() ===
-    "APPLICATION_APPROVED";
+  // const canUploadReceipt =
+  //   String(appData?.application_status || "").toUpperCase() ===
+  //   "APPLICATION_APPROVED";
 
   if (loading) {
     return <div style={{ padding: "40px", color: "#64748b" }}>Loading payment details…</div>;
@@ -235,100 +249,209 @@ function ApplicantPaymentPage() {
           </div>
 
           {/* Upload form */}
-          {canUploadReceipt || alreadyUploaded ? (
-            <div className="appl-payment-card">
-              <div className="appl-payment-card__header">
-                <Upload size={22} />
-                <div>
-                  <h2>Upload Money Receipt</h2>
-                  <p>
-                    {alreadyUploaded
-                      ? "Receipt already submitted."
-                      : "Upload your payment receipt to proceed."}
-                  </p>
-                </div>
-              </div>
+{/* ── Permanently rejected ── */}
+{isPermanentReject && (
+  <div className="appl-payment-card">
+    <div
+      style={{
+        background: "#fee2e2",
+        border: "1px solid #fca5a5",
+        borderRadius: "10px",
+        padding: "20px 24px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "8px",
+      }}
+    >
+      <p style={{ fontWeight: 700, color: "#991b1b", fontSize: "1rem", margin: 0 }}>
+        ❌ Application Rejected
+      </p>
+      <p style={{ color: "#7f1d1d", margin: 0, fontSize: "0.9rem" }}>
+        Your payment receipt was rejected twice. This application has been
+        permanently rejected and cannot be resubmitted.
+      </p>
+      {appData?.remarks && (
+        <p style={{ color: "#7f1d1d", margin: 0, fontSize: "0.85rem" }}>
+          <strong>Last Remark:</strong> {appData.remarks}
+        </p>
+      )}
+    </div>
+  </div>
+)}
 
-              {alreadyUploaded ? (
-                <div className="appl-uploaded-notice">
-                  ✅ Payment receipt already uploaded. You can view it above.
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="appl-payment-form">
-                  <div className="appl-form-field">
-                    <label>Application ID</label>
-                    <input type="text" value={appData.application_id} readOnly />
-                  </div>
+{/* ── First rejection — allow re-upload ── */}
+{isFirstRejection && (
+  <div className="appl-payment-card">
+    <div
+      style={{
+        background: "#fff7ed",
+        border: "1px solid #fed7aa",
+        borderRadius: "10px",
+        padding: "16px 20px",
+        marginBottom: "16px",
+      }}
+    >
+      <p style={{ fontWeight: 700, color: "#92400e", margin: "0 0 4px" }}>
+        ⚠️ Payment Receipt Rejected
+      </p>
+      <p style={{ color: "#78350f", fontSize: "0.88rem", margin: 0 }}>
+        Your payment receipt was rejected by the JE. You may upload a corrected
+        receipt <strong>once more</strong>. A second rejection will permanently
+        close this application.
+      </p>
+      {appData?.remarks && (
+        <p style={{ color: "#78350f", fontSize: "0.85rem", marginTop: "8px", marginBottom: 0 }}>
+          <strong>Rejection Remark:</strong> {appData.remarks}
+        </p>
+      )}
+    </div>
 
-                  <div className="appl-form-field">
-                    <label>Connection Type</label>
-                    <input type="text" value={appData.type_of_connection || ""} readOnly />
-                  </div>
+    {/* Re-upload form (same form as below, shown inline) */}
+    <div className="appl-payment-card__header">
+      <Upload size={22} />
+      <div>
+        <h2>Re-upload Money Receipt</h2>
+        <p>Upload a corrected receipt to resubmit for verification.</p>
+      </div>
+    </div>
+    <form onSubmit={handleSubmit} className="appl-payment-form">
+      <div className="appl-form-field">
+        <label>Application ID</label>
+        <input type="text" value={appData.application_id} readOnly />
+      </div>
+      <div className="appl-form-field">
+        <label>Connection Type</label>
+        <input type="text" value={appData.type_of_connection || ""} readOnly />
+      </div>
+      <div className="appl-form-field">
+        <label>Amount (₹)</label>
+        <input
+          type="number" min="1" step="0.01"
+          placeholder="Enter amount paid"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          required
+        />
+      </div>
+      <div className="appl-form-field">
+        <label>Date of Payment</label>
+        <input
+          type="date"
+          value={dateOfPayment}
+          onChange={(e) => setDateOfPayment(e.target.value)}
+          max={new Date().toISOString().slice(0, 10)}
+          required
+        />
+      </div>
+      <div className="appl-form-field appl-payment-form__full">
+        <label>Money Receipt (PDF / JPG / PNG — max 2 MB)</label>
+        <input
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+          ref={fileRef}
+          onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+          required
+        />
+      </div>
+      {message.text && (
+        <div className={`appl-payment-message appl-payment-form__full appl-payment-message--${message.type}`}>
+          {message.text}
+        </div>
+      )}
+      <div className="appl-payment-form__full">
+        <button type="submit" className="appl-payment-submit" disabled={submitting}>
+          <Upload size={16} />
+          {submitting ? "Uploading…" : "Re-submit Payment Receipt"}
+        </button>
+      </div>
+    </form>
+  </div>
+)}
 
-                  <div className="appl-form-field">
-                    <label>Amount (₹)</label>
-                    <input
-                      type="number"
-                      min="1"
-                      step="0.01"
-                      placeholder="Enter amount paid"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      required
-                    />
-                  </div>
+{/* ── Normal first-time upload (APPLICATION_APPROVED) ── */}
+{appStatus === "APPLICATION_APPROVED" && (
+  <div className="appl-payment-card">
+    <div className="appl-payment-card__header">
+      <Upload size={22} />
+      <div>
+        <h2>Upload Money Receipt</h2>
+        <p>Upload your payment receipt to proceed.</p>
+      </div>
+    </div>
+    <form onSubmit={handleSubmit} className="appl-payment-form">
+      {/* ... same form fields as original ... */}
+      <div className="appl-form-field">
+        <label>Application ID</label>
+        <input type="text" value={appData.application_id} readOnly />
+      </div>
+      <div className="appl-form-field">
+        <label>Connection Type</label>
+        <input type="text" value={appData.type_of_connection || ""} readOnly />
+      </div>
+      <div className="appl-form-field">
+        <label>Amount (₹)</label>
+        <input
+          type="number" min="1" step="0.01"
+          placeholder="Enter amount paid"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+          required
+        />
+      </div>
+      <div className="appl-form-field">
+        <label>Date of Payment</label>
+        <input
+          type="date"
+          value={dateOfPayment}
+          onChange={(e) => setDateOfPayment(e.target.value)}
+          max={new Date().toISOString().slice(0, 10)}
+          required
+        />
+      </div>
+      <div className="appl-form-field appl-payment-form__full">
+        <label>Money Receipt (PDF / JPG / PNG — max 2 MB)</label>
+        <input
+          type="file"
+          accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+          ref={fileRef}
+          onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+          required
+        />
+      </div>
+      {message.text && (
+        <div className={`appl-payment-message appl-payment-form__full appl-payment-message--${message.type}`}>
+          {message.text}
+        </div>
+      )}
+      <div className="appl-payment-form__full">
+        <button type="submit" className="appl-payment-submit" disabled={submitting}>
+          <Upload size={16} />
+          {submitting ? "Uploading…" : "Submit Payment Receipt"}
+        </button>
+      </div>
+    </form>
+  </div>
+)}
 
-                  <div className="appl-form-field">
-                    <label>Date of Payment</label>
-                    <input
-                      type="date"
-                      value={dateOfPayment}
-                      onChange={(e) => setDateOfPayment(e.target.value)}
-                      max={new Date().toISOString().slice(0, 10)}
-                      required
-                    />
-                  </div>
+{/* ── Already uploaded / verified ── */}
+{alreadyUploaded && (
+  <div className="appl-payment-card">
+    <div className="appl-uploaded-notice">
+      {isVerified
+        ? "✅ Payment verified. No further action needed."
+        : "✅ Payment receipt submitted and pending JE verification."}
+    </div>
+  </div>
+)}
 
-                  <div className="appl-form-field appl-payment-form__full">
-                    <label>Money Receipt (PDF / JPG / PNG — max 2 MB)</label>
-                    <input
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                      ref={fileRef}
-                      onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
-                      required
-                    />
-                  </div>
-
-                  {message.text && (
-                    <div
-                      className={`appl-payment-message appl-payment-form__full appl-payment-message--${message.type}`}
-                    >
-                      {message.text}
-                    </div>
-                  )}
-
-                  <div className="appl-payment-form__full">
-                    <button
-                      type="submit"
-                      className="appl-payment-submit"
-                      disabled={submitting}
-                    >
-                      <Upload size={16} />
-                      {submitting ? "Uploading…" : "Submit Payment Receipt"}
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          ) : (
-            <div className="appl-payment-card">
-              <div className="appl-uploaded-notice">
-                Payment receipt upload is available only after application approval.
-              </div>
-            </div>
-          )}
-        </>
+{/* ── Waiting for approval (not yet approved) ── */}
+{!canUploadReceipt && !alreadyUploaded && !isPermanentReject && !isFirstRejection && (
+  <div className="appl-payment-card">
+    <div className="appl-uploaded-notice">
+      Payment receipt upload is available only after application approval.
+    </div>
+  </div>
+)}        </>
       )}
 
       {/* ── PDF Preview Overlay (mirrors PaymentVerificationPage) ──────────── */}

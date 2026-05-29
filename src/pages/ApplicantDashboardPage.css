@@ -294,7 +294,26 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+/* ─── Applicant Dashboard Cards ───────────────────────── */
 
+.applicant-stat-card--clickable {
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.applicant-stat-card--clickable:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+  border-color: rgba(59, 130, 246, 0.22);
+}
+
+.applicant-stat-card__icon--blue {
+  background: rgba(59, 130, 246, 0.12);
+  color: #2563eb;
+}
 @media (max-width: 860px) {
   .applicant-dashboard-shell {
     padding: 16px;

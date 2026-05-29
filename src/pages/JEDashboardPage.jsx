@@ -13,7 +13,8 @@ import {
   Search,
   FileText,
   Download,
-  X,
+  FileCheck,
+Settings2,  X,
 } from "lucide-react";
 import {
   createOfficerUser,
@@ -1395,8 +1396,57 @@ const handleDashboardHomeClick = () => {
           </header>
 
 {showDashboardHome && !shouldShowCreateUserForm ? (
-              <section className="officer-dashboard-stats">
-              
+<section className="je-dashboard-cards"> 
+  <div
+  className="je-dashboard-card"
+  onClick={() => navigate("/je-application-received")}
+>
+  <div className="je-dashboard-card__icon je-dashboard-card__icon--blue">
+    <FileText size={30} />
+  </div>
+
+  <h3 className="je-dashboard-card__title">
+    Application Received
+  </h3>
+
+  <p className="je-dashboard-card__description">
+    View applications forwarded from SE and upload site visit reports.
+  </p>
+</div>
+
+<div
+  className="je-dashboard-card"
+  onClick={() => navigate("/je-payment-verification")}
+>
+  <div className="je-dashboard-card__icon je-dashboard-card__icon--green">
+<FileCheck size={30} />
+  </div>
+
+  <h3 className="je-dashboard-card__title">
+    Payment Verification
+  </h3>
+
+  <p className="je-dashboard-card__description">
+    Verify uploaded payment receipts and review payment details.
+  </p>
+</div>
+
+<div
+  className="je-dashboard-card"
+  onClick={() => navigate("/je-update-connection")}
+>
+  <div className="je-dashboard-card__icon je-dashboard-card__icon--purple">
+<Settings2 size={30} />
+  </div>
+
+  <h3 className="je-dashboard-card__title">
+    Update Connection Details
+  </h3>
+
+  <p className="je-dashboard-card__description">
+    Update tapping and connection details after payment verification.
+  </p>
+</div>             
             </section>
           ) : null}
 
