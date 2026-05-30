@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { sessionChannel } from "../utils/sessionChannel";
+import { logoutOfficer } from "../api/api";
 
 const SESSION_TIMEOUT_MINUTES = Number(import.meta.env.VITE_SESSION_TIMEOUT_MINUTES) || 60;
 const SESSION_TIMEOUT_MS = SESSION_TIMEOUT_MINUTES * 60 * 1000;
@@ -34,10 +35,18 @@ function SessionWatcher() {
     return null;
   };
 
-  const forceLogout = (redirectTo) => {
-    localStorage.removeItem("officerSession");
-    localStorage.removeItem("applicantSession");
-    navigate(redirectTo, { replace: true });
+  const forceLogout = async (redirectTo, userId) => {
+    try {
+      if (userId) {
+        await logoutOfficer({ userId });
+      }
+    } catch (err) {
+      console.error("Auto logout API error:", err);
+    } finally {
+      localStorage.removeItem("officerSession");
+      localStorage.removeItem("applicantSession");
+      navigate(redirectTo, { replace: true });
+    }
   };
 
   const startPolling = () => {
@@ -54,7 +63,7 @@ function SessionWatcher() {
       const inactiveDuration = Date.now() - lastActivityRef.current;
       if (inactiveDuration >= SESSION_TIMEOUT_MS) {
         stopPolling();
-        forceLogout(currentSession.redirectTo);
+        forceLogout(currentSession.redirectTo, currentSession.id);
       }
     }, CHECK_INTERVAL_MS);
   };
