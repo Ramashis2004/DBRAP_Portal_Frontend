@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "axios";  
 
 const API = axios.create({
   baseURL: "http://localhost:5000/api"
@@ -365,11 +365,25 @@ formData.append("userId", userId || "");
   );
 };
 
+const addTokenToUrl = (url) => {
+  try {
+    const officerSession = JSON.parse(localStorage.getItem("officerSession"));
+    const applicantSession = JSON.parse(localStorage.getItem("applicantSession"));
+    const token = officerSession?.token || applicantSession?.token;
+    if (token) {
+      return `${url}?token=${encodeURIComponent(token)}`;
+    }
+  } catch (e) {
+    console.error("Error parsing session to get token:", e);
+  }
+  return url;
+};
+
 export const getSiteVisitReportUrl = (applicationId) =>
-  `${API.defaults.baseURL}/organisation/organisations/${applicationId}/site-visit-report`;
+  addTokenToUrl(`${API.defaults.baseURL}/organisation/organisations/${applicationId}/site-visit-report`);
 
 export const getOrganisationDocumentUrl = (applicationId, documentType) =>
-  `${API.defaults.baseURL}/organisation/organisations/${applicationId}/documents/${documentType}`;
+  addTokenToUrl(`${API.defaults.baseURL}/organisation/organisations/${applicationId}/documents/${documentType}`);
 
 // ── Applicant ─────────────────────────────────────────────────────────────────
 export const fetchApplicantApplicationCount = (userId) =>
@@ -396,7 +410,7 @@ export const verifyPaymentReceipt = (applicationId, action, remarks, userId) =>
   API.patch(`/payment-verification/${applicationId}/verify`, { action, remarks, userId });
 
 export const getMoneyReceiptUrl = (applicationId) =>
-  `${API.defaults.baseURL}/payment-verification/${applicationId}/money-receipt`;
+  addTokenToUrl(`${API.defaults.baseURL}/payment-verification/${applicationId}/money-receipt`);
 
 // ── Connection Details ────────────────────────────────────────────────────────
 export const fetchConnectionApplications = (blockCode) =>
@@ -452,4 +466,4 @@ export const uploadPaymentReceipt = (formData) =>
   });
 
 export const getReceiptUrl = (applicationId) =>
-  `${API.defaults.baseURL}/applicant-payment/receipt/${applicationId}`;
+  addTokenToUrl(`${API.defaults.baseURL}/applicant-payment/receipt/${applicationId}`);
