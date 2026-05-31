@@ -109,10 +109,10 @@ function RegisterForm() {
 
       console.error("OTP Error:", err);
       console.log("BYPASS: OTP is " + otp);
-      await swalWarning(
-        "SMS Gateway Error",
-        "Could not send OTP via SMS. Check the console for the OTP (testing mode)."
-      );
+      // await swalWarning(
+      //   "SMS Gateway Error",
+      //   "Could not send OTP via SMS. Check the console for the OTP (testing mode)."
+      // );
       setStep(2);
       setResendTimer(30);
     } finally {

@@ -160,7 +160,7 @@ console.log("OTP sent successfully. Mobile Number:", mobileNumber);
       console.error("OTP error:", error);
       console.log("BYPASS: OTP is " + otp);
       setIsOtpSent(true);
-      await swalWarning("OTP Generated", `SMS could not be sent. Use this OTP for testing: ${otp}`);
+    //  await swalWarning("OTP Generated", `SMS could not be sent. Use this OTP for testing: ${otp}`);
     } finally {
       setIsSubmitting(false);
     }

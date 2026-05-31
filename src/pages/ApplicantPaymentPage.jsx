@@ -70,7 +70,7 @@ const canUploadReceipt =
       try {
         const res = await fetchPaymentDetails(applicantSession.id);
         const data = res.data?.data || null;
-        console.log("Payment details response:", res.data);
+        //console.log("Payment details response:", res.data);
         setAppData(data);
 
         if (data?.amount) setAmount(String(data.amount));

@@ -320,7 +320,7 @@ if (!inspectionTime) {
     try {
       const uploadResponse = await uploadSiteVisitReport(uploadTargetApp.application_id, selectedReportFile, inspectionDate,
   inspectionTime,
-  remarks);
+  remarks,userId);
       const forwardedDivisionName =
         uploadTargetApp.division_name ||
         uploadResponse.data?.data?.division_name ||

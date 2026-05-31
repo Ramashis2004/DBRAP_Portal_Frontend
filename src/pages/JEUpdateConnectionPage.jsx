@@ -9,25 +9,26 @@ import {
   Settings,
   ShieldCheck,
   Users,
+  Search,
+  Pencil,
+  X,
+  LoaderCircle,
 } from "lucide-react";
 
 import {
   fetchOfficerDashboardConfig,
   logoutOfficer,
-  fetchJEPaymentBlocks,fetchConnectionApplications,
-  submitConnectionDetails
+  fetchJEPaymentBlocks,
+  fetchConnectionApplications,
+  submitConnectionDetails,
 } from "../api/api";
-
-import axios from "axios";
 
 import "./OfficerDashboardPage.css";
 import "./JEUpdateConnectionPage.css";
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-// ─── Initial form state ───────────────────────────────────────────────────────
 const initialForm = {
-  block_code: "",
-  application_id: "",
   typeOfConnectionRwss: "",
   nameOfProject: "",
   tappingPoint: "",
@@ -36,45 +37,49 @@ const initialForm = {
   meterMake: "",
 };
 
+const tableColumns = [
+  { label: "Application ID",    width: 150 },
+  { label: "Organisation Name", width: 190 },
+  { label: "Block",             width: 110 },
+  { label: "Village",           width: 120 },
+  { label: "Applicant Name",    width: 160 },
+  { label: "Connection Type",   width: 140 },
+  { label: "Action",            width: 130 },
+];
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
 function JEUpdateConnectionPage() {
   const navigate = useNavigate();
 
-  const [session, setSession]           = useState(null);
+  const [session,       setSession]       = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
-  const [blocks, setBlocks]             = useState([]);
-  const [activeMenuKey, setActiveMenuKey]     = useState("");
-  const [activeOptionKey, setActiveOptionKey] = useState("");
+  const [blocks,        setBlocks]        = useState([]);
+  const [applications,  setApplications]  = useState([]);
+  const [loadingApps,   setLoadingApps]   = useState(false);
+  const [isLoadingShell,setIsLoadingShell]= useState(true);
+  const [search,        setSearch]        = useState("");
+  const [activeMenuKey, setActiveMenuKey] = useState("");
+  const [activeOptionKey,setActiveOptionKey]=useState("");
 
-  const [applications, setApplications] = useState([]);
-  const [loadingApps, setLoadingApps]   = useState(false);
-  const [selectedApp, setSelectedApp]   = useState(null);
-  const [submitting, setSubmitting]     = useState(false);
-
-  const [form, setForm] = useState(initialForm);
+  // Modal state
+  const [modalApp,   setModalApp]   = useState(null); // selected app
+  const [form,       setForm]       = useState(initialForm);
+  const [submitting, setSubmitting] = useState(false);
 
   const user  = dashboardData?.user;
   const menus = dashboardData?.dashboard?.navigation?.menus || [];
-
-  // ─── Derived helpers ─────────────────────────────────────────────────────────
   const assignedBlock = blocks[0] || null;
 
-  /**
-   * Normalise the connection_type field coming from the DB.
-   * Treat anything that is NOT "single tap" (case-insensitive) as "multiple".
-   */
-  const connectionType = String(selectedApp?.type_of_connection || "").toLowerCase().trim();
+  // Derived from modal app
+  const connectionType = String(modalApp?.type_of_connection || "").toLowerCase().trim();
   const isSingleTap    = connectionType === "single tap";
 
-  // ─── Init ────────────────────────────────────────────────────────────────────
+  // ─── Init ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     const raw    = localStorage.getItem("officerSession");
     const parsed = raw ? JSON.parse(raw) : null;
-
-    if (!parsed?.id) {
-      navigate("/login");
-      return;
-    }
-
+    if (!parsed?.id) { navigate("/login"); return; }
     setSession(parsed);
 
     const init = async () => {
@@ -83,65 +88,52 @@ function JEUpdateConnectionPage() {
           fetchOfficerDashboardConfig(parsed.id),
           fetchJEPaymentBlocks(parsed.id),
         ]);
-
         const loadedBlocks = blocksRes.data || [];
         setDashboardData(dashboardRes.data);
         setBlocks(loadedBlocks);
 
-        if (!loadedBlocks.length) return;
-
-        // ✅ Keep block_code as the raw value from DB (string or number — don't coerce)
-        const blockCode = loadedBlocks[0].block_code;
-
-        setForm((prev) => ({ ...prev, block_code: blockCode }));
-
-        // ✅ Fetch applications for this block
-        await loadApplications(blockCode);
+        if (loadedBlocks.length) {
+          await loadApplications(loadedBlocks[0].block_code);
+        }
       } catch (err) {
         console.error("INIT ERROR:", err);
         Swal.fire("Error", "Failed to load page data. Please refresh.", "error");
+      } finally {
+        setIsLoadingShell(false);
       }
     };
 
     init();
   }, [navigate]);
 
-  // ─── Load applications for a given blockCode ─────────────────────────────────
-const loadApplications = async (blockCode) => {
-  setLoadingApps(true);
-  try {
-    const appRes = await fetchConnectionApplications(blockCode);
-    console.log("API response:", appRes.data); // should show { data: [...] }
-
-    // ✅ appRes.data.data because backend sends { data: rows }
-    const list = Array.isArray(appRes.data?.data) ? appRes.data.data : [];
-    console.log("Applications list:", list); // should show array with CA369700007
-
-    setApplications(list);
-  } catch (err) {
-    console.error("Failed to load applications:", err);
-    setApplications([]);
-  } finally {
-    setLoadingApps(false);
-  }
-};
-  // ─── Sidebar handlers ─────────────────────────────────────────────────────────
-  const handleMenuClick = (menuKey) => {
-    setActiveMenuKey(menuKey === activeMenuKey ? "" : menuKey);
-    setActiveOptionKey("");
+  // ─── Load applications ─────────────────────────────────────────────────────
+  const loadApplications = async (blockCode) => {
+    setLoadingApps(true);
+    try {
+      const appRes = await fetchConnectionApplications(blockCode);
+      const list   = Array.isArray(appRes.data?.data) ? appRes.data.data : [];
+      setApplications(list);
+    } catch (err) {
+      console.error("Failed to load applications:", err);
+      setApplications([]);
+    } finally {
+      setLoadingApps(false);
+    }
   };
 
+  // ─── Sidebar ───────────────────────────────────────────────────────────────
+  const handleMenuClick   = (menuKey) => setActiveMenuKey(menuKey === activeMenuKey ? "" : menuKey);
   const handleOptionClick = (option) => {
     const label = option.label.toLowerCase();
-    if (label.includes("application")) navigate("/je-application-received");
-     if (label.includes("payment verification")) navigate("/je-payment-verification");
-    if (label.includes("connection"))  navigate("/je-update-connection");
+    if (label.includes("application"))          navigate("/je-application-received");
+    if (label.includes("payment verification")) navigate("/je-payment-verification");
+    if (label.includes("connection"))           navigate("/je-update-connection");
     setActiveOptionKey(option.key);
   };
 
-  // ─── Logout ───────────────────────────────────────────────────────────────────
+  // ─── Logout ────────────────────────────────────────────────────────────────
   const handleLogout = async () => {
-const res = await Swal.fire({
+    const res = await Swal.fire({
       title: "Logout?",
       text: "Do you want to logout from this account?",
       icon: "warning",
@@ -149,46 +141,34 @@ const res = await Swal.fire({
       confirmButtonText: "OK",
       cancelButtonText: "Cancel",
       reverseButtons: true,
-    });    if (!res.isConfirmed) return;
+    });
+    if (!res.isConfirmed) return;
     await logoutOfficer({ userId: session.id });
     localStorage.removeItem("officerSession");
     navigate("/login");
   };
 
-  // ─── Application selection ────────────────────────────────────────────────────
-  const handleApplicationChange = (e) => {
-    const applicationId = e.target.value;
-
-    const app = applications.find(
-      (a) => String(a.application_id) === String(applicationId)
-    );
-
-    setSelectedApp(app || null);
-
-    // Reset connection-specific fields when switching application
-    setForm((prev) => ({
-      ...prev,
-      application_id:       applicationId,
-      typeOfConnectionRwss: "",
-      nameOfProject:        "",
-      tappingPoint:         "",
-      meterId:              "",
-      initialMeterReading:  "",
-      meterMake:            "",
-    }));
+  // ─── Open modal ────────────────────────────────────────────────────────────
+  const openModal = (app) => {
+    setModalApp(app);
+    setForm(initialForm);
   };
 
-  // ─── Form field change ────────────────────────────────────────────────────────
+  const closeModal = () => {
+    setModalApp(null);
+    setForm(initialForm);
+  };
+
+  // ─── Form field change ─────────────────────────────────────────────────────
   const handleFieldChange = (field) => (e) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
-  // ─── Submit ───────────────────────────────────────────────────────────────────
+  // ─── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!modalApp) return;
 
-    if (!selectedApp) return;
-
-    // ── Validation ──
+    // Validation
     if (isSingleTap) {
       if (!form.nameOfProject.trim() || !form.tappingPoint.trim()) {
         Swal.fire("Validation", "Please fill in Name of Project and Tapping Point.", "warning");
@@ -215,56 +195,65 @@ const res = await Swal.fire({
 
     setSubmitting(true);
 
+    // Capture block code before we close the modal (which clears modalApp)
+    const blockCode = assignedBlock?.block_code || blocks[0]?.block_code;
+
+    const payload = {
+      applicationId:        modalApp.application_id,
+      typeOfConnectionRwss: isSingleTap ? "Unmetered" : form.typeOfConnectionRwss,
+      nameOfProject:        form.nameOfProject   || null,
+      tappingPoint:         form.tappingPoint    || null,
+      meterId:              form.meterId         || null,
+      initialMeterReading:  form.initialMeterReading || null,
+      meterMake:            form.meterMake       || null,
+      applicationStatus:    "CONNECTION_DETAILS_UPDATED",
+        officerId:            session?.id || null,   
+
+    };
+
     try {
-      const payload = {
-        applicationId:        selectedApp.application_id,
-        // Single tap is always Unmetered
-        typeOfConnectionRwss: isSingleTap ? "Unmetered" : form.typeOfConnectionRwss,
-        nameOfProject:        form.nameOfProject   || null,
-        tappingPoint:         form.tappingPoint    || null,
-        meterId:              form.meterId         || null,
-        initialMeterReading:  form.initialMeterReading || null,
-        meterMake:            form.meterMake       || null,
-        /*
-         * ✅ Tell the backend to:
-         *   • set application_status = 'CONNECTION_DETAILS_UPDATED'
-         *   • set connection_details_updated_on = NOW()
-         * in the organisation table
-         */
-        applicationStatus:    "CONNECTION_DETAILS_UPDATED",
-      };
-
-      console.log("Submitting payload:", payload);
-
       await submitConnectionDetails(payload);
 
+      // ✅ Close modal FIRST so Swal isn't trapped behind the overlay
+      closeModal();
+
       await Swal.fire("Success", "Connection details updated successfully!", "success");
-
-      // Reset form after success
-      setSelectedApp(null);
-      setForm((prev) => ({
-        ...initialForm,
-        block_code: prev.block_code,
-      }));
-
-      // Reload applications list (the submitted one should no longer appear
-      // once your backend filters by PAYMENT_RECEIPT_VERIFIED)
-      await loadApplications(form.block_code);
+      await loadApplications(blockCode);
     } catch (err) {
       console.error("Submit error:", err);
-      Swal.fire(
-        "Error",
-        err?.response?.data?.message || "Failed to update. Please try again.",
-        "error"
-      );
+      setSubmitting(false);
+      Swal.fire("Error", err?.response?.data?.message || "Failed to update. Please try again.", "error");
     } finally {
+      // Only runs on success path (error path sets it above before Swal)
       setSubmitting(false);
     }
   };
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // RENDER
-  // ─────────────────────────────────────────────────────────────────────────────
+  // ─── Filtered rows ─────────────────────────────────────────────────────────
+  const filtered = applications.filter((app) => {
+    const q = search.toLowerCase();
+    return (
+      app.application_id?.toLowerCase().includes(q) ||
+      app.organisation_name?.toLowerCase().includes(q) ||
+      app.block?.toLowerCase().includes(q) ||
+      app.village?.toLowerCase().includes(q) ||
+      app.name?.toLowerCase().includes(q)
+    );
+  });
+
+  // ─── Shell guard ───────────────────────────────────────────────────────────
+  if (isLoadingShell) {
+    return (
+      <div className="officer-dashboard-page">
+        <div className="officer-dashboard-loading">
+          <LoaderCircle size={28} className="officer-dashboard-loading__icon" />
+          <span>Loading dashboard...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="officer-dashboard-page">
       <div className="officer-dashboard-shell">
@@ -272,9 +261,7 @@ const res = await Swal.fire({
         {/* ── SIDEBAR ── */}
         <aside className="officer-dashboard-sidebar">
           <div className="officer-dashboard-sidebar__brand">
-            <div className="officer-dashboard-brand__icon">
-              <Droplet size={22} />
-            </div>
+            <div className="officer-dashboard-brand__icon"><Droplet size={22} /></div>
             <div>
               <span>DBRAP Portal</span>
               <strong>{user?.roleName || "JE"} Workspace</strong>
@@ -282,7 +269,6 @@ const res = await Swal.fire({
           </div>
 
           <nav className="officer-dashboard-nav">
-            {/* Dashboard link */}
             <div className="officer-dashboard-nav__group">
               <button
                 type="button"
@@ -290,13 +276,11 @@ const res = await Swal.fire({
                 onClick={() => navigate("/je-dashboard")}
               >
                 <div className="officer-dashboard-nav__item-copy">
-                  <ShieldCheck size={18} />
-                  <span>Dashboard</span>
+                  <ShieldCheck size={18} /><span>Dashboard</span>
                 </div>
               </button>
             </div>
 
-            {/* Dynamic menus */}
             {menus.map((item) => {
               const isActive = item.key === activeMenuKey;
               return (
@@ -307,21 +291,17 @@ const res = await Swal.fire({
                     onClick={() => handleMenuClick(item.key)}
                   >
                     <div className="officer-dashboard-nav__item-copy">
-                      <Users size={18} />
-                      <span>{item.label}</span>
+                      <Users size={18} /><span>{item.label}</span>
                     </div>
                     {isActive ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                   </button>
-
                   {isActive && item.options.length > 0 && (
                     <div className="officer-dashboard-nav__options">
                       {item.options.map((option) => (
                         <button
                           key={option.key}
                           type="button"
-                          className={`officer-dashboard-nav__option ${
-                            option.key === activeOptionKey ? "is-active" : ""
-                          }`}
+                          className={`officer-dashboard-nav__option ${option.key === activeOptionKey ? "is-active" : ""}`}
                           onClick={() => handleOptionClick(option)}
                         >
                           {option.label}
@@ -342,9 +322,7 @@ const res = await Swal.fire({
         </aside>
 
         {/* ── MAIN ── */}
-        <main className="officer-dashboard-main je-update-conn-main">
-
-          {/* HEADER */}
+        <main className="officer-dashboard-main">
           <header className="officer-dashboard-header">
             <div className="officer-dashboard-header__copy">
               <h1>Update Connection Details</h1>
@@ -354,95 +332,328 @@ const res = await Swal.fire({
                 <span>Logged in as</span>
                 <strong>{user?.loginId}</strong>
               </div>
-              <button
-                type="button"
-                className="officer-dashboard-logout"
-                onClick={handleLogout}
-              >
-                <LogOut size={18} />
-                Logout
+              <button type="button" className="officer-dashboard-logout" onClick={handleLogout}>
+                <LogOut size={18} /> Logout
               </button>
             </div>
           </header>
 
-          {/* CONTENT */}
-          <section className="payment-card je-update-conn-panel">
-            <div className="payment-card__header je-update-conn-panel__header">
-              <div className="je-update-conn-panel__icon">
-                <Settings size={22} />
+          {/* ── TABLE SECTION ── */}
+          <section style={{ padding: "24px", width: "100%", boxSizing: "border-box" }}>
+
+            {/* Section header */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              marginBottom: "20px", flexWrap: "wrap", gap: "12px",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                <Settings size={20} style={{ color: "#b45309" }} />
+                <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, color: "#1e293b" }}>
+                  Connection Applications
+                </h2>
+                <span style={{
+                  background: "#fef3c7", color: "#92400e", borderRadius: "999px",
+                  padding: "2px 10px", fontSize: "0.78rem", fontWeight: 600,
+                }}>
+                  {filtered.length}
+                </span>
+                {assignedBlock && (
+                  <span style={{
+                    background: "#e0f2fe", color: "#0369a1", borderRadius: "999px",
+                    padding: "2px 10px", fontSize: "0.78rem", fontWeight: 600,
+                  }}>
+                    Block: {assignedBlock.block_name}
+                  </span>
+                )}
               </div>
-              <div>
-                <h2>Connection Details</h2>
-                <p>Select application and update connection</p>
+
+              {/* Search */}
+              <div style={{ position: "relative" }}>
+                <Search size={15} style={{
+                  position: "absolute", left: "10px",
+                  top: "50%", transform: "translateY(-50%)", color: "#94a3b8",
+                }} />
+                <input
+                  type="text"
+                  placeholder="Search applications…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  style={{
+                    paddingLeft: "32px", paddingRight: "12px",
+                    paddingTop: "8px", paddingBottom: "8px",
+                    border: "1px solid #e2e8f0", borderRadius: "8px",
+                    fontSize: "0.85rem", width: "220px",
+                    background: "#fff", color: "#1e293b", outline: "none",
+                  }}
+                />
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="je-update-conn-form-grid">
-
-              {/* ── Block (auto-assigned, read-only) ── */}
-              <div className="je-update-conn-field">
-                <label>
-                  <span>Block</span>
-                  <select value={form.block_code} disabled>
-                    <option value={form.block_code}>
-                      {assignedBlock?.block_name || form.block_code || "Assigned block"}
-                    </option>
-                  </select>
-                </label>
+            {/* Table */}
+            {loadingApps ? (
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "40px", color: "#666" }}>
+                <LoaderCircle size={20} style={{ animation: "spin 1s linear infinite" }} />
+                <span>Loading applications…</span>
               </div>
+            ) : (
+              <div style={{
+                overflowX: "auto", borderRadius: "12px",
+                border: "1px solid #e2e8f0", background: "#fff",
+              }}>
+                <table style={{
+                  width: "100%", minWidth: "900px", borderCollapse: "collapse",
+                  fontSize: "0.85rem", tableLayout: "fixed",
+                }}>
+                  <thead>
+                    <tr style={{ background: "#1e293b", color: "#fff" }}>
+                      {tableColumns.map((col) => (
+                        <th
+                          key={col.label}
+                          style={{
+                            width: `${col.width}px`, padding: "12px 14px",
+                            textAlign: "left", fontWeight: 600,
+                            fontSize: "0.78rem", letterSpacing: "0.04em", whiteSpace: "nowrap",
+                          }}
+                        >
+                          {col.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.length === 0 ? (
+                      <tr>
+                        <td colSpan={tableColumns.length} style={{ padding: "40px", textAlign: "center", color: "#94a3b8" }}>
+                          No applications pending for connection update.
+                        </td>
+                      </tr>
+                    ) : (
+                      filtered.map((app, index) => (
+                        <tr
+                          key={app.application_id}
+                          style={{
+                            background: index % 2 === 0 ? "#fff" : "#f8fafc",
+                            borderBottom: "1px solid #f1f5f9",
+                            transition: "background 0.15s",
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.background = "#fef9f0")}
+                          onMouseLeave={(e) => (e.currentTarget.style.background = index % 2 === 0 ? "#fff" : "#f8fafc")}
+                        >
+                          {/* Application ID */}
+                          <td style={{ padding: "12px 16px", whiteSpace: "nowrap" }}>
+                            <span style={{
+                              background: "#fef3c7", color: "#92400e", borderRadius: "6px",
+                              padding: "3px 8px", fontWeight: 600, fontSize: "0.78rem",
+                              fontFamily: "monospace",
+                            }}>
+                              {app.application_id}
+                            </span>
+                          </td>
 
-              {/* ── Application ID ── */}
-              <div className="je-update-conn-field">
-                <label>
-                  <span>Application ID</span>
-                  <select
-                    value={form.application_id}
-                    onChange={handleApplicationChange}
-                    disabled={!form.block_code || loadingApps}
-                  >
-                    <option value="">
-                      {loadingApps
-                        ? "Loading…"
-                        : applications.length === 0
-                        ? "No applications found"
-                        : "Select Application ID"}
-                    </option>
+                          <td style={{ padding: "12px 16px", fontWeight: 500, color: "#1e293b" }}>
+                            {app.organisation_name || "—"}
+                          </td>
+                          <td style={{ padding: "12px 16px", color: "#475569" }}>{app.block || "—"}</td>
+                          <td style={{ padding: "12px 16px", color: "#475569" }}>{app.village || "—"}</td>
+                          <td style={{ padding: "12px 16px", color: "#475569" }}>{app.name || "—"}</td>
 
-                    {applications.map((app) => (
-                      <option key={app.application_id} value={app.application_id}>
-                        {app.application_id}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                          {/* Connection Type */}
+                          <td style={{ padding: "12px 16px" }}>
+                            <span style={{
+                              background: app.type_of_connection?.toLowerCase() === "single tap" ? "#dcfce7" : "#dbeafe",
+                              color:      app.type_of_connection?.toLowerCase() === "single tap" ? "#166534" : "#1e40af",
+                              borderRadius: "999px", padding: "3px 10px",
+                              fontSize: "0.75rem", fontWeight: 600,
+                            }}>
+                              {app.type_of_connection || "—"}
+                            </span>
+                          </td>
+
+                          {/* Action */}
+                          <td style={{ padding: "12px 16px" }}>
+                            <button
+                              onClick={() => openModal(app)}
+                              className="juc-update-btn"
+                            >
+                              <Pencil size={13} />
+                              Update
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
+            )}
+          </section>
+        </main>
+      </div>
 
-              {/* ── Step 2: show fields only after an application is selected ── */}
-              {selectedApp && (
+      {/* ── UPDATE MODAL ── */}
+      {modalApp && (
+        <div className="juc-modal-overlay">
+          <div className="juc-modal">
+
+            {/* Modal header */}
+            <div className="juc-modal__header">
+              <div className="juc-modal__header-left">
+                <div className="juc-modal__icon">
+                  <Settings size={20} />
+                </div>
+                <div>
+                  <p className="juc-modal__label">Update Connection Details</p>
+                  <h3 className="juc-modal__title">
+                    <span className="juc-modal__app-id">{modalApp.application_id}</span>
+                  </h3>
+                  <p className="juc-modal__subtitle">{modalApp.organisation_name}</p>
+                </div>
+              </div>
+              <button className="juc-modal__close" onClick={closeModal} title="Close">
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* App summary strip */}
+            <div className="juc-modal__summary">
+              <div className="juc-modal__summary-item">
+                <span className="juc-modal__summary-label">Block</span>
+                <span className="juc-modal__summary-value">{modalApp.block || "—"}</span>
+              </div>
+              <div className="juc-modal__summary-item">
+                <span className="juc-modal__summary-label">Village</span>
+                <span className="juc-modal__summary-value">{modalApp.village || "—"}</span>
+              </div>
+              <div className="juc-modal__summary-item">
+                <span className="juc-modal__summary-label">Applicant</span>
+                <span className="juc-modal__summary-value">{modalApp.name || "—"}</span>
+              </div>
+              <div className="juc-modal__summary-item">
+                <span className="juc-modal__summary-label">Connection Type</span>
+                <span
+                  className="juc-modal__summary-badge"
+                  style={{
+                    background: isSingleTap ? "#dcfce7" : "#dbeafe",
+                    color:      isSingleTap ? "#166534" : "#1e40af",
+                  }}
+                >
+                  {modalApp.type_of_connection || "—"}
+                </span>
+              </div>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} className="juc-modal__form">
+
+              {/* ── SINGLE TAP → always Unmetered ── */}
+              {isSingleTap && (
                 <>
-                  {/* ════════════════════════════════════════
-                      SINGLE TAP  →  always Unmetered
-                  ════════════════════════════════════════ */}
-                  {isSingleTap && (
+                  <div className="juc-form-field">
+                    <label>
+                      <span>Type of Connection (RWSS)</span>
+                      <input value="Unmetered" readOnly className="juc-form-input juc-form-input--readonly" />
+                    </label>
+                  </div>
+
+                  <div className="juc-form-field">
+                    <label>
+                      <span>Name of Project <em>*</em></span>
+                      <input
+                        className="juc-form-input"
+                        placeholder="Enter project name"
+                        value={form.nameOfProject}
+                        onChange={handleFieldChange("nameOfProject")}
+                        required
+                      />
+                    </label>
+                  </div>
+
+                  <div className="juc-form-field">
+                    <label>
+                      <span>Tapping Point <em>*</em></span>
+                      <input
+                        className="juc-form-input"
+                        placeholder="Enter tapping point"
+                        value={form.tappingPoint}
+                        onChange={handleFieldChange("tappingPoint")}
+                        required
+                      />
+                    </label>
+                  </div>
+                </>
+              )}
+
+              {/* ── MULTIPLE TAP → Metered or Unmetered ── */}
+              {!isSingleTap && (
+                <>
+                  <div className="juc-form-field">
+                    <label>
+                      <span>Type of Connection (RWSS) <em>*</em></span>
+                      <select
+                        className="juc-form-input"
+                        value={form.typeOfConnectionRwss}
+                        onChange={handleFieldChange("typeOfConnectionRwss")}
+                        required
+                      >
+                        <option value="">— Select —</option>
+                        <option value="Metered">Metered</option>
+                        <option value="Unmetered">Unmetered</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  {form.typeOfConnectionRwss === "Metered" && (
                     <>
-                      {/* Type of Connection — auto "Unmetered", read-only */}
-                      <div className="je-update-conn-field">
+                      <div className="juc-form-field">
                         <label>
-                          <span>Type of Connection (RWSS)</span>
+                          <span>Meter ID <em>*</em></span>
                           <input
-                            value="Unmetered"
-                            readOnly
-                            className="je-update-conn-input--readonly"
+                            className="juc-form-input"
+                            placeholder="Enter meter ID"
+                            value={form.meterId}
+                            onChange={handleFieldChange("meterId")}
+                            required
                           />
                         </label>
                       </div>
 
-                      {/* Name of Project */}
-                      <div className="je-update-conn-field">
+                      <div className="juc-form-field">
                         <label>
-                          <span>Name of Project</span>
+                          <span>Initial Meter Reading <em>*</em></span>
                           <input
-                            className="je-update-conn-input"
+                            type="number"
+                            min="0"
+                            className="juc-form-input"
+                            placeholder="Enter initial reading"
+                            value={form.initialMeterReading}
+                            onChange={handleFieldChange("initialMeterReading")}
+                            required
+                          />
+                        </label>
+                      </div>
+
+                      <div className="juc-form-field">
+                        <label>
+                          <span>Meter Make <em>*</em></span>
+                          <input
+                            className="juc-form-input"
+                            placeholder="Enter meter make / brand"
+                            value={form.meterMake}
+                            onChange={handleFieldChange("meterMake")}
+                            required
+                          />
+                        </label>
+                      </div>
+                    </>
+                  )}
+
+                  {form.typeOfConnectionRwss === "Unmetered" && (
+                    <>
+                      <div className="juc-form-field">
+                        <label>
+                          <span>Name of Project <em>*</em></span>
+                          <input
+                            className="juc-form-input"
                             placeholder="Enter project name"
                             value={form.nameOfProject}
                             onChange={handleFieldChange("nameOfProject")}
@@ -451,12 +662,11 @@ const res = await Swal.fire({
                         </label>
                       </div>
 
-                      {/* Tapping Point */}
-                      <div className="je-update-conn-field">
+                      <div className="juc-form-field">
                         <label>
-                          <span>Tapping Point</span>
+                          <span>Tapping Point <em>*</em></span>
                           <input
-                            className="je-update-conn-input"
+                            className="juc-form-input"
                             placeholder="Enter tapping point"
                             value={form.tappingPoint}
                             onChange={handleFieldChange("tappingPoint")}
@@ -466,125 +676,31 @@ const res = await Swal.fire({
                       </div>
                     </>
                   )}
-
-                  {/* ════════════════════════════════════════
-                      MORE THAN ONE TAP  →  Metered or Unmetered
-                  ════════════════════════════════════════ */}
-                  {!isSingleTap && (
-                    <>
-                      {/* Type of Connection dropdown */}
-                      <div className="je-update-conn-field">
-                        <label>
-                          <span>Type of Connection (RWSS)</span>
-                          <select
-                            className="je-update-conn-select"
-                            value={form.typeOfConnectionRwss}
-                            onChange={handleFieldChange("typeOfConnectionRwss")}
-                            required
-                          >
-                            <option value="">— Select —</option>
-                            <option value="Metered">Metered</option>
-                            <option value="Unmetered">Unmetered</option>
-                          </select>
-                        </label>
-                      </div>
-
-                      {/* ── Metered fields ── */}
-                      {form.typeOfConnectionRwss === "Metered" && (
-                        <>
-                          <div className="je-update-conn-field">
-                            <label>
-                              <span>Meter ID</span>
-                              <input
-                                className="je-update-conn-input"
-                                placeholder="Enter meter ID"
-                                value={form.meterId}
-                                onChange={handleFieldChange("meterId")}
-                                required
-                              />
-                            </label>
-                          </div>
-
-                          <div className="je-update-conn-field">
-                            <label>
-                              <span>Initial Meter Reading</span>
-                              <input
-                                type="number"
-                                min="0"
-                                className="je-update-conn-input"
-                                placeholder="Enter initial reading"
-                                value={form.initialMeterReading}
-                                onChange={handleFieldChange("initialMeterReading")}
-                                required
-                              />
-                            </label>
-                          </div>
-
-                          <div className="je-update-conn-field">
-                            <label>
-                              <span>Meter Make</span>
-                              <input
-                                className="je-update-conn-input"
-                                placeholder="Enter meter make / brand"
-                                value={form.meterMake}
-                                onChange={handleFieldChange("meterMake")}
-                                required
-                              />
-                            </label>
-                          </div>
-                        </>
-                      )}
-
-                      {/* ── Unmetered fields ── */}
-                      {form.typeOfConnectionRwss === "Unmetered" && (
-                        <>
-                          <div className="je-update-conn-field">
-                            <label>
-                              <span>Name of Project</span>
-                              <input
-                                className="je-update-conn-input"
-                                placeholder="Enter project name"
-                                value={form.nameOfProject}
-                                onChange={handleFieldChange("nameOfProject")}
-                                required
-                              />
-                            </label>
-                          </div>
-
-                          <div className="je-update-conn-field">
-                            <label>
-                              <span>Tapping Point</span>
-                              <input
-                                className="je-update-conn-input"
-                                placeholder="Enter tapping point"
-                                value={form.tappingPoint}
-                                onChange={handleFieldChange("tappingPoint")}
-                                required
-                              />
-                            </label>
-                          </div>
-                        </>
-                      )}
-                    </>
-                  )}
-
-                  {/* ── Submit button ── */}
-                  <div className="je-update-conn-actions">
-                    <button
-                      type="submit"
-                      className="je-update-conn-btn je-update-conn-btn--primary"
-                      disabled={submitting}
-                    >
-                      {submitting ? "Submitting…" : "Submit Connection Details"}
-                    </button>
-                  </div>
                 </>
               )}
 
+              {/* Modal actions */}
+              <div className="juc-modal__actions">
+                <button
+                  type="button"
+                  className="juc-modal__btn juc-modal__btn--cancel"
+                  onClick={closeModal}
+                  disabled={submitting}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="juc-modal__btn juc-modal__btn--submit"
+                  disabled={submitting}
+                >
+                  {submitting ? "Submitting…" : "Submit Connection Details"}
+                </button>
+              </div>
             </form>
-          </section>
-        </main>
-      </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
