@@ -38,6 +38,8 @@ API.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+export const sendApplicantOtp = (mobile, otp) =>
+  API.post("/applicant-auth/send-otp", { mobile, otp });
 
 export const fetchPublicDashboardSummary = () => {
   return API.get("/public-dashboard/summary");

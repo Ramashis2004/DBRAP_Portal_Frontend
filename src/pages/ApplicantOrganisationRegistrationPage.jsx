@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState ,useRef  } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import { Download, X } from "lucide-react";
@@ -579,7 +579,7 @@ const [pdfPreview, setPdfPreview] = useState(null);
               </div>
             )}
 
-            {step === 2 && (
+            {/* {step === 2 && (
               <div className="applicant-org-panel">
                 <FileField name="property_proof"       label="Property Proof"       onChange={handleFileChange} existing={returnedApplication?.property_proof} />
                 <FileField name="registration_proof"   label="Registration Proof"   onChange={handleFileChange} existing={returnedApplication?.registration_proof} />
@@ -587,8 +587,16 @@ const [pdfPreview, setPdfPreview] = useState(null);
                 <FileField name="owner_indemnity_bond" label="Owner Indemnity Bond" onChange={handleFileChange} existing={returnedApplication?.owner_indemnity_bond} />
                 <FileField name="identity_proof"       label="Identity Proof"       onChange={handleFileChange} existing={returnedApplication?.identity_proof} />
               </div>
-            )}
-
+            )} */}
+{step === 2 && (
+  <div className="applicant-org-panel">
+    <FileField name="property_proof"       label="Property Proof"       onChange={handleFileChange} existing={returnedApplication?.property_proof}       selectedFile={files.property_proof} />
+    <FileField name="registration_proof"   label="Registration Proof"   onChange={handleFileChange} existing={returnedApplication?.registration_proof}   selectedFile={files.registration_proof} />
+    <FileField name="ownership_proof"      label="Ownership Proof"      onChange={handleFileChange} existing={returnedApplication?.ownership_proof}      selectedFile={files.ownership_proof} />
+    <FileField name="owner_indemnity_bond" label="Owner Indemnity Bond" onChange={handleFileChange} existing={returnedApplication?.owner_indemnity_bond} selectedFile={files.owner_indemnity_bond} />
+    <FileField name="identity_proof"       label="Identity Proof"       onChange={handleFileChange} existing={returnedApplication?.identity_proof}       selectedFile={files.identity_proof} />
+  </div>
+)}
             {step === 3 && (
               <div className="applicant-org-panel">
                 <Field label="Connection Type" required>
@@ -719,14 +727,59 @@ function Field({ label, required, children }) {
   );
 }
 
-function FileField({ name, label, onChange, existing }) {
+// function FileField({ name, label, onChange, existing }) {
+//   return (
+//     <label className="applicant-org-field">
+//       <RequiredLabel>{label}</RequiredLabel>
+//       <input type="file" name={name} accept=".pdf" onChange={onChange} />
+//       <small>{existing ? "Existing file will be kept if you do not upload a new PDF." : "Max size: 2MB. Only PDF files are allowed."}</small>
+//     </label>
+//   );
+// }
+
+function FileField({ name, label, onChange, existing, selectedFile }) {
+  const inputRef = useRef(null);
+
   return (
-    <label className="applicant-org-field">
-      <RequiredLabel>{label}</RequiredLabel>
-      <input type="file" name={name} accept=".pdf" onChange={onChange} />
-      <small>{existing ? "Existing file will be kept if you do not upload a new PDF." : "Max size: 2MB. Only PDF files are allowed."}</small>
-    </label>
+    <div className="applicant-org-field">
+      <span>
+        {label} <b className="applicant-org-required">*</b>
+      </span>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          style={{
+            padding: "5px 12px",
+            border: "1px solid #d1d5db",
+            borderRadius: "4px",
+            background: "#f9f9f9",
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+            fontSize: "0.9rem",
+          }}
+        >
+          Choose file
+        </button>
+        <span style={{ fontSize: "0.9rem", color: "#374151" }}>
+          {selectedFile ? selectedFile.name : "No file chosen"}
+        </span>
+        <input
+          ref={inputRef}
+          type="file"
+          name={name}
+          accept=".pdf"
+          onChange={onChange}
+          style={{ display: "none" }}
+        />
+      </div>
+      {existing && !selectedFile && (
+        <small style={{ color: "#2563eb" }}>
+          Existing file will be kept if you do not upload a new PDF.
+        </small>
+      )}
+      <small>Max size: 2MB. Only PDF files are allowed.</small> {/* ← always shown */}
+    </div>
   );
 }
-
 export default ApplicantOrganisationRegistrationPage;

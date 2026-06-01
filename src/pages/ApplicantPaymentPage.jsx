@@ -79,7 +79,7 @@ const canUploadReceipt =
           if (!isNaN(d)) setDateOfPayment(d.toISOString().slice(0, 10));
         }
       } catch (err) {
-        console.error("Load error:", err);
+        //console.error("Load error:", err);
         setAppData(null);
       } finally {
         setLoading(false);

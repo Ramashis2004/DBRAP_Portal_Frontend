@@ -145,7 +145,7 @@ export function CEDashboardApplicationCountCard({
         const response = await summaryFetcher(userId);
         setCount(Number(response.data?.totalApplications || 0));
       } catch (error) {
-        console.error("CE dashboard application summary failed:", error);
+        //console.error("CE dashboard application summary failed:", error);
         setCount(0);
       } finally {
         setIsLoading(false);
@@ -203,7 +203,7 @@ export function CEDashboardApplicationsDrilldown({
       setSelectedStatusLabel("");
       setApplications([]);
     } catch (err) {
-      console.error("CE circle report failed:", err);
+      //console.error("CE circle report failed:", err);
       setError(err.response?.data?.error || "Failed to load circle report.");
     } finally {
       setIsLoading(false);
@@ -230,7 +230,7 @@ export function CEDashboardApplicationsDrilldown({
       setApplications([]);
       setLevel("division");
     } catch (err) {
-      console.error("CE division report failed:", err);
+      //console.error("CE division report failed:", err);
       setError(err.response?.data?.error || "Failed to load division report.");
     } finally {
       setIsLoading(false);
@@ -250,7 +250,7 @@ export function CEDashboardApplicationsDrilldown({
       setApplications([]);
       setLevel("block");
     } catch (err) {
-      console.error("CE block report failed:", err);
+      //console.error("CE block report failed:", err);
       setError(err.response?.data?.error || "Failed to load block report.");
     } finally {
       setIsLoading(false);
@@ -271,7 +271,7 @@ export function CEDashboardApplicationsDrilldown({
       setApplications([]);
       setLevel("panchayat");
     } catch (err) {
-      console.error("CE panchayat report failed:", err);
+      //console.error("CE panchayat report failed:", err);
       setError(err.response?.data?.error || "Failed to load panchayat report.");
     } finally {
       setIsLoading(false);
@@ -295,7 +295,7 @@ export function CEDashboardApplicationsDrilldown({
       setSelectedStatusLabel(statusLabel || selectedStatusLabel);
       setLevel("applications");
     } catch (err) {
-      console.error("CE applications failed:", err);
+      //console.error("CE applications failed:", err);
       setError(err.response?.data?.error || "Failed to load applications.");
     } finally {
       setIsLoading(false);

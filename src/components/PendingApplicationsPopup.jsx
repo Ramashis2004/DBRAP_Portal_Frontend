@@ -19,7 +19,7 @@ function playNotificationSound() {
       osc.stop(ctx.currentTime + i * 0.13 + 0.28);
     });
   } catch (e) {
-    console.warn("Audio failed:", e);
+    //console.warn("Audio failed:", e);
   }
 }
 
@@ -51,7 +51,7 @@ export default function PendingApplicationsPopup({ session, dashboardReady }) {
         }
       })
       .catch((err) => {
-        console.error("[Popup] fetch failed:", err);
+        //console.error("[Popup] fetch failed:", err);
       });
   }, [dashboardReady, session]);
 

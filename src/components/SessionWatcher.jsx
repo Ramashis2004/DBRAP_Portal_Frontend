@@ -41,7 +41,7 @@ function SessionWatcher() {
         await logoutOfficer({ userId });
       }
     } catch (err) {
-      console.error("Auto logout API error:", err);
+      //console.error("Auto logout API error:", err);
     } finally {
       localStorage.removeItem("officerSession");
       localStorage.removeItem("applicantSession");

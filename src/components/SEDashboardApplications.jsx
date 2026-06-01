@@ -149,7 +149,7 @@ export function SEDashboardApplicationCountCard({ userId, onOpen }) {
         const response = await fetchSEDashboardApplicationSummary(userId);
         setCount(Number(response.data?.totalApplications || 0));
       } catch (error) {
-        console.error("SE dashboard application summary failed:", error);
+        //console.error("SE dashboard application summary failed:", error);
         setCount(0);
       } finally {
         setIsLoading(false);
@@ -213,7 +213,7 @@ const renderDocumentLink = (app, documentType, label = "View File") => {
         const response = await fetchSEDashboardApplications(userId);
         setApplications(Array.isArray(response.data) ? response.data : []);
       } catch (err) {
-        console.error("SE dashboard applications failed:", err);
+       // console.error("SE dashboard applications failed:", err);
         setError(err.response?.data?.error || "Failed to load applications.");
       } finally {
         setIsLoading(false);

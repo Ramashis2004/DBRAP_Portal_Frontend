@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -13,11 +14,10 @@ import {
   ShieldCheck,
   UserRound,
 } from "lucide-react";
-import axios from "axios";
 import Swal from "sweetalert2";
 import { checkApplicantLoginMobile, loginApplicant, loginApplicantWithPassword } from "../api/api";
 import "./ApplicantLoginPage.css";
-
+import { sendApplicantOtp } from "../api/api";
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const swalError   = (title, text) => Swal.fire({ icon: "error",   title, text, confirmButtonColor: "#3d1f0f" });
@@ -135,17 +135,21 @@ function ApplicantLoginPage() {
       otp = generateOTP();
       setSentOtp(otp);
 
-      const data = new FormData();
-      data.append("template_id",  "1007529288081313959");
-      data.append("phonenumber",  mobileNumber);
-      data.append("department_id","D047009");
-      data.append("action",       "sendOTPSMS");
-      data.append("source",       "ODIGOV");
-      data.append("sms_content",
-        `Your OTP for Gramsewa Nidhi Portal is ${otp}. Please do not share this with anyone. Panchayati Raj & Drinking Water Dept. - Govt. of Odisha`
-      );
-console.log("OTP sent successfully. Mobile Number:", mobileNumber);
-      await axios.post("https://govtsms.odisha.gov.in/api/api.php", data);
+//       const data = new FormData();
+//       data.append("template_id",  "1007529288081313959");
+//       data.append("phonenumber",  mobileNumber);
+//       data.append("department_id","D047009");
+//       data.append("action",       "sendOTPSMS");
+//       data.append("source",       "ODIGOV");
+//       data.append("sms_content",
+//         `Your OTP for Gramsewa Nidhi Portal is ${otp}. Please do not share this with anyone. Panchayati Raj & Drinking Water Dept. - Govt. of Odisha`
+//       );
+// console.log("OTP sent successfully. Mobile Number:", mobileNumber);
+//       await axios.post("https://govtsms.odisha.gov.in/api/api.php", data);
+
+//await axios.post("/api/applicant-auth/send-otp", { mobile: mobileNumber, otp });
+      await sendApplicantOtp(mobileNumber, otp);
+
       setIsOtpSent(true);
       await swalSuccess("OTP Sent", `OTP has been sent to ${mobileNumber}.`);
     } catch (error) {
@@ -157,8 +161,8 @@ console.log("OTP sent successfully. Mobile Number:", mobileNumber);
         await swalError("Unable to Send OTP", error.response.data.error);
         return;
       }
-      console.error("OTP error:", error);
-      console.log("BYPASS: OTP is " + otp);
+      //console.error("OTP error:", error);
+     // console.log("BYPASS: OTP is " + otp);
       setIsOtpSent(true);
     //  await swalWarning("OTP Generated", `SMS could not be sent. Use this OTP for testing: ${otp}`);
     } finally {

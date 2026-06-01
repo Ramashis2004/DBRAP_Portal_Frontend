@@ -55,7 +55,7 @@ export default function AEEStatusCards({ userId, onCardClick, onTotalClick }) {
     fetchAEEStatusCounts(userId)
       .then((res) => { if (!cancelled) setData(res.data); })
       .catch((err) => {
-        console.error("AEEStatusCards error:", err);
+       // console.error("AEEStatusCards error:", err);
         if (!cancelled) setError(err?.response?.data?.error || err?.message || "Failed to load application counts.");
       })
       .finally(() => { if (!cancelled) setIsLoading(false); });

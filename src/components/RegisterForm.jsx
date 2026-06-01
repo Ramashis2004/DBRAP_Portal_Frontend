@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { checkApplicantMobile, registerApplicant } from "../api/api";
-import axios from "axios";
 import Swal from "sweetalert2";
-
+import axios from "axios";
+import { sendApplicantOtp } from "../api/api";
 const swalSuccess = (title, text) =>
   Swal.fire({ icon: "success", title, text, confirmButtonColor: "#3d1f0f" });
 
@@ -86,18 +86,20 @@ function RegisterForm() {
       otp = generateOTP();
       setSentOtp(otp);
 
-      const data = new FormData();
-      data.append("template_id", "1007529288081313959");
-      data.append("phonenumber", mobileNumber);
-      data.append("department_id", "D047009");
-      data.append("action", "sendOTPSMS");
-      data.append("source", "ODIGOV");
-      data.append(
-        "sms_content",
-        `Your OTP for Gramsewa Nidhi Portal is ${otp}. Please do not share this with anyone. Panchayati Raj & Drinking Water Dept. - Govt. of Odisha`
-      );
-      console.log("OTP sent successfully. Mobile Number:", mobileNumber);
-      await axios.post("https://govtsms.odisha.gov.in/api/api.php", data);
+      // const data = new FormData();
+      // data.append("template_id", "1007529288081313959");
+      // data.append("phonenumber", mobileNumber);
+      // data.append("department_id", "D047009");
+      // data.append("action", "sendOTPSMS");
+      // data.append("source", "ODIGOV");
+      // data.append(
+      //   "sms_content",
+      //   `Your OTP for Gramsewa Nidhi Portal is ${otp}. Please do not share this with anyone. Panchayati Raj & Drinking Water Dept. - Govt. of Odisha`
+      // );
+      // console.log("OTP sent successfully. Mobile Number:", mobileNumber);
+      // await axios.post("https://govtsms.odisha.gov.in/api/api.php", data);
+      //await axios.post("/api/applicant-auth/send-otp", { mobile: mobileNumber, otp });
+await sendApplicantOtp(mobileNumber, otp);
       await swalSuccess("OTP Sent!", `OTP has been sent to ${mobileNumber}.`);
       setStep(2);
       setResendTimer(30);
@@ -107,8 +109,8 @@ function RegisterForm() {
         return;
       }
 
-      console.error("OTP Error:", err);
-      console.log("BYPASS: OTP is " + otp);
+      //console.error("OTP Error:", err);
+      //console.log("BYPASS: OTP is " + otp);
       // await swalWarning(
       //   "SMS Gateway Error",
       //   "Could not send OTP via SMS. Check the console for the OTP (testing mode)."
@@ -168,7 +170,7 @@ useEffect(() => {
 
       resetRegistrationForm();
     } catch (error) {
-      console.error(error);
+      //console.error(error);
       await swalError(
         "Registration Failed",
         error.response?.data?.error || "Something went wrong. Please try again."

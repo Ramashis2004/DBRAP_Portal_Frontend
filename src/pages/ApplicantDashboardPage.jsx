@@ -24,7 +24,7 @@ function ApplicantDashboardPage() {
         //console.log("API response:", response.data); // check this in browser console
         setApplicationCount(Number(response.data?.total ?? 0));
       } catch (error) {
-        console.error("Failed to fetch application count:", error);
+        //console.error("Failed to fetch application count:", error);
         setApplicationCount(0);
       }
     };

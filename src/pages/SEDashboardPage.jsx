@@ -49,7 +49,6 @@ const initializeDashboard = async () => {
     await loadDashboard(parsedSession.id);
     setDashboardReady(true);  // ← ADD THIS LINE
   } catch (error) {
-    console.error("Dashboard config load failed:", error);
     setErrorMessage(error.response?.data?.error || "Unable to load dashboard.");
   } finally {
     setIsLoading(false);
@@ -108,7 +107,6 @@ function ApplicationReceivedTable() {
         const response = await fetchOrganisations();
         setApplications(response.data);
       } catch (err) {
-        console.error(err);
         setError("Failed to load applications.");
       } finally {
         setIsLoading(false);
@@ -242,7 +240,6 @@ function ApplicationReceivedTable() {
         confirmButtonText: "OK",
       });
     } catch (error) {
-      console.error("Forward to JE failed:", error);
       await Swal.fire({
         title: "Failed",
         text: error.response?.data?.error || "Unable to forward application.",
@@ -568,7 +565,6 @@ const [statusFilter, setStatusFilter] = useState("all");
       const response = await getOfficerUsers();
       setUsers(response.data.users);
     } catch (error) {
-      console.error("Failed to load users:", error);
     } finally {
       setIsLoadingUsers(false);
     }
@@ -588,7 +584,6 @@ const [statusFilter, setStatusFilter] = useState("all");
               setDashboardReady(true);  // ← THIS IS THE CRITICAL FIX
 
       } catch (error) {
-        console.error("Dashboard config load failed:", error);
         setErrorMessage(error.response?.data?.error || "Unable to load dashboard.");
       } finally {
         setIsLoading(false);
@@ -603,7 +598,6 @@ const [statusFilter, setStatusFilter] = useState("all");
         const response = await fetchCircles();
         setCircles(response.data);
       } catch (error) {
-        console.error("Circle load failed:", error);
       } finally {
         setIsLoadingCircles(false);
       }
@@ -631,7 +625,6 @@ const [statusFilter, setStatusFilter] = useState("all");
     try {
       if (session?.id) await logoutOfficer({ userId: session.id });
     } catch (error) {
-      console.error("Logout failed:", error);
     } finally {
       localStorage.removeItem("officerSession");
       navigate("/login");

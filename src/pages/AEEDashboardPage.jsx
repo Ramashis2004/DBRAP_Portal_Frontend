@@ -118,7 +118,7 @@ function AEEDashboardPage() {
     fetchAEEDashboardApplications(session.id)
       .then((res) => setApplications(Array.isArray(res.data) ? res.data : []))
       .catch((err) => {
-        console.error("AEE dashboard applications failed:", err);
+        //console.error("AEE dashboard applications failed:", err);
         setError(err.response?.data?.error || "Failed to load applications.");
       })
       .finally(() => setIsLoadingApps(false));

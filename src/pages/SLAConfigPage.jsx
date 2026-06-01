@@ -56,7 +56,6 @@ function SLAConfigPage() {
         setSelectedStageName(rows[0].stageName);
       }
     } catch (error) {
-      console.error("SLA stages load failed:", error);
       setErrorMessage(error.response?.data?.error || "Unable to load SLA stages.");
     } finally {
       setIsLoading(false);
@@ -124,7 +123,6 @@ function SLAConfigPage() {
         showConfirmButton: false,
       });
     } catch (error) {
-      console.error("SLA save failed:", error);
       Swal.fire({
         title: "Save failed",
         text: error.response?.data?.error || "Unable to save SLA.",

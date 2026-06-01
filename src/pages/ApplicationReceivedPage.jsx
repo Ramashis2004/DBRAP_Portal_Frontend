@@ -209,7 +209,7 @@ function ApplicationReceivedPage() {
         const response = await fetchOfficerDashboardConfig(parsedSession.id);
         setDashboardData(response.data);
       } catch (error) {
-        console.error("Dashboard config load failed:", error);
+        //console.error("Dashboard config load failed:", error);
         setErrorMessage(error.response?.data?.error || "Unable to load dashboard.");
       } finally {
         setIsLoadingShell(false);
@@ -231,7 +231,7 @@ function ApplicationReceivedPage() {
         );
         setApplications(response.data);
       } catch (error) {
-        console.error("Application load failed:", error);
+        //console.error("Application load failed:", error);
         setApplicationError("Failed to load applications.");
       } finally {
         setIsLoadingApplications(false);
@@ -257,7 +257,7 @@ function ApplicationReceivedPage() {
     try {
       if (session?.id) await logoutOfficer({ userId: session.id });
     } catch (error) {
-      console.error("Logout failed:", error);
+     // console.error("Logout failed:", error);
     } finally {
       localStorage.removeItem("officerSession");
       navigate("/login");
@@ -336,7 +336,7 @@ const handleOptionClick = (option) => {
         confirmButtonText: "OK",
       });
     } catch (error) {
-      console.error("Forward to JE failed:", error);
+      //console.error("Forward to JE failed:", error);
       await Swal.fire({
         title: "Failed",
         text: error.response?.data?.error || "Unable to forward application.",
@@ -379,7 +379,7 @@ const handleOptionClick = (option) => {
         confirmButtonText: "OK",
       });
     } catch (error) {
-      console.error("Approval failed:", error);
+      //console.error("Approval failed:", error);
       await Swal.fire({
         title: "Failed",
         text: error.response?.data?.error || "Unable to approve application.",

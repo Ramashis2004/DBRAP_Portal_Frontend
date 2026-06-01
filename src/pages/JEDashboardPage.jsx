@@ -150,7 +150,7 @@ const [remarks, setRemarks] = useState("");
         const response = await fetchApplicationReceivedApplications(userId, applicationStatus);
         setApplications(response.data);
       } catch (err) {
-        console.error(err);
+        //console.error(err);
         setError("Failed to load forwarded applications.");
       } finally {
         setIsLoading(false);
@@ -344,7 +344,7 @@ if (!inspectionTime) {
         confirmButtonText: "OK",
       });
     } catch (err) {
-      console.error("Site visit upload failed:", err);
+      //console.error("Site visit upload failed:", err);
       setUploadError(err.response?.data?.error || "Unable to upload site visit report.");
     } finally {
       setIsUploading(false);
@@ -954,7 +954,7 @@ const handleDashboardHomeClick = () => {
       const response = await getOfficerUsers();
       setUsers(response.data.users);
     } catch (error) {
-      console.error("Failed to load users:", error);
+      //console.error("Failed to load users:", error);
     } finally {
       setIsLoadingUsers(false);
     }
@@ -975,7 +975,7 @@ const handleDashboardHomeClick = () => {
       try {
         await loadDashboard(parsedSession.id);
       } catch (error) {
-        console.error("Dashboard config load failed:", error);
+        //console.error("Dashboard config load failed:", error);
         setErrorMessage(error.response?.data?.error || "Unable to load dashboard.");
       } finally {
         setIsLoading(false);
@@ -991,7 +991,7 @@ const handleDashboardHomeClick = () => {
         const response = await fetchCircles();
         setCircles(response.data);
       } catch (error) {
-        console.error("Circle load failed:", error);
+       // console.error("Circle load failed:", error);
       } finally {
         setIsLoadingCircles(false);
       }
@@ -1026,7 +1026,7 @@ const handleDashboardHomeClick = () => {
         await logoutOfficer({ userId: session.id });
       }
     } catch (error) {
-      console.error("Logout failed:", error);
+      //console.error("Logout failed:", error);
     } finally {
       localStorage.removeItem("officerSession");
       navigate("/login");
@@ -1186,7 +1186,7 @@ const handleDashboardHomeClick = () => {
       const response = await fetchDistrictsByCircle(value);
       setDistricts(response.data);
     } catch (error) {
-      console.error("District load failed:", error);
+      //console.error("District load failed:", error);
       setFormMessage("Unable to load districts for the selected circle.");
     } finally {
       setIsLoadingDistricts(false);
@@ -1221,7 +1221,7 @@ const handleDashboardHomeClick = () => {
       const response = await fetchDivisionsByDistrict(value);
       setDivisions(response.data);
     } catch (error) {
-      console.error("Division load failed:", error);
+      //console.error("Division load failed:", error);
       setFormMessage("Unable to load divisions for the selected district.");
     } finally {
       setIsLoadingDivisions(false);
@@ -1253,7 +1253,7 @@ const handleDashboardHomeClick = () => {
       const response = await fetchBlocksByDivision(value);
       setBlocks(response.data);
     } catch (error) {
-      console.error("Block load failed:", error);
+      //console.error("Block load failed:", error);
       setFormMessage("Unable to load blocks for the selected division.");
     } finally {
       setIsLoadingBlocks(false);
