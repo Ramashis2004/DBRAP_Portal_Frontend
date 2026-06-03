@@ -18,7 +18,7 @@ const toPositiveIntOrEmpty = (value) => {
   return intValue > 0 ? String(intValue) : "";
 };
 
-function SLAConfigPage() {
+function SLAConfigPage({ inline = false }) {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -158,14 +158,12 @@ function SLAConfigPage() {
 
   return (
     <div className="sla-config-page">
-      <header className="sla-config-header">
-        <button type="button" className="sla-config-header__back" onClick={() => navigate("/dashboard")}
-        >
-          <ArrowLeft size={18} />
-          Back
-        </button>
-        <h1>SLA Config</h1>
-      </header>
+        {!inline && (               // ← hide header when embedded
+        <header className="sla-config-header">
+          <button onClick={() => navigate("/dashboard")}>...</button>
+          <h1>SLA Config</h1>
+        </header>
+      )}
 
       <div className="sla-config-shell">
         <section className="sla-config-stage-list">

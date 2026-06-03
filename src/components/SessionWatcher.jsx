@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { sessionChannel } from "../utils/sessionChannel";
 import { logoutOfficer } from "../api/api";
 
@@ -10,6 +10,7 @@ const LOGIN_GRACE_MS = 3000; // ignore FORCE_LOGOUT for 3s after login
 
 function SessionWatcher() {
   const navigate = useNavigate();
+  const location = useLocation();
   const timerRef = useRef(null);
   const loginTimeRef = useRef(null); // tracks when session was written
   const lastActivityRef = useRef(Date.now()); // tracks last user interaction
@@ -21,14 +22,26 @@ function SessionWatcher() {
     if (officerRaw) {
       try {
         const s = JSON.parse(officerRaw);
-        return { id: s.id, type: "officer", redirectTo: "/login", loginTime: s.loginTime };
+        return {
+          id: s.id,
+          type: "officer",
+          redirectTo: "/login",
+          loginTime: s.loginTime,
+          passwordChangeRequired: Boolean(s.passwordChangeRequired),
+        };
       } catch { }
     }
 
     if (applicantRaw) {
       try {
         const s = JSON.parse(applicantRaw);
-        return { id: s.id, type: "applicant", redirectTo: "/applicant-login", loginTime: s.loginTime };
+        return {
+          id: s.id,
+          type: "applicant",
+          redirectTo: "/applicant-login",
+          loginTime: s.loginTime,
+          passwordChangeRequired: Boolean(s.passwordChangeRequired),
+        };
       } catch { }
     }
 
@@ -149,6 +162,15 @@ function SessionWatcher() {
       window.removeEventListener("storage", handleStorage);
     };
   }, [navigate]);
+
+  useEffect(() => {
+    const session = getActiveSession();
+    const isLoginPage = location.pathname === "/login" || location.pathname === "/applicant-login";
+
+    if (session?.passwordChangeRequired && location.pathname !== "/change-password" && !isLoginPage) {
+      navigate("/change-password", { replace: true });
+    }
+  }, [location.pathname, navigate]);
 
   return null;
 }

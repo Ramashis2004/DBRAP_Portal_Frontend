@@ -13,6 +13,7 @@ import ApplicantDashboardPage from "./pages/ApplicantDashboardPage";
 import ApplicantOrganisationRegistrationPage from "./pages/ApplicantOrganisationRegistrationPage";
 import RegisterForm from "./components/RegisterForm";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ChangePasswordPage from "./pages/ChangePasswordPage";
 import CEApplicationReceivedPage from "./pages/CEApplicationReceivedPage";
 import EICApplicationReceivedPage from "./pages/EICApplicationReceivedPage";
 import "./App.css";
@@ -50,8 +51,10 @@ function App() {
         <Route path="/je-application-received" element={<JEApplicationReceivedPage />} />
         <Route path="/register" element={<RegisterForm />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/ce-application-received" element={<CEApplicationReceivedPage />} />
+        <Route path="/change-password" element={<ChangePasswordPage />} />
         <Route path="/eic-application-received" element={<EICApplicationReceivedPage />} />
+<Route path="/ce-application-received"  element={<CEApplicationReceivedPage rolePrefix="CE" />} />
+<Route path="/ace-application-received" element={<CEApplicationReceivedPage rolePrefix="ACE" />} />
         {/* <Route path="/se-payment-details" element={<SEPaymentDetailsPage />} /> */}
         {/* <Route path="/je-payment-details" element={<JEPaymentDetailsPage />} /> */}
 

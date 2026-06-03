@@ -96,7 +96,7 @@ function JEUpdateConnectionPage() {
           await loadApplications(loadedBlocks[0].block_code);
         }
       } catch (err) {
-        console.error("INIT ERROR:", err);
+        //console.error("INIT ERROR:", err);
         Swal.fire("Error", "Failed to load page data. Please refresh.", "error");
       } finally {
         setIsLoadingShell(false);
@@ -114,7 +114,7 @@ function JEUpdateConnectionPage() {
       const list   = Array.isArray(appRes.data?.data) ? appRes.data.data : [];
       setApplications(list);
     } catch (err) {
-      console.error("Failed to load applications:", err);
+      //console.error("Failed to load applications:", err);
       setApplications([]);
     } finally {
       setLoadingApps(false);
@@ -220,7 +220,7 @@ function JEUpdateConnectionPage() {
       await Swal.fire("Success", "Connection details updated successfully!", "success");
       await loadApplications(blockCode);
     } catch (err) {
-      console.error("Submit error:", err);
+      //console.error("Submit error:", err);
       setSubmitting(false);
       Swal.fire("Error", err?.response?.data?.message || "Failed to update. Please try again.", "error");
     } finally {

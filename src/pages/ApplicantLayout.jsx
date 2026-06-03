@@ -18,6 +18,7 @@ function ApplicantLayout() {
   const [activeMenuKey, setActiveMenuKey] = useState("");
   const [activeOptionKey, setActiveOptionKey] = useState("");
   const [menus, setMenus] = useState([]);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const applicantSession = useMemo(() => {
     try {
@@ -39,7 +40,7 @@ function ApplicantLayout() {
         const response = await fetchApplicantNavigation(applicantSession?.roleId || 7);
         setMenus(response.data?.menus || []);
       } catch (error) {
-        console.error("Applicant navigation load failed:", error);
+       // console.error("Applicant navigation load failed:", error);
         setMenus([]);
       }
     };
@@ -179,7 +180,23 @@ const handleLogout = async () => {
 
           <div className="applicant-dashboard-sidebar__footer">
             <p>Logged in as</p>
-            <strong>{applicantSession.name || applicantSession.mobileNo}</strong>
+            <button
+              type="button"
+              className="applicant-dashboard-sidebar__user-button"
+              onClick={() => setIsUserMenuOpen((current) => !current)}
+            >
+              <strong>{applicantSession.name || applicantSession.mobileNo}</strong>
+              {isUserMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </button>
+            {isUserMenuOpen ? (
+              <button
+                type="button"
+                className="applicant-dashboard-sidebar__user-option"
+                onClick={() => navigate("/change-password")}
+              >
+                Change Password
+              </button>
+            ) : null}
             <span>Applicant</span>
           </div>
         </aside>

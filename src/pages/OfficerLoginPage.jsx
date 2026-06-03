@@ -46,12 +46,13 @@ function OfficerLoginPage() {
         name: user.name,
         roleName: user.roleName,
         userTypeId: user.userTypeId,
+        passwordChangeRequired: Boolean(user.passwordChangeRequired),
         loginTime: new Date().toISOString(),
         token: token,
       })
     );
 
-    navigate(getOfficerDashboardPath(user));
+    navigate(user.passwordChangeRequired ? "/change-password" : getOfficerDashboardPath(user));
   };
 const broadcastLogout = (userId) => {
   const channel = new BroadcastChannel("officer_session");

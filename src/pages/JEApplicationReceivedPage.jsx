@@ -42,7 +42,7 @@ const [tableKey, setTableKey] = useState(0);
         const response = await fetchOfficerDashboardConfig(parsedSession.id);
         setDashboardData(response.data);
       } catch (error) {
-        console.error("Dashboard config load failed:", error);
+        //console.error("Dashboard config load failed:", error);
         setErrorMessage(error.response?.data?.error || "Unable to load dashboard.");
       } finally {
         setIsLoading(false);
@@ -72,7 +72,7 @@ const [tableKey, setTableKey] = useState(0);
         await logoutOfficer({ userId: session.id });
       }
     } catch (error) {
-      console.error("Logout failed:", error);
+      //console.error("Logout failed:", error);
     } finally {
       localStorage.removeItem("officerSession");
       navigate("/login");

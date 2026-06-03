@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 import {
   ArrowLeft,
+  ChevronDown,
+  ChevronRight,
   Download,
   Droplet,
   FileText,
@@ -92,6 +94,7 @@ const getActionStatusMeta = (app) => {
 function AEEDashboardPage() {
   const navigate = useNavigate();
   const [session, setSession]               = useState(null);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [applications, setApplications]     = useState([]);
   const [isLoadingApps, setIsLoadingApps]   = useState(false);
   const [showApplications, setShowApplications] = useState(false);
@@ -341,7 +344,23 @@ function AEEDashboardPage() {
           </nav>
           <div className="officer-dashboard-sidebar__footer">
             <p>Logged in as</p>
-            <strong>{session?.name || session?.loginId || session?.username}</strong>
+            <button
+              type="button"
+              className="officer-dashboard-sidebar__user-button"
+              onClick={() => setIsUserMenuOpen((current) => !current)}
+            >
+              <strong>{session?.name || session?.loginId || session?.username}</strong>
+              {isUserMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </button>
+            {isUserMenuOpen ? (
+              <button
+                type="button"
+                className="officer-dashboard-sidebar__user-option"
+                onClick={() => navigate("/change-password")}
+              >
+                Change Password
+              </button>
+            ) : null}
             <span>{session?.roleName || "AEE Access"}</span>
           </div>
         </aside>

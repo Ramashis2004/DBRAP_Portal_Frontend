@@ -86,9 +86,6 @@ function StatusCard({ item, onClick }) {
         </p>
       </div>
 
-      <div className="se-status-arrow" style={colors.badge}>
-        →
-      </div>
     </button>
   );
 }
@@ -110,9 +107,6 @@ function TotalCard({ count, onClick }) {
         </p>
       </div>
 
-      <div className="se-status-arrow total-arrow">
-        →
-      </div>
     </button>
   );
 }

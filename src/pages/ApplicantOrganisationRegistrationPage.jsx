@@ -312,7 +312,7 @@ const [pdfPreview, setPdfPreview] = useState(null);
           }
         }
       } catch (error) {
-        console.error("Applicant organisation form load failed:", error);
+        //console.error("Applicant organisation form load failed:", error);
         await swalError(
           "Unable to Load",
           error.response?.data?.error || "Unable to load applicant details."
@@ -445,10 +445,16 @@ const [pdfPreview, setPdfPreview] = useState(null);
         ? await updateReturnedApplicantOrganisation(returnedApplication.application_id, payload)
         : await registerApplicantOrganisation(payload);
       const applicationId = response.data?.data?.application_id;
+      const divisionName  = response.data?.data?.division_name; 
+const forwardedTo = divisionName
+  ? `${divisionName} SE`
+  : "SE"; 
       await Swal.fire({
         icon: "success",
         title: returnedApplication ? "Application Resubmitted" : "Application Submitted",
-        html: `Application ID:<br/><b style="font-family:monospace;font-size:1.2rem;">${applicationId}</b>`,
+        html: `Application ID:<br/>
+         <b style="font-family:monospace;font-size:1.2rem;">${applicationId}</b><br/>
+         Application Forwarded to ${forwardedTo} for further Processing.`,
         confirmButtonColor: "#3d1f0f",
       });
       handleBack();

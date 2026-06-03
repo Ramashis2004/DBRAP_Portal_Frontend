@@ -242,7 +242,7 @@ const filterApplications = (applications, { search = "", statusFilter = "all" })
 
 // ─── Page component ───────────────────────────────────────────────────────────
 
-function CEApplicationReceivedPage() {
+function CEApplicationReceivedPage({ rolePrefix = "CE" }) {
   const navigate = useNavigate();
 
   // Shell
@@ -334,7 +334,7 @@ function CEApplicationReceivedPage() {
         // Auto-select if only one circle is mapped
         if (filtered.length === 1) setSelectedCircle(filtered[0].circle_code);
       } catch (err) {
-        console.error(err);
+        //console.error(err);
       } finally {
         setIsLoadingCircles(false);
       }
@@ -409,7 +409,7 @@ function CEApplicationReceivedPage() {
       setApplications(data);
       setHasSubmitted(true);
     } catch (err) {
-      console.error("Applications load failed:", err.response?.data || err);
+      //console.error("Applications load failed:", err.response?.data || err);
       setAppError(err.response?.data?.error || "Failed to load applications.");
       setHasSubmitted(true);
     } finally {
@@ -659,7 +659,8 @@ function CEApplicationReceivedPage() {
             <div className="ce-table-header">
               <div className="ce-table-header__left">
                 <FileText size={19} />
-                <h2>Applications Received</h2>
+                  <h2>{rolePrefix} Application Received</h2>
+
                 <span className="ce-count-badge">{filtered.length}</span>
               </div>
               <div className="ce-table-controls">

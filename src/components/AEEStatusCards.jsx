@@ -12,7 +12,6 @@ function StatusCard({ item, onClick }) {
         <p className="se-status-count" style={colors.count}>{item.count}</p>
         <p className="se-status-label" style={colors.label}>{item.label}</p>
       </div>
-      <div className="se-status-arrow" style={colors.badge}>→</div>
     </button>
   );
 }
@@ -25,7 +24,6 @@ function TotalCard({ count, onClick }) {
         <p className="se-status-count total-count">{count}</p>
         <p className="se-status-label total-label">Total No. of Applications</p>
       </div>
-      <div className="se-status-arrow total-arrow">→</div>
     </button>
   );
 }

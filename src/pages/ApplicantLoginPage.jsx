@@ -88,8 +88,12 @@ function ApplicantLoginPage() {
 
   const saveApplicantSession = (applicant, token) => {
     localStorage.setItem("applicantSession", JSON.stringify({
-      id: applicant.id, mobileNo: applicant.mobileNo,
-      name: applicant.name, roleId: applicant.roleId,
+      id: applicant.id,
+      loginId: applicant.loginId,
+      mobileNo: applicant.mobileNo,
+      name: applicant.name,
+      roleId: applicant.roleId,
+      passwordChangeRequired: Boolean(applicant.passwordChangeRequired),
       loginTime: new Date().toISOString(),
       token: token,
     }));
@@ -186,7 +190,7 @@ function ApplicantLoginPage() {
       const applicant = response.data?.applicant;
       saveApplicantSession(applicant, response.data?.token);
       await swalSuccess("Login Successful", `Welcome ${applicant.name || applicant.mobileNo}.`);
-      navigate("/applicant-dashboard");
+      navigate(applicant.passwordChangeRequired ? "/change-password" : "/applicant-dashboard");
     } catch (error) {
       if (error.response?.status === 409 && error.response?.data?.code === "ALREADY_LOGGED_IN") {
         const shouldContinue = await confirmActiveSessionTakeover(error.response.data.error);
@@ -199,7 +203,7 @@ function ApplicantLoginPage() {
 
           saveApplicantSession(applicant, response.data?.token);
           await swalSuccess("Login Successful", `Welcome ${applicant.name || applicant.mobileNo}.`);
-          navigate("/applicant-dashboard");
+          navigate(applicant.passwordChangeRequired ? "/change-password" : "/applicant-dashboard");
         } catch (retryError) {
           await swalError("Login Failed", retryError.response?.data?.error || "Something went wrong.");
         }
@@ -241,7 +245,7 @@ function ApplicantLoginPage() {
       const applicant = response.data?.applicant;
       saveApplicantSession(applicant, response.data?.token);
       await swalSuccess("Login Successful", `Welcome ${applicant.name || applicant.loginId}.`);
-      navigate("/applicant-dashboard");
+      navigate(applicant.passwordChangeRequired ? "/change-password" : "/applicant-dashboard");
     } catch (error) {
       if (error.response?.status === 409 && error.response?.data?.code === "ALREADY_LOGGED_IN") {
         const shouldContinue = await confirmActiveSessionTakeover(error.response.data.error);
@@ -258,7 +262,7 @@ function ApplicantLoginPage() {
 
           saveApplicantSession(applicant, response.data?.token);
           await swalSuccess("Login Successful", `Welcome ${applicant.name || applicant.loginId}.`);
-          navigate("/applicant-dashboard");
+          navigate(applicant.passwordChangeRequired ? "/change-password" : "/applicant-dashboard");
         } catch (retryError) {
           await swalError("Login Failed", retryError.response?.data?.error || "Invalid User ID or password.");
         }

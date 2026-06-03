@@ -56,7 +56,7 @@ function StepSendOtp({ onNext }) {
     const { data } = await sendOtp({
       username: username.trim(),
     });
-      console.log("OTP sent successfully. User ID:", username.trim(), "Mobile Number:", data.maskedMobile);
+      //console.log("OTP sent successfully. User ID:", username.trim(), "Mobile Number:", data.maskedMobile);
       onNext({
         username: username.trim(),
         maskedMobile: data.maskedMobile,
@@ -196,7 +196,7 @@ function StepVerifyOtp({ data, onNext, onBack }) {
 
     try {
       const response = await sendOtp({ username: data.username });
-      console.log("OTP sent successfully. User ID:", data.username, "Mobile Number:", response.data?.maskedMobile || data.maskedMobile);
+      //console.log("OTP sent successfully. User ID:", data.username, "Mobile Number:", response.data?.maskedMobile || data.maskedMobile);
       const nextCooldown = Number(response.data?.retryAfterSeconds || response.data?.resendAfterSeconds || 25);
       const isBlocked = Boolean(response.data?.resendBlocked);
 

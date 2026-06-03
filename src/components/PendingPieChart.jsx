@@ -57,6 +57,13 @@ const formatDateTime = (value) => {
   return d.toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
 };
 
+const formatPendingDays = (days) => {
+  if (days == null || days === "") return "-";
+  const totalHours = Math.round(Number(days) * 24);
+  const d = Math.floor(totalHours / 24);
+  const h = totalHours % 24;
+  return `${d}d ${h}h`;
+};
 // ── Pie hit-test ──────────────────────────────────────────────────────────────
 function hitTestPie(mx, my, vals, total) {
   if (total <= 0) return null;
@@ -314,7 +321,7 @@ function ApplicationsModal({ userId, bucket, division, fetchApplicationsByDivisi
                           className="pending-pill"
                           style={{ background: bucket.bg, color: bucket.text }}
                         >
-                          {app.pending_days ?? "-"}d
+                          {formatPendingDays(app.pending_days)}
                         </span>
                       </td>
                       <td className="pending-history-cell">

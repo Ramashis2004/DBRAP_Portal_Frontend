@@ -1,0 +1,219 @@
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, CheckCircle2, Eye, EyeOff, KeyRound, Lock } from "lucide-react";
+import Swal from "sweetalert2";
+import { changePassword } from "../api/api";
+import "./ChangePasswordPage.css";
+
+const getOfficerDashboardPath = (session) => {
+  const roleName = String(session?.roleName || "").trim().toUpperCase();
+  const userTypeId = Number(session?.userTypeId);
+
+  if (roleName === "SE" || userTypeId === 2) return "/se-dashboard";
+  if (roleName === "AEE") return "/aee-dashboard";
+  if (roleName === "JE" || userTypeId === 4) return "/je-dashboard";
+
+  return "/dashboard";
+};
+
+const getSession = () => {
+  try {
+    const officerSession = JSON.parse(localStorage.getItem("officerSession") || "null");
+    if (officerSession?.id) {
+      return { type: "officer", storageKey: "officerSession", loginPath: "/login", dashboardPath: getOfficerDashboardPath(officerSession), data: officerSession };
+    }
+
+    const applicantSession = JSON.parse(localStorage.getItem("applicantSession") || "null");
+    if (applicantSession?.id) {
+      return { type: "applicant", storageKey: "applicantSession", loginPath: "/applicant-login", dashboardPath: "/applicant-dashboard", data: applicantSession };
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+};
+
+const validatePassword = (password) => {
+  if (password.length < 8) return "Use at least 8 characters.";
+  if (!/[A-Z]/.test(password)) return "Add at least one uppercase letter.";
+  if (!/[a-z]/.test(password)) return "Add at least one lowercase letter.";
+  if (!/\d/.test(password)) return "Add at least one number.";
+  if (!/[!@#$%^&*(),.?":{}|<>_\-+=/\\[\]~`';]/.test(password)) return "Add at least one special character.";
+  return "";
+};
+
+function ChangePasswordPage() {
+  const navigate = useNavigate();
+  const session = useMemo(() => getSession(), []);
+  const isFirstLogin = Boolean(session?.data?.passwordChangeRequired);
+  const [formData, setFormData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [visibleFields, setVisibleFields] = useState({});
+
+  useEffect(() => {
+    if (!session?.data?.id) {
+      navigate("/login", { replace: true });
+    }
+  }, [navigate, session]);
+
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setErrorMessage("");
+    setFormData((current) => ({ ...current, [name]: value }));
+  };
+
+  const toggleVisibility = (fieldName) => {
+    setVisibleFields((current) => ({ ...current, [fieldName]: !current[fieldName] }));
+  };
+
+  const handleBack = () => {
+    if (isFirstLogin) {
+      return;
+    }
+
+    navigate(session?.dashboardPath || "/");
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
+      setErrorMessage("Please fill in all password fields.");
+      return;
+    }
+
+    const passwordError = validatePassword(formData.newPassword);
+    if (passwordError) {
+      setErrorMessage(passwordError);
+      return;
+    }
+
+    if (formData.newPassword !== formData.confirmPassword) {
+      setErrorMessage("New password and confirm password do not match.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await changePassword(formData);
+
+      const updatedSession = {
+        ...session.data,
+        passwordChangeRequired: false,
+      };
+      localStorage.setItem(session.storageKey, JSON.stringify(updatedSession));
+
+      await Swal.fire({
+        icon: "success",
+        title: "Password Changed",
+        text: "Your password has been updated successfully.",
+        confirmButtonColor: "#1a3c5a",
+      });
+
+      navigate(session.dashboardPath, { replace: true });
+    } catch (error) {
+      setErrorMessage(error.response?.data?.error || "Unable to change password. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!session?.data?.id) {
+    return null;
+  }
+
+  const renderPasswordField = ({ name, label, autoComplete }) => (
+    <label className="change-password-field">
+      <span>{label}</span>
+      <div className="change-password-input">
+        <Lock size={18} />
+        <input
+          type={visibleFields[name] ? "text" : "password"}
+          name={name}
+          value={formData[name]}
+          onChange={handleChange}
+          autoComplete={autoComplete}
+          disabled={isSubmitting}
+          required
+        />
+        <button
+          type="button"
+          onClick={() => toggleVisibility(name)}
+          aria-label={visibleFields[name] ? "Hide password" : "Show password"}
+        >
+          {visibleFields[name] ? <EyeOff size={17} /> : <Eye size={17} />}
+        </button>
+      </div>
+    </label>
+  );
+
+  return (
+    <div className="change-password-page">
+      <section className="change-password-panel">
+        {!isFirstLogin ? (
+          <button type="button" className="change-password-back" onClick={handleBack}>
+            <ArrowLeft size={18} />
+            Back
+          </button>
+        ) : null}
+
+        <div className="change-password-header">
+          <div className="change-password-header__icon">
+            <KeyRound size={24} />
+          </div>
+          <div>
+            <h1>Change Password</h1>
+            <p>
+              {isFirstLogin
+                ? "Please change your temporary password before continuing."
+                : "Update your account password."}
+            </p>
+          </div>
+        </div>
+
+        <div className="change-password-user">
+          <span>Signed in as</span>
+          <strong>{session.data.loginId || session.data.username || session.data.id}</strong>
+        </div>
+
+        <form className="change-password-form" onSubmit={handleSubmit}>
+          {renderPasswordField({
+            name: "currentPassword",
+            label: "Current Password",
+            autoComplete: "current-password",
+          })}
+          {renderPasswordField({
+            name: "newPassword",
+            label: "New Password",
+            autoComplete: "new-password",
+          })}
+          {renderPasswordField({
+            name: "confirmPassword",
+            label: "Confirm New Password",
+            autoComplete: "new-password",
+          })}
+
+          <div className="change-password-rules">
+            <CheckCircle2 size={18} />
+            <span>Minimum 8 characters with uppercase, lowercase, number, and special character.</span>
+          </div>
+
+          {errorMessage ? <p className="change-password-error">{errorMessage}</p> : null}
+
+          <button type="submit" className="change-password-submit" disabled={isSubmitting}>
+            {isSubmitting ? "Changing..." : "Change Password"}
+          </button>
+        </form>
+      </section>
+    </div>
+  );
+}
+
+export default ChangePasswordPage;

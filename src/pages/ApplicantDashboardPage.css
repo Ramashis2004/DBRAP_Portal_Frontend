@@ -148,8 +148,35 @@
 
 .applicant-dashboard-sidebar__footer strong {
   display: block;
-  margin: 8px 0 4px;
   font-size: 1.08rem;
+}
+
+.applicant-dashboard-sidebar__user-button,
+.applicant-dashboard-sidebar__user-option {
+  width: 100%;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.applicant-dashboard-sidebar__user-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 8px 0 4px;
+  padding: 0;
+  background: transparent;
+}
+
+.applicant-dashboard-sidebar__user-option {
+  margin: 8px 0 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  font-weight: 700;
 }
 
 .applicant-dashboard-main {

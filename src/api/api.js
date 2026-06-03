@@ -75,6 +75,11 @@ export const fetchApplicantProfile = (userId) => {
   return API.get(`/applicant-application/profile/${userId}`);
 };
 
+export const changePassword = (data) => {
+  return API.post("/password/change", data);
+};
+
+
 export const registerApplicantOrganisation = (data) => {
   return API.post("/applicant-application/register-organisation", data);
 };

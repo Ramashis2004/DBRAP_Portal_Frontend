@@ -28,6 +28,7 @@ import {
   fetchEICPendingApplicationHistory,
 } from "../api/api";
 import { PendingPieChart } from "../components/PendingPieChart";
+import SLAConfigPage from "./SLAConfigPage";
 
 import "./OfficerDashboardPage.css";
 import {
@@ -136,10 +137,10 @@ const validateCreateUserForm = (formData) => {
 
   if (formData.isEicUserType) {
     // EIC users are created without circle/district/division/block mapping.
-  } else if (formData.isCeUserType) {
-    // For CE users, circleCode is auto-filled from subtype; validate it exists
+  } else if (formData.isMappedCircleUserType) {
+    // For CE/ACE users, circleCode is auto-filled from subtype; validate it exists
     if (!formData.circleCode) {
-      errors.circleCode = "Circle mapping is unavailable for the selected CE subtype.";
+      errors.circleCode = "Circle mapping is unavailable for the selected subtype.";
     }
   } else {
     // For non-CE users, all location fields are required
@@ -208,6 +209,7 @@ function OfficerDashboardPage() {
   const [isLoadingDivisions, setIsLoadingDivisions] = useState(false);
   const [isLoadingBlocks, setIsLoadingBlocks] = useState(false);
   const [showCEDashboardApplications, setShowCEDashboardApplications] = useState(false);
+const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const loadDashboard = async (userId, preserveMenuState = false) => {
     const response = await fetchOfficerDashboardConfig(userId);
@@ -236,7 +238,6 @@ function OfficerDashboardPage() {
       try {
         await loadDashboard(parsedSession.id);
       } catch (error) {
-        console.error("Dashboard config load failed:", error);
         setErrorMessage(error.response?.data?.error || "Unable to load dashboard.");
       } finally {
         setIsLoading(false);
@@ -252,7 +253,6 @@ function OfficerDashboardPage() {
         const response = await fetchCircles();
         setCircles(response.data);
       } catch (error) {
-        console.error("Circle load failed:", error);
       } finally {
         setIsLoadingCircles(false);
       }
@@ -305,7 +305,6 @@ function OfficerDashboardPage() {
         await logoutOfficer({ userId: session.id });
       }
     } catch (error) {
-      console.error("Logout failed:", error);
     } finally {
       localStorage.removeItem("officerSession");
       navigate("/login");
@@ -361,12 +360,21 @@ useEffect(() => {
   const shouldShowCreateUserForm =
     activeOption?.url?.toLowerCase() === "/createuser" ||
     activeOption?.label?.toLowerCase() === "create user";
+
+    const shouldShowSLAConfig =
+  activeOption?.url?.toLowerCase() === "/slaconfig" ||
+  activeOption?.label?.toLowerCase() === "sla config";
+  
   const isLoggedInCE = String(user.roleName || user.loginId || "").trim().toUpperCase().startsWith("CE");
   const isLoggedInEIC = String(user.roleName || user.loginId || "").trim().toUpperCase() === "EIC";
+  const isLoggedInACE = String(user.roleName || user.loginId || "").trim().toUpperCase().startsWith("ACE");
+
   const dashboardTitle = isLoggedInCE
     ? "CE Dashboard"
     : isLoggedInEIC
       ? "State Dashboard"
+      : isLoggedInACE
+      ? "ACE Dashboard"
       : "Officer Dashboard";
 
   // ── Derived form state ──────────────────────────────────────────────────────
@@ -376,18 +384,18 @@ useEffect(() => {
     (st) => String(st.type_id) === String(selectedUserType?.id)
   );
   const selectedUserTypeName = selectedUserType?.type_name?.toUpperCase() || "";
-  const requiresSubTypeSelection = selectedUserTypeName === "CE";
-  const isCeUserType = requiresSubTypeSelection;
+  const requiresSubTypeSelection = ["CE", "ACE"].includes(selectedUserTypeName);
+  const isMappedCircleUserType = requiresSubTypeSelection;
   const isEicUserType = selectedUserTypeName === "EIC";
-  const requiresLocationSelection = Boolean(selectedUserType) && !isCeUserType && !isEicUserType;
+  const requiresLocationSelection = Boolean(selectedUserType) && !isMappedCircleUserType && !isEicUserType;
   const requiresBlockSelection = selectedUserTypeName === "JE";
 
   const selectedSubType =
     selectedSubTypes.find((st) => String(st.id) === String(createUserForm.subTypeId)) || null;
 
-  // CE users: show auto-filled circle from subtype master
-  const selectedSubTypeCircleCodes = isCeUserType ? getSubtypeCircleCodes(selectedSubType) : [];
-  const selectedSubTypeCircleNames = isCeUserType ? getSubtypeCircleNames(selectedSubType) : [];
+  // CE/ACE users: show auto-filled circle from subtype master
+  const selectedSubTypeCircleCodes = isMappedCircleUserType ? getSubtypeCircleCodes(selectedSubType) : [];
+  const selectedSubTypeCircleNames = isMappedCircleUserType ? getSubtypeCircleNames(selectedSubType) : [];
   const selectedSubTypeCircleLabel =
     selectedSubTypeCircleNames.length > 0
       ? selectedSubTypeCircleNames.join(", ")
@@ -415,16 +423,26 @@ useEffect(() => {
     setShowCEDashboardApplications(false);
     setActiveOptionKey(option.key);
 
+    // if (optionUrl === "/applicationreceived" || optionLabel === "application received") {
+    //   const roleName = String(user.roleName || user.loginId || "").trim().toUpperCase();
+    //   navigate(roleName === "EIC" ? "/eic-application-received" : "/ce-application-received");
+    //   return;
+    // }
+
     if (optionUrl === "/applicationreceived" || optionLabel === "application received") {
-      const roleName = String(user.roleName || user.loginId || "").trim().toUpperCase();
-      navigate(roleName === "EIC" ? "/eic-application-received" : "/ce-application-received");
-      return;
-    }
+  const roleName = String(user.roleName || user.loginId || "").trim().toUpperCase();
+  if (roleName === "EIC") navigate("/eic-application-received");
+  else if (roleName.startsWith("ACE")) navigate("/ace-application-received");  // ← add
+  else navigate("/ce-application-received");
+  return;
+}
 
     if (optionUrl === "/createuser" || optionLabel === "create user") {
       return;
     }
-
+if (optionUrl === "/slaconfig" || optionLabel === "sla config") {
+  return; // render inline, don't navigate
+}
     if (optionUrl) {
       navigate(optionUrl);
     }
@@ -438,7 +456,7 @@ useEffect(() => {
     const nextUserType = isChangingUserType
       ? userTypes.find((ut) => String(ut.id) === String(value))
       : selectedUserType;
-    const nextIsCeUserType = nextUserType?.type_name?.toUpperCase() === "CE";
+    const nextIsMappedCircleUserType = ["CE", "ACE"].includes(nextUserType?.type_name?.toUpperCase());
 
     setFormMessage("");
     setFormErrors((current) => ({
@@ -464,18 +482,18 @@ useEffect(() => {
         : {}),
       ...(isChangingSubType
         ? {
-            // For CE: auto-fill circleCode from the selected subtype's mapped circles
-            circleCode: nextIsCeUserType
+            // For CE/ACE: auto-fill circleCode from the selected subtype's mapped circles
+            circleCode: nextIsMappedCircleUserType
               ? getSubtypeCircleCodes(
                   subTypes.find((st) => String(st.id) === String(value)) || null
                 ).join(",")
               : current.circleCode,
-            divisionCode: nextIsCeUserType
+            divisionCode: nextIsMappedCircleUserType
               ? ""
               : getSubtypeDivisionCodes(
                   subTypes.find((st) => String(st.id) === String(value)) || null
                 ).join(","),
-            districtCode: nextIsCeUserType ? "" : current.districtCode,
+            districtCode: nextIsMappedCircleUserType ? "" : current.districtCode,
             blockCode: "",
           }
         : {}),
@@ -519,7 +537,6 @@ useEffect(() => {
       const response = await fetchDistrictsByCircle(value);
       setDistricts(response.data);
     } catch (error) {
-      console.error("District load failed:", error);
       setFormMessage("Unable to load districts for the selected circle.");
     } finally {
       setIsLoadingDistricts(false);
@@ -554,7 +571,6 @@ useEffect(() => {
       const response = await fetchDivisionsByDistrict(value);
       setDivisions(response.data);
     } catch (error) {
-      console.error("Division load failed:", error);
       setFormMessage("Unable to load divisions for the selected district.");
     } finally {
       setIsLoadingDivisions(false);
@@ -586,7 +602,6 @@ useEffect(() => {
       const response = await fetchBlocksByDivision(value);
       setBlocks(response.data);
     } catch (error) {
-      console.error("Block load failed:", error);
       setFormMessage("Unable to load blocks for the selected division.");
     } finally {
       setIsLoadingBlocks(false);
@@ -600,7 +615,7 @@ useEffect(() => {
     const validationErrors = validateCreateUserForm({
       ...createUserForm,
       isEicUserType,
-      isCeUserType,
+      isMappedCircleUserType,
       requiresSubTypeSelection,
       requiresBlockSelection,
     });
@@ -714,10 +729,26 @@ useEffect(() => {
           </nav>
 
           <div className="officer-dashboard-sidebar__footer">
-            <p>Logged in as</p>
-            <strong>{user.name || user.loginId}</strong>
-            <span>{user.roleName || "Officer Access"}</span>
-          </div>
+  <p>Logged in as</p>
+  <button
+    type="button"
+    className="officer-dashboard-sidebar__user-button"
+    onClick={() => setIsUserMenuOpen((current) => !current)}
+  >
+    <strong>{user.name || user.loginId}</strong>
+    {isUserMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+  </button>
+  {isUserMenuOpen ? (
+    <button
+      type="button"
+      className="officer-dashboard-sidebar__user-option"
+      onClick={() => navigate("/change-password")}
+    >
+      Change Password
+    </button>
+  ) : null}
+  <span>{user.roleName || "Officer Access"}</span>
+</div>
         </aside>
 
         <main className="officer-dashboard-main">
@@ -794,6 +825,31 @@ useEffect(() => {
                 </div>
               ) : null}
 
+{isLoggedInACE ? (
+  <CEDashboardApplicationCountCard
+    userId={user.id}
+    onOpen={() => {
+      setActiveMenuKey("");
+      setActiveOptionKey("");
+      setShowCEDashboardApplications(true);
+    }}
+  />
+) : null}
+
+{isLoggedInACE ? (
+  <div className="ce-dashboard-charts-row officer-dashboard-charts-wide">
+    <CEDashboardOverduePieChart userId={user.id} />
+    <PendingPieChart
+      userId={user.id}
+      titlePrefix="ACE"
+      fetchPendingSummary={fetchCEPendingSummary}
+      fetchPendingByDivision={fetchCEPendingByDivision}
+      fetchApplicationsByDivision={fetchCEPendingApplicationsByDivision}
+      fetchApplicationHistory={fetchCEPendingApplicationHistory}
+    />
+  </div>
+) : null}
+
             </section>
           ) : null}
 
@@ -811,7 +867,12 @@ useEffect(() => {
               onClose={() => setShowCEDashboardApplications(false)}
             />
           ) : null}
-
+{showCEDashboardApplications && isLoggedInACE ? (
+  <CEDashboardApplicationsDrilldown
+    userId={user.id}
+    onClose={() => setShowCEDashboardApplications(false)}
+  />
+) : null}
           {shouldShowCreateUserForm ? (
             <section className="officer-dashboard-form-section officer-dashboard-form-section--full">
               <div className="officer-dashboard-form-card">
@@ -829,9 +890,10 @@ useEffect(() => {
                   {showCreateUserHint ? (
                     <p className="officer-dashboard-form__hint">
                       Login ID will be generated automatically. For JE users, it will be saved as
-                      JE{`<block_code>`}{`<serial_no>`} like JE363901. For CE users, the selected
-                      subtype name will be used as the login ID and the mapped circle will be filled
-                      automatically from the subtype master. For AEE users, it will be saved as
+                      JE{`<block_code>`}{`<serial_no>`} like JE363901. For CE and ACE users, subtype
+                      wise mapped circle will be filled automatically from the subtype master. ACE
+                      login IDs will be saved as ACE{`<subtype_serial>`}{`<serial_no>`} like ACE0101.
+                      For AEE users, it will be saved as
                       AEE{`<district_code>`}{`<division_serial>`}{`<serial_no>`} like AEE3090101. Password will be created automatically
                       and sent to the entered mobile number.
                     </p>
@@ -859,7 +921,7 @@ useEffect(() => {
                     ) : null}
                   </label>
 
-                  {/* ── Subtype (CE only) ─────────────────────────────────── */}
+                  {/* ── Subtype (CE/ACE only) ─────────────────────────────── */}
                   {requiresSubTypeSelection ? (
                     <label className="officer-dashboard-form__field">
                       <span>Subtype</span>
@@ -884,8 +946,8 @@ useEffect(() => {
                   ) : null}
 
                   {/* ── Circle ────────────────────────────────────────────── */}
-                  {isCeUserType ? (
-                    // CE: auto-filled read-only circle from subtype master
+                  {isMappedCircleUserType ? (
+                    // CE/ACE: auto-filled read-only circle from subtype master
                     <label className="officer-dashboard-form__field">
                       <span>Circle</span>
                       <input
@@ -1122,6 +1184,12 @@ useEffect(() => {
               </div>
             </section>
           ) : null}
+
+          {shouldShowSLAConfig ? (
+  <section className="officer-dashboard-form-section officer-dashboard-form-section--full">
+    <SLAConfigPage inline />
+  </section>
+) : null}
         </main>
       </div>
     </div>
