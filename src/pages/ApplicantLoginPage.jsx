@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
@@ -40,6 +40,11 @@ const TABS = [
 
 function ApplicantLoginPage() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    localStorage.removeItem("officerSession");
+    localStorage.removeItem("applicantSession");
+  }, []);
 
   // ── Tab ───────────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState("otp");
@@ -242,6 +247,15 @@ function ApplicantLoginPage() {
     setIsSubmitting(true);
     try {
       const response  = await loginApplicantWithPassword({ login_id: userId.trim(), password });
+      if (response.data?.passwordChangeRequired) {
+        navigate("/change-password", {
+          state: {
+            username: response.data.username,
+            role: "applicant",
+          },
+        });
+        return;
+      }
       const applicant = response.data?.applicant;
       saveApplicantSession(applicant, response.data?.token);
       await swalSuccess("Login Successful", `Welcome ${applicant.name || applicant.loginId}.`);
@@ -257,6 +271,15 @@ function ApplicantLoginPage() {
             password,
             forceLogin: true,
           });
+          if (response.data?.passwordChangeRequired) {
+            navigate("/change-password", {
+              state: {
+                username: response.data.username,
+                role: "applicant",
+              },
+            });
+            return;
+          }
           const applicant = response.data?.applicant;
           broadcastLogout(applicant.id); // ← ADD
 

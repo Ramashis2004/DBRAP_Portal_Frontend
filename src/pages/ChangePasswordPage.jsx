@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { ArrowLeft, CheckCircle2, Eye, EyeOff, KeyRound, Lock } from "lucide-react";
 import Swal from "sweetalert2";
 import { changePassword } from "../api/api";
@@ -45,8 +45,14 @@ const validatePassword = (password) => {
 
 function ChangePasswordPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const stateData = location.state || {};
+  const { username, role } = stateData;
+  const isPublicChange = Boolean(username && role);
+
   const session = useMemo(() => getSession(), []);
-  const isFirstLogin = Boolean(session?.data?.passwordChangeRequired);
+  const isFirstLogin = isPublicChange || Boolean(session?.data?.passwordChangeRequired);
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -57,10 +63,10 @@ function ChangePasswordPage() {
   const [visibleFields, setVisibleFields] = useState({});
 
   useEffect(() => {
-    if (!session?.data?.id) {
+    if (!session?.data?.id && !isPublicChange) {
       navigate("/login", { replace: true });
     }
-  }, [navigate, session]);
+  }, [navigate, session, isPublicChange]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -102,12 +108,65 @@ function ChangePasswordPage() {
     setIsSubmitting(true);
 
     try {
-      await changePassword(formData);
-
-      const updatedSession = {
-        ...session.data,
-        passwordChangeRequired: false,
+      const payload = {
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+        confirmPassword: formData.confirmPassword,
       };
+
+      if (isPublicChange) {
+        payload.username = username;
+      }
+
+      const response = await changePassword(payload);
+
+      if (isPublicChange) {
+        await Swal.fire({
+          icon: "success",
+          title: "Password Changed",
+          text: "Your password has been updated successfully. Please log in with your new password.",
+          confirmButtonColor: "#1a3c5a",
+        });
+
+        const loginPath = role === "applicant" ? "/applicant-login" : "/login";
+        navigate(loginPath, { replace: true });
+        return;
+      }
+
+      let updatedSession;
+      if (response.data?.token && response.data?.user) {
+        const u = response.data.user;
+        if (session.type === "applicant") {
+          updatedSession = {
+            id: u.id,
+            loginId: u.loginId,
+            mobileNo: u.mobileNo,
+            name: u.name,
+            roleId: u.roleId,
+            passwordChangeRequired: false,
+            loginTime: new Date().toISOString(),
+            token: response.data.token,
+          };
+        } else {
+          updatedSession = {
+            id: u.id,
+            username: u.loginId,
+            loginId: u.loginId,
+            login_id: u.loginId,
+            name: u.name,
+            roleName: u.roleName,
+            userTypeId: u.userTypeId,
+            passwordChangeRequired: false,
+            loginTime: new Date().toISOString(),
+            token: response.data.token,
+          };
+        }
+      } else {
+        updatedSession = {
+          ...session.data,
+          passwordChangeRequired: false,
+        };
+      }
       localStorage.setItem(session.storageKey, JSON.stringify(updatedSession));
 
       await Swal.fire({
@@ -125,7 +184,7 @@ function ChangePasswordPage() {
     }
   };
 
-  if (!session?.data?.id) {
+  if (!session?.data?.id && !isPublicChange) {
     return null;
   }
 
@@ -179,8 +238,8 @@ function ChangePasswordPage() {
         </div>
 
         <div className="change-password-user">
-          <span>Signed in as</span>
-          <strong>{session.data.loginId || session.data.username || session.data.id}</strong>
+          <span>{isPublicChange ? "Changing password for" : "Signed in as"}</span>
+          <strong>{isPublicChange ? username : (session?.data?.loginId || session?.data?.username || session?.data?.id)}</strong>
         </div>
 
         <form className="change-password-form" onSubmit={handleSubmit}>

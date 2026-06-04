@@ -22,7 +22,7 @@ import {
   ChevronDown,
   Info
 } from 'lucide-react';
-import { fetchPublicDashboardSummary } from '../api/api';
+import { fetchPublicDashboardSummary, logoutOfficer } from '../api/api';
 import './LandingPage.css';
 
 const FeatureCard = ({ icon: Icon, title, description, delay }) => (
@@ -112,6 +112,21 @@ const LandingPage = () => {
   });
   const [isDashboardLoading, setIsDashboardLoading] = useState(true);
   const [dashboardError, setDashboardError] = useState("");
+
+  useEffect(() => {
+    const officerSession = JSON.parse(localStorage.getItem("officerSession") || "null");
+    const applicantSession = JSON.parse(localStorage.getItem("applicantSession") || "null");
+
+    const session = officerSession || applicantSession;
+    if (session && session.id) {
+      logoutOfficer({ userId: session.id })
+        .catch((err) => console.error("Auto logout on landing page failed:", err))
+        .finally(() => {
+          localStorage.removeItem("officerSession");
+          localStorage.removeItem("applicantSession");
+        });
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;

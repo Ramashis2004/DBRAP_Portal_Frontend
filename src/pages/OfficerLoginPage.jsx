@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Lock, LogIn, User, Eye, EyeOff } from "lucide-react";
 import Swal from "sweetalert2";
@@ -25,6 +25,11 @@ function OfficerLoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    localStorage.removeItem("officerSession");
+    localStorage.removeItem("applicantSession");
+  }, []);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -73,6 +78,15 @@ const broadcastLogout = (userId) => {
       }
 
       const response = await loginOfficer({ username, password });
+      if (response.data?.passwordChangeRequired) {
+        navigate("/change-password", {
+          state: {
+            username: response.data.username,
+            role: "officer",
+          },
+        });
+        return;
+      }
       openDashboard(response.data.user, response.data.token);
     } catch (error) {
       if (error.response?.status === 409 && error.response?.data?.code === "ALREADY_LOGGED_IN") {
@@ -93,6 +107,16 @@ const broadcastLogout = (userId) => {
               password: formData.password.trim(),
               forceLogin: true,
             });
+
+            if (retryResponse.data?.passwordChangeRequired) {
+              navigate("/change-password", {
+                state: {
+                  username: retryResponse.data.username,
+                  role: "officer",
+                },
+              });
+              return;
+            }
 
             openDashboard(retryResponse.data.user, retryResponse.data.token);
             broadcastLogout(retryResponse.data.user.id); // ← ADD

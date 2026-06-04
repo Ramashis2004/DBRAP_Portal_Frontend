@@ -1,4 +1,4 @@
-import axios from "axios";  
+import axios from "axios";
 
 const API = axios.create({
   baseURL: "/api"
@@ -9,7 +9,7 @@ API.interceptors.request.use(
     const officerSession = JSON.parse(localStorage.getItem("officerSession"));
     const applicantSession = JSON.parse(localStorage.getItem("applicantSession"));
     const token = officerSession?.token || applicantSession?.token;
-    
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -24,15 +24,26 @@ API.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
-      const isApplicant = !!localStorage.getItem("applicantSession");
-      // Clear sessions
-      localStorage.removeItem("officerSession");
-      localStorage.removeItem("applicantSession");
-      // Redirect to correct login page
-      if (isApplicant) {
-        window.location.href = "/applicant-login";
-      } else {
-        window.location.href = "/login";
+      const url = error.config?.url || "";
+      const bypassUrls = [
+        "/auth/login",
+        "/applicant-auth/login",
+        "/applicant-auth/login-password",
+        "/password/change"
+      ];
+      const shouldBypass = bypassUrls.some((path) => url.includes(path));
+
+      if (!shouldBypass) {
+        const isApplicant = !!localStorage.getItem("applicantSession");
+        // Clear sessions
+        localStorage.removeItem("officerSession");
+        localStorage.removeItem("applicantSession");
+        // Redirect to correct login page
+        if (isApplicant) {
+          window.location.href = "/applicant-login";
+        } else {
+          window.location.href = "/login";
+        }
       }
     }
     return Promise.reject(error);
@@ -364,7 +375,7 @@ export const uploadSiteVisitReport = (applicationId, file, inspectionDate, inspe
   if (inspectionDate) formData.append("inspection_date", inspectionDate);
   if (inspectionTime) formData.append("inspection_time", inspectionTime);
   if (remarks?.trim()) formData.append("remarks", remarks.trim());
-formData.append("userId", userId || "");
+  formData.append("userId", userId || "");
   return API.patch(
     `/organisation/organisations/${applicationId}/site-visit-report`,
     formData,
