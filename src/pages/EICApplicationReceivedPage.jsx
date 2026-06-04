@@ -287,6 +287,7 @@ function EICApplicationReceivedPage() {
   // Table controls
   const [statusFilter, setStatusFilter] = useState("all");
   const [search,       setSearch]       = useState("");
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   // Detail / PDF
   const [detailView,   setDetailView]   = useState(null);
@@ -327,7 +328,7 @@ function EICApplicationReceivedPage() {
         const res = await fetchCircles();
         setCircles(res.data || []);
       } catch (err) {
-        console.error("Circle load failed:", err);
+        //console.error("Circle load failed:", err);
       } finally {
         setIsLoadingCircles(false);
       }
@@ -404,7 +405,7 @@ function EICApplicationReceivedPage() {
       setApplications(data);
       setHasSubmitted(true);
     } catch (err) {
-      console.error("Applications load failed:", err.response?.data || err);
+      //console.error("Applications load failed:", err.response?.data || err);
       setAppError(err.response?.data?.error || "Failed to load applications.");
       setHasSubmitted(true);
     } finally {
@@ -778,8 +779,26 @@ function EICApplicationReceivedPage() {
               );
             })}
           </nav>
-          <div className="officer-dashboard-sidebar__footer">
-            <p>Logged in as</p><strong>{user.name || user.loginId}</strong><span>{user.roleName || "Officer Access"}</span>
+         <div className="officer-dashboard-sidebar__footer">
+            <p>Logged in as</p>
+            <button
+              type="button"
+              className="officer-dashboard-sidebar__user-button"
+              onClick={() => setIsUserMenuOpen((current) => !current)}
+            >
+              <strong>{user.name || user.loginId}</strong>
+              {isUserMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </button>
+            {isUserMenuOpen ? (
+              <button
+                type="button"
+                className="officer-dashboard-sidebar__user-option"
+                onClick={() => navigate("/change-password")}
+              >
+                Change Password
+              </button>
+            ) : null}
+            <span>{user.roleName || "Officer Access"}</span>
           </div>
         </aside>
 

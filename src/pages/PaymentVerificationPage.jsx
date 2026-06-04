@@ -100,6 +100,7 @@ function PaymentVerificationPage() {
   const [remarkInput,        setRemarkInput]        = useState("");
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
   const [pdfPreview,         setPdfPreview]         = useState(null);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   // ── useEffect: session + dashboard shell ──────────────────────────────────
   useEffect(() => {
@@ -667,7 +668,23 @@ function PaymentVerificationPage() {
 
           <div className="officer-dashboard-sidebar__footer">
             <p>Logged in as</p>
-            <strong>{user.name || user.loginId}</strong>
+            <button
+              type="button"
+              className="officer-dashboard-sidebar__user-button"
+              onClick={() => setIsUserMenuOpen((current) => !current)}
+            >
+              <strong>{user.name || user.loginId}</strong>
+              {isUserMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </button>
+            {isUserMenuOpen ? (
+              <button
+                type="button"
+                className="officer-dashboard-sidebar__user-option"
+                onClick={() => navigate("/change-password")}
+              >
+                Change Password
+              </button>
+            ) : null}
             <span>{user.roleName || "Officer Access"}</span>
           </div>
         </aside>

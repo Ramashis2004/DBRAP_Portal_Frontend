@@ -70,6 +70,7 @@ function JEUpdateConnectionPage() {
   const user  = dashboardData?.user;
   const menus = dashboardData?.dashboard?.navigation?.menus || [];
   const assignedBlock = blocks[0] || null;
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   // Derived from modal app
   const connectionType = String(modalApp?.type_of_connection || "").toLowerCase().trim();
@@ -316,8 +317,24 @@ function JEUpdateConnectionPage() {
 
           <div className="officer-dashboard-sidebar__footer">
             <p>Logged in as</p>
-            <strong>{user?.name || user?.loginId}</strong>
-            <span>{user?.roleName}</span>
+            <button
+              type="button"
+              className="officer-dashboard-sidebar__user-button"
+              onClick={() => setIsUserMenuOpen((current) => !current)}
+            >
+              <strong>{user.name || user.loginId}</strong>
+              {isUserMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </button>
+            {isUserMenuOpen ? (
+              <button
+                type="button"
+                className="officer-dashboard-sidebar__user-option"
+                onClick={() => navigate("/change-password")}
+              >
+                Change Password
+              </button>
+            ) : null}
+            <span>{user.roleName || "Officer Access"}</span>
           </div>
         </aside>
 

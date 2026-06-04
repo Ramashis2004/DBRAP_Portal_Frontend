@@ -280,6 +280,7 @@ function CEApplicationReceivedPage({ rolePrefix = "CE" }) {
   // Table controls
   const [statusFilter, setStatusFilter] = useState("all");
   const [search,       setSearch]       = useState("");
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   // Detail / PDF
   const [detailView,   setDetailView]   = useState(null);
@@ -780,7 +781,25 @@ function CEApplicationReceivedPage({ rolePrefix = "CE" }) {
             })}
           </nav>
           <div className="officer-dashboard-sidebar__footer">
-            <p>Logged in as</p><strong>{user.name || user.loginId}</strong><span>{user.roleName || "Officer Access"}</span>
+            <p>Logged in as</p>
+            <button
+              type="button"
+              className="officer-dashboard-sidebar__user-button"
+              onClick={() => setIsUserMenuOpen((current) => !current)}
+            >
+              <strong>{user.name || user.loginId}</strong>
+              {isUserMenuOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+            </button>
+            {isUserMenuOpen ? (
+              <button
+                type="button"
+                className="officer-dashboard-sidebar__user-option"
+                onClick={() => navigate("/change-password")}
+              >
+                Change Password
+              </button>
+            ) : null}
+            <span>{user.roleName || "Officer Access"}</span>
           </div>
         </aside>
 
