@@ -29,6 +29,7 @@ import {
 } from "../api/api";
 import { PendingPieChart } from "../components/PendingPieChart";
 import SLAConfigPage from "./SLAConfigPage";
+import  UserManualButton from "../components/UserManualButton";
 
 import "./OfficerDashboardPage.css";
 import {
@@ -758,6 +759,8 @@ if (optionUrl === "/slaconfig" || optionLabel === "sla config") {
             </div>
 
             <div className="officer-dashboard-user">
+                            <UserManualButton /> 
+
               <div>
                 <span>Logged in as</span>
                 <strong>{user.loginId}</strong>

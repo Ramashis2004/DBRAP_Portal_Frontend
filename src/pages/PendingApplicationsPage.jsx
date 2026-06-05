@@ -21,6 +21,7 @@ import {
 } from "../utils/applicationStatus";
 import "./OfficerDashboardPage.css";
 import "./PaymentVerificationPage.css";
+import  UserManualButton from "../components/UserManualButton";
 
 // ─── Helpers (same as ApplicationReceivedPage) ────────────────────────────────
 
@@ -722,6 +723,8 @@ function PendingApplicationsPage({ mode }) {
               <h1>{config.h1}</h1>
             </div>
             <div className="officer-dashboard-user">
+                            <UserManualButton /> 
+
               <div><span>Logged in as</span><strong>{user.loginId}</strong></div>
               <button type="button" className="officer-dashboard-logout" onClick={handleLogout}>
                 <LogOut size={18} /> Logout

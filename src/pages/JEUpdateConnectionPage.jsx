@@ -25,6 +25,7 @@ import {
 
 import "./OfficerDashboardPage.css";
 import "./JEUpdateConnectionPage.css";
+import  UserManualButton from "../components/UserManualButton";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -345,6 +346,8 @@ function JEUpdateConnectionPage() {
               <h1>Update Connection Details</h1>
             </div>
             <div className="officer-dashboard-user">
+                            <UserManualButton /> 
+
               <div>
                 <span>Logged in as</span>
                 <strong>{user?.loginId}</strong>

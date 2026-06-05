@@ -15,6 +15,7 @@ import {
 } from "../api/api";
 import { ForwardedApplicationsTable } from "./JEDashboardPage";
 import "./OfficerDashboardPage.css";
+import  UserManualButton from "../components/UserManualButton";
 
 function JEApplicationReceivedPage() {
   const navigate = useNavigate();
@@ -269,6 +270,8 @@ if (optionUrl.includes("updateConnectionDetails") || optionLabel.includes("updat
             </div>
 
             <div className="officer-dashboard-user">
+                            <UserManualButton /> 
+
               <div>
                 <span>Logged in as</span>
                 <strong>{user.loginId}</strong>

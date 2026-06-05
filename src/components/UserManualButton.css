@@ -1,0 +1,272 @@
+/* ── Trigger Button ─────────────────────────────────────────────────────────── */
+.user-manual-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-radius: 8px;
+  color: #89400e;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  flex-shrink: 0;
+}
+
+.user-manual-trigger:hover {
+  background: rgba(255, 255, 255, 0.20);
+  border-color: rgba(255, 255, 255, 0.32);
+  transform: translateY(-1px);
+}
+
+.user-manual-trigger:active {
+  transform: translateY(0);
+}
+
+.user-manual-trigger__icon {
+  flex-shrink: 0;
+  color: #fbbf24;
+}
+
+.user-manual-trigger__download-icon {
+  flex-shrink: 0;
+  opacity: 0.65;
+}
+
+/* ── Overlay ─────────────────────────────────────────────────────────────────── */
+.user-manual-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.76);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  backdrop-filter: blur(3px);
+  animation: user-manual-overlay-in 0.18s ease;
+}
+
+@keyframes user-manual-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Modal ───────────────────────────────────────────────────────────────────── */
+.user-manual-modal {
+  background: #0f172a;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 920px;
+  height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.60);
+  animation: user-manual-modal-in 0.22s cubic-bezier(0.34, 1.26, 0.64, 1);
+}
+
+@keyframes user-manual-modal-in {
+  from { opacity: 0; transform: scale(0.96) translateY(12px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
+}
+
+/* ── Modal Header ────────────────────────────────────────────────────────────── */
+.user-manual-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  background: #1e293b;
+  flex-shrink: 0;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.user-manual-modal__header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-manual-modal__icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(251, 191, 36, 0.14);
+  border: 1px solid rgba(251, 191, 36, 0.24);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fbbf24;
+  flex-shrink: 0;
+}
+
+.user-manual-modal__title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-manual-modal__title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  letter-spacing: 0.01em;
+}
+
+.user-manual-modal__subtitle {
+  margin: 0;
+  font-size: 0.72rem;
+  color: #d6844b;
+}
+
+.user-manual-modal__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Download Button ─────────────────────────────────────────────────────────── */
+.user-manual-download-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: #166534;
+  border: 1px solid #15803d;
+  border-radius: 8px;
+  color: #dcfce7;
+  font-size: 0.80rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.user-manual-download-btn:hover {
+  background: #15803d;
+  transform: translateY(-1px);
+}
+
+.user-manual-download-btn:active {
+  transform: translateY(0);
+}
+
+/* ── Close Button ────────────────────────────────────────────────────────────── */
+.user-manual-close-btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 8px;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+
+.user-manual-close-btn:hover {
+  background: rgba(235, 54, 9, 0.874);
+  color: #f1f5f9;
+}
+
+/* ── Modal Body / PDF Viewer ─────────────────────────────────────────────────── */
+.user-manual-modal__body {
+  flex: 1;
+  position: relative;
+  background: #fdfdfd;
+  overflow: hidden;
+}
+
+/* ── Loading / Error State ───────────────────────────────────────────────────── */
+.user-manual-modal__state {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: #475569;
+  font-size: 0.88rem;
+  z-index: 1;
+}
+
+.user-manual-modal__state--error {
+  color: #64748b;
+}
+
+.user-manual-modal__state--error p {
+  margin: 0;
+  font-size: 0.90rem;
+}
+
+.user-manual-modal__spinner {
+  color: #fbbf24;
+  animation: user-manual-spin 1s linear infinite;
+}
+
+.user-manual-modal__error-icon {
+  opacity: 0.25;
+}
+
+@keyframes user-manual-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* ── iframe ──────────────────────────────────────────────────────────────────── */
+.user-manual-modal__iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.30s ease;
+}
+
+.user-manual-modal__iframe.is-loaded {
+  opacity: 1;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .user-manual-overlay {
+    padding: 12px;
+  }
+
+  .user-manual-modal {
+    height: 92vh;
+    border-radius: 12px;
+  }
+
+  .user-manual-modal__header {
+    padding: 12px 14px;
+  }
+
+  .user-manual-modal__title {
+    font-size: 0.85rem;
+  }
+
+  .user-manual-trigger span {
+    display: none;
+  }
+
+  .user-manual-trigger {
+    padding: 7px 10px;
+    gap: 4px;
+  }
+}

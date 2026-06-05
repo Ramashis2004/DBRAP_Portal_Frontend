@@ -36,6 +36,7 @@ import {
   formatDayProgress,
 } from "../utils/applicationStatus";
 import "./OfficerDashboardPage.css";
+import  UserManualButton from "../components/UserManualButton";
 
 const initialCreateUserForm = {
   userTypeId: "",
@@ -1401,6 +1402,8 @@ const handleDashboardHomeClick = () => {
             </div>
 
             <div className="officer-dashboard-user">
+                            <UserManualButton /> 
+
               <div>
                 <span>Logged in as</span>
                 <strong>{user.loginId}</strong>

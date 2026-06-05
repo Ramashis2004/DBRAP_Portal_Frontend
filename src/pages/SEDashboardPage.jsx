@@ -35,6 +35,7 @@ import "./OfficerDashboardPage.css";
 // At top with other imports
 import PendingApplicationsPopup from "../components/PendingApplicationsPopup";
 import SEStatusCards from "../components/SEStatusCards";
+import  UserManualButton from "../components/UserManualButton";
 
 import {
   SEDashboardApplicationCountCard,
@@ -935,6 +936,7 @@ const [statusFilter, setStatusFilter] = useState("all");
               <h1>SE/EE Dashboard</h1>
             </div>
             <div className="officer-dashboard-user">
+              <UserManualButton /> 
               <div>
                 <span>Logged in as</span>
                 <strong>{user.loginId}</strong>

@@ -29,6 +29,7 @@ import "../components/SEDashboardApplications.css";
 import "./AEEDashboardPage.css";
 import "./PaymentVerificationPage.css";
 import AEEStatusCards from "../components/AEEStatusCards";
+import  UserManualButton from "../components/UserManualButton";
 
 // ─── Table columns ────────────────────────────────────────────────────────────
 const tableColumns = [
@@ -373,6 +374,8 @@ function AEEDashboardPage() {
               <span>Division-wise application overview</span>
             </div>
             <div className="officer-dashboard-user">
+                            <UserManualButton /> 
+
               <div><span>Logged in as</span><strong>{session?.loginId || session?.username}</strong></div>
               <button type="button" className="officer-dashboard-logout" onClick={handleLogout}>
                 <LogOut size={18} /> Logout

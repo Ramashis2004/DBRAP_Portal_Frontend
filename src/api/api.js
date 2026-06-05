@@ -49,6 +49,8 @@ API.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+
 export const sendApplicantOtp = (mobile, otp) =>
   API.post("/applicant-auth/send-otp", { mobile, otp });
 
@@ -485,3 +487,15 @@ export const uploadPaymentReceipt = (formData) =>
 
 export const getReceiptUrl = (applicationId) =>
   addTokenToUrl(`${API.defaults.baseURL}/applicant-payment/receipt/${applicationId}`);
+
+export const getUserManualViewUrl = () =>
+  addTokenToUrl(`${API.defaults.baseURL}/user-manual/view`);
+
+export const getUserManualDownloadUrl = () =>
+  addTokenToUrl(`${API.defaults.baseURL}/user-manual/download`);
+
+export const getPublicUserManualViewUrl = () =>
+  `/api/user-manual/public/view`;
+
+export const getPublicUserManualDownloadUrl = () =>
+  `/api/user-manual/public/download`;

@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { fetchPublicDashboardSummary } from '../api/api';
 import './LandingPage.css';
+import LandingUserManualCard  from "../components/LandingUserManualCard";
 
 const FeatureCard = ({ icon: Icon, title, description, delay }) => (
   <motion.div 
@@ -178,11 +179,21 @@ const LandingPage = () => {
       {/* Navigation Header */}
       <nav className="landing-nav glass">
         <div className="landing-nav__brand">
-          <div className="landing-nav__logo">
-            <Droplet fill="white" size={24} />
-          </div>
-          <span className="landing-nav__title">DBRAP PORTAL</span>
-        </div>
+  <img
+    src="/Odisha-Gov.svg"
+    alt="Government of Odisha"
+    className="landing-nav__gov-logo"
+  />
+
+  <div className="landing-nav__title-group">
+    <h3 className="landing-nav__title">
+      Panchayati Raj & Drinking Water Department
+    </h3>
+    <p className="landing-nav__subtitle">
+      Government of Odisha
+    </p>
+  </div>
+</div>
         <div className="landing-nav__links">
           <a href="#services" className="hover:text-accent-blue">Services</a>
           <a href="#process" className="hover:text-accent-blue">Process</a>
@@ -403,11 +414,11 @@ const LandingPage = () => {
           <p>Helpful resources for citizens and stakeholders</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {['SOP / Guidelines', 'Citizen Charter', 'Required Documents', 'FAQs'].map((item, i) => (
+          {/* {['User Manual '].map((item, i) => (
             <motion.a 
               key={i}
               whileHover={{ scale: 1.02 }}
-              className="glass p-6 text-center flex flex-col items-center gap-3 cursor-pointer border-b-2 border-accent-gold"
+              className=" p-6 text-center flex flex-col items-center gap-3 cursor-pointer border-b-2 border-accent-gold"
             >
               <div className="w-12 h-12 rounded-full border border-accent-blue/20 flex items-center justify-center text-accent-blue">
                 <Info size={24} />
@@ -415,7 +426,8 @@ const LandingPage = () => {
               <span className="font-bold text-accent-blue">{item}</span>
               <span className="text-xs text-gray-500">Click to view/download PDF</span>
             </motion.a>
-          ))}
+          ))} */}
+          <LandingUserManualCard />
         </div>
       </section>
 

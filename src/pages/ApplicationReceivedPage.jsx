@@ -26,6 +26,7 @@ import {
   formatDisplayDate,
 } from "../utils/applicationStatus";
 import "./OfficerDashboardPage.css";
+import  UserManualButton from "../components/UserManualButton";
 
 // ─── Date helpers ─────────────────────────────────────────────────────────────
 
@@ -1015,6 +1016,8 @@ background:"#fff"
               <h1>Application Received</h1>
             </div>
             <div className="officer-dashboard-user">
+                            <UserManualButton /> 
+
               <div>
                 <span>Logged in as</span>
                 <strong>{user.loginId}</strong>

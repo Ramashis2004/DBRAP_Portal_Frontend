@@ -34,6 +34,7 @@ import {
 } from "../utils/applicationStatus";
 import "./OfficerDashboardPage.css";
 import "./CEApplicationReceivedPage.css";
+import  UserManualButton from "../components/UserManualButton";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -807,6 +808,8 @@ function CEApplicationReceivedPage({ rolePrefix = "CE" }) {
           <header className="officer-dashboard-header">
             <div className="officer-dashboard-header__copy"><h1>Application Received</h1></div>
             <div className="officer-dashboard-user">
+                            <UserManualButton /> 
+
               <div><span>Logged in as</span><strong>{user.loginId}</strong></div>
               <button type="button" className="officer-dashboard-logout" onClick={handleLogout}><LogOut size={18} />Logout</button>
             </div>
