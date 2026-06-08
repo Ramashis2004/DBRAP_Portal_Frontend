@@ -2,32 +2,32 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { 
-  Droplet, 
-  ArrowRight, 
-  UserPlus, 
-  LogIn, 
-  Search, 
-  ShieldCheck, 
-  BarChart3, 
-  Bell, 
-  FileCheck, 
-  Clock, 
-  CreditCard, 
-  CheckCircle2, 
-  Mail, 
-  Phone, 
-  MapPin, 
+import {
+  Droplet,
+  ArrowRight,
+  UserPlus,
+  LogIn,
+  Search,
+  ShieldCheck,
+  BarChart3,
+  Bell,
+  FileCheck,
+  Clock,
+  CreditCard,
+  CheckCircle2,
+  Mail,
+  Phone,
+  MapPin,
   ExternalLink,
   ChevronDown,
   Info
 } from 'lucide-react';
-import { fetchPublicDashboardSummary } from '../api/api';
+import { fetchPublicDashboardSummary, logoutOfficer } from '../api/api';
 import './LandingPage.css';
-import LandingUserManualCard  from "../components/LandingUserManualCard";
+import LandingUserManualCard from "../components/LandingUserManualCard";
 
 const FeatureCard = ({ icon: Icon, title, description, delay }) => (
-  <motion.div 
+  <motion.div
     initial={{ opacity: 0, y: 30 }}
     whileInView={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.6, delay }}
@@ -43,7 +43,7 @@ const FeatureCard = ({ icon: Icon, title, description, delay }) => (
 );
 
 const ProcessStep = ({ number, title, description, isEven, delay }) => (
-  <motion.div 
+  <motion.div
     initial={{ opacity: 0, x: isEven ? 50 : -50 }}
     whileInView={{ opacity: 1, x: 0 }}
     transition={{ duration: 0.8, delay }}
@@ -115,6 +115,21 @@ const LandingPage = () => {
   const [dashboardError, setDashboardError] = useState("");
 
   useEffect(() => {
+    const officerSession = JSON.parse(localStorage.getItem("officerSession") || "null");
+    const applicantSession = JSON.parse(localStorage.getItem("applicantSession") || "null");
+
+    const session = officerSession || applicantSession;
+    if (session && session.id) {
+      logoutOfficer({ userId: session.id })
+        .catch((err) => console.error("Auto logout on landing page failed:", err))
+        .finally(() => {
+          localStorage.removeItem("officerSession");
+          localStorage.removeItem("applicantSession");
+        });
+    }
+  }, []);
+
+  useEffect(() => {
     let isMounted = true;
 
     fetchPublicDashboardSummary()
@@ -179,21 +194,21 @@ const LandingPage = () => {
       {/* Navigation Header */}
       <nav className="landing-nav glass">
         <div className="landing-nav__brand">
-  <img
-    src="/Odisha-Gov.svg"
-    alt="Government of Odisha"
-    className="landing-nav__gov-logo"
-  />
+          <img
+            src="/Odisha-Gov.svg"
+            alt="Government of Odisha"
+            className="landing-nav__gov-logo"
+          />
 
-  <div className="landing-nav__title-group">
-    <h3 className="landing-nav__title">
-      Panchayati Raj & Drinking Water Department
-    </h3>
-    <p className="landing-nav__subtitle">
-      Government of Odisha
-    </p>
-  </div>
-</div>
+          <div className="landing-nav__title-group">
+            <h3 className="landing-nav__title">
+              Panchayati Raj & Drinking Water Department
+            </h3>
+            <p className="landing-nav__subtitle">
+              Government of Odisha
+            </p>
+          </div>
+        </div>
         <div className="landing-nav__links">
           <a href="#services" className="hover:text-accent-blue">Services</a>
           <a href="#process" className="hover:text-accent-blue">Process</a>
@@ -254,14 +269,14 @@ const LandingPage = () => {
 
       {/* Hero Section */}
       <section className="hero">
-        <motion.div 
+        <motion.div
           style={{ y: backgroundY }}
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1 }}
           className="hero-content"
         >
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.2, duration: 0.8 }}
@@ -271,9 +286,9 @@ const LandingPage = () => {
             GOVERNMENT OF ODISHA OFFICIAL PORTAL
           </motion.div>
           <h1 className="drop-shadow-2xl">JAL CONNECT</h1>
-          <h3  className="drop-shadow-2xl">Digital Water Connection Management System</h3>
-          <p className="drop-shadow-md text-accent-blue/90 font-medium">Transparent, Efficient & Time-Bound Rural Water Supply Connection.<br/> Empowering through digital governance.</p>
-          
+          <h3 className="drop-shadow-2xl">Digital Water Connection Management System</h3>
+          <p className="drop-shadow-md text-accent-blue/90 font-medium">Transparent, Efficient & Time-Bound Rural Water Supply Connection.<br /> Empowering through digital governance.</p>
+
           <div className="hero-buttons">
             <button onClick={() => navigate("/register")} className="btn btn-primary">
               <UserPlus size={20} /> Apply for New Commercial Water Connection
@@ -292,40 +307,40 @@ const LandingPage = () => {
           <p>Leveraging technology for seamless service delivery</p>
         </div>
         <div className="features-grid">
-          <FeatureCard 
-            icon={ExternalLink} 
-            title="Online Submission" 
-            description="Paperless application submission from the comfort of your home." 
+          <FeatureCard
+            icon={ExternalLink}
+            title="Online Submission"
+            description="Paperless application submission from the comfort of your home."
             delay={0.1}
           />
-          <FeatureCard 
-            icon={Clock} 
-            title="Real-Time Tracking" 
-            description="Monitor every stage of your application with live status updates." 
+          <FeatureCard
+            icon={Clock}
+            title="Real-Time Tracking"
+            description="Monitor every stage of your application with live status updates."
             delay={0.2}
           />
-          <FeatureCard 
-            icon={UserPlus} 
-            title="Role-Based Workflow" 
-            description="Seamless coordination between JE, SE, EE and administrative offices." 
+          <FeatureCard
+            icon={UserPlus}
+            title="Role-Based Workflow"
+            description="Seamless coordination between JE, SE, EE and administrative offices."
             delay={0.3}
           />
-          <FeatureCard 
-            icon={BarChart3} 
-            title="SLA Monitoring" 
-            description="Automated alerts for time-bound processing ensuring accountability." 
+          <FeatureCard
+            icon={BarChart3}
+            title="SLA Monitoring"
+            description="Automated alerts for time-bound processing ensuring accountability."
             delay={0.4}
           />
-          <FeatureCard 
-            icon={FileCheck} 
-            title="Digital Approvals" 
-            description="E-signed certificates available for instant download upon approval." 
+          <FeatureCard
+            icon={FileCheck}
+            title="Digital Approvals"
+            description="E-signed certificates available for instant download upon approval."
             delay={0.5}
           />
-          <FeatureCard 
-            icon={Bell} 
-            title="System Alerts" 
-            description="Instant SMS and Email notifications at every process milestone." 
+          <FeatureCard
+            icon={Bell}
+            title="System Alerts"
+            description="Instant SMS and Email notifications at every process milestone."
             delay={0.6}
           />
         </div>
@@ -442,14 +457,14 @@ const LandingPage = () => {
               <span className="text-2xl font-black tracking-tighter">DBRAP PORTAL</span>
             </div>
             <p className="text-sm opacity-70 leading-relaxed max-w-xs">
-              Official Water Connection Management System, Government of Odisha. 
+              Official Water Connection Management System, Government of Odisha.
               Dedicated to providing clean water and digital transparency.
             </p>
             <div className="footer-socials">
               {/* Social icons would go here */}
             </div>
           </div>
-          
+
           <div className="footer-link-group">
             <h4>Quick Links</h4>
             <ul>
@@ -459,7 +474,7 @@ const LandingPage = () => {
               <li><a href="#">Official Notices</a></li>
             </ul>
           </div>
-          
+
           <div className="footer-link-group">
             <h4>Citizen Services</h4>
             <ul>
@@ -469,7 +484,7 @@ const LandingPage = () => {
               <li><a href="#">Bill Payment</a></li>
             </ul>
           </div>
-          
+
           <div className="footer-link-group">
             <h4>Contact Helpdesk</h4>
             <ul>
@@ -479,7 +494,7 @@ const LandingPage = () => {
             </ul>
           </div>
         </div>
-        
+
         <div className="footer-bottom">
           <p>© 2026 DBRAP Portal – Water Supply Department. All Rights Reserved. Designed & Maintained by NIC Odisha.</p>
         </div>
