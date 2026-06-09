@@ -322,7 +322,7 @@ const LandingPage = () => {
           <FeatureCard
             icon={UserPlus}
             title="Role-Based Workflow"
-            description="Seamless coordination between JE, SE, EE and administrative offices."
+            description="Seamless coordination between JE, SE/EE and administrative offices."
             delay={0.3}
           />
           <FeatureCard
@@ -331,16 +331,16 @@ const LandingPage = () => {
             description="Automated alerts for time-bound processing ensuring accountability."
             delay={0.4}
           />
-          <FeatureCard
+          {/* <FeatureCard
             icon={FileCheck}
             title="Digital Approvals"
             description="E-signed certificates available for instant download upon approval."
             delay={0.5}
-          />
+          /> */}
           <FeatureCard
             icon={Bell}
             title="System Alerts"
-            description="Instant SMS and Email notifications at every process milestone."
+            description="Instant SMS notifications at every process milestone."
             delay={0.6}
           />
         </div>
@@ -353,14 +353,15 @@ const LandingPage = () => {
           <p>How it works: From application to execution</p>
         </div>
         <div className="process-timeline">
-          <ProcessStep number={1} title="Citizen Registration" description="Register using your mobile number and Aadhar details." isEven={false} delay={0.1} />
+          <ProcessStep number={1} title="Citizen Registration" description="Register using your mobile number." isEven={false} delay={0.1} />
           <ProcessStep number={2} title="Application Submission" description="Fill connection details and upload required documents." isEven={true} delay={0.2} />
           <ProcessStep number={3} title="SE/EE Assignment" description="Automatic assignment to the respective jurisdictional officer." isEven={false} delay={0.3} />
           <ProcessStep number={4} title="JE Site Inspection" description="Junior Engineer visits the site for feasibility assessment." isEven={true} delay={0.4} />
           <ProcessStep number={5} title="Report Approval" description="Review and approval of the feasibility report by higher authorities." isEven={false} delay={0.5} />
-          <ProcessStep number={6} title="Online Payment" description="Secure payment of connection charges via integrated gateway." isEven={true} delay={0.6} />
-          <ProcessStep number={7} title="Connection Execution" description="Physical execution of water supply connection at site." isEven={false} delay={0.7} />
-          <ProcessStep number={8} title="Completion Certificate" description="Issuance of final certificate and bill generation setup." isEven={true} delay={0.8} />
+          <ProcessStep number={6} title="Payment Details" description="Payment Details Update by Applicant." isEven={true} delay={0.6} />
+          <ProcessStep number={7} title="Payment Verification" description="Payment Verification by Junior Engineer." isEven={false} delay={0.7} />
+          <ProcessStep number={8} title="Connection Execution" description="Physical execution of water supply connection at site." isEven={false} delay={0.8} />
+          <ProcessStep number={9} title="Connection Update" description="Connection Details Updated." isEven={true} delay={0.9} />
         </div>
       </section>
 
@@ -413,7 +414,7 @@ const LandingPage = () => {
           </motion.div>
           <motion.div whileHover={{ y: -5 }} className="transparency-card glass">
             <h4 className="flex items-center gap-2 text-accent-blue font-bold mb-3"><CheckCircle2 size={18} /> Digital Integrity</h4>
-            <p className="text-sm text-gray-600">Tamper-proof digital certificates ensures the highest level of trust and security.</p>
+            <p className="text-sm text-gray-600">Ensures the highest level of trust and security.</p>
           </motion.div>
           <motion.div whileHover={{ y: -5 }} className="transparency-card glass">
             <h4 className="flex items-center gap-2 text-accent-blue font-bold mb-3"><BarChart3 size={18} /> Dashboard Visibility</h4>
@@ -454,11 +455,12 @@ const LandingPage = () => {
               <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-accent-blue">
                 <Droplet fill="#1a3c5a" size={28} />
               </div>
-              <span className="text-2xl font-black tracking-tighter">DBRAP PORTAL</span>
+              <span className="text-2xl font-black tracking-tighter">JAL CONNECT</span>
             </div>
             <p className="text-sm opacity-70 leading-relaxed max-w-xs">
-              Official Water Connection Management System, Government of Odisha.
-              Dedicated to providing clean water and digital transparency.
+              Digital Water Connection Management System.
+              Transparent, Efficient & Time-Bound Rural Water Supply Connection.
+Empowering through digital governance.
             </p>
             <div className="footer-socials">
               {/* Social icons would go here */}
@@ -466,37 +468,28 @@ const LandingPage = () => {
           </div>
 
           <div className="footer-link-group">
-            <h4>Quick Links</h4>
-            <ul>
-              <li><a href="#">Apply Online</a></li>
-              <li><a href="#">Track Status</a></li>
-              <li><a href="#">Public Dashboard</a></li>
-              <li><a href="#">Official Notices</a></li>
-            </ul>
-          </div>
+  <h4>Quick Links</h4>
+  <ul>
+    <li><a href="#" onClick={(e) => { e.preventDefault(); navigate("/register"); }}>Apply for New Water Connection</a></li>
+    <li><a href="#">Track Application Status</a></li>
+    <li><a href="#" onClick={(e) => { e.preventDefault(); navigate("/login"); }}>Officer Login</a></li>
+  </ul>
+</div>
 
           <div className="footer-link-group">
             <h4>Citizen Services</h4>
             <ul>
-              <li><a href="#">Change of Title</a></li>
-              <li><a href="#">Disconnection</a></li>
-              <li><a href="#">Address Update</a></li>
-              <li><a href="#">Bill Payment</a></li>
+    <li><a href="#" onClick={(e) => { e.preventDefault(); navigate("/register"); }}>Apply for New Water Connection</a></li>
+              <li><a href="#">Track Application Status</a></li>
+              
             </ul>
           </div>
 
-          <div className="footer-link-group">
-            <h4>Contact Helpdesk</h4>
-            <ul>
-              <li className="flex items-center gap-2 opacity-80"><Phone size={14} /> 1800-345-XXXX</li>
-              <li className="flex items-center gap-2 opacity-80"><Mail size={14} /> support-water@odisha.gov.in</li>
-              <li className="flex items-center gap-2 opacity-80"><MapPin size={14} /> Odisha Secretariat, Bhubaneswar</li>
-            </ul>
-          </div>
+          
         </div>
 
         <div className="footer-bottom">
-          <p>© 2026 DBRAP Portal – Water Supply Department. All Rights Reserved. Designed & Maintained by NIC Odisha.</p>
+          <p>© All Rights Reserved. Designed & Maintained by NIC Odisha.</p>
         </div>
       </footer>
     </div>

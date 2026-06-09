@@ -21,19 +21,23 @@ function LandingUserManualCard() {
       <motion.div
         whileHover={{ scale: 1.02 }}
         onClick={openModal}
-        className="p-6 text-center flex flex-col items-center gap-3 cursor-pointer border-b-2 border-accent-gold"
-        role="button"
+ className="transparency-card glass p-6 cursor-pointer border-b-2 border-accent-gold mx-auto"
+  style={{
+    width: "400px",
+    maxWidth: "90%",
+  }}        role="button"
         tabIndex={0}
         onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") openModal(); }}
         aria-label="View User Manual"
       >
         <div className="w-12 h-12 rounded-full border border-accent-blue/20 flex items-center justify-center text-accent-blue">
-          <Info size={24} />
-        </div>
-        <span className="font-bold text-accent-blue">User Manual</span>
+          <Download size={24} />
+        <span className="font-bold text-accent-blue"> User Manual</span>
         <span className="text-xs text-gray-500 flex items-center gap-1">
             / Click to view / download PDF
         </span>
+                </div>
+
       </motion.div>
 
       <UserManualModal

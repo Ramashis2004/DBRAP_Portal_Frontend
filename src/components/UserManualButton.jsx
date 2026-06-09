@@ -115,7 +115,7 @@ function UserManualButton() {
         onClick={openModal}
         title="View User Manual"
       >
-        <BookOpen size={14} className="user-manual-trigger__icon" />
+        {/* <BookOpen size={14} className="user-manual-trigger__icon" /> */}
         <span>User Manual</span>
         <Download size={20} className="user-manual-trigger__download-icon" />
       </button>
