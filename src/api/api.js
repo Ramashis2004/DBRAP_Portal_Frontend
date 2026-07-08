@@ -499,3 +499,6 @@ export const getPublicUserManualViewUrl = () =>
 
 export const getPublicUserManualDownloadUrl = () =>
   `/api/user-manual/public/download`;
+
+export const checkExistingUserByType = (params) =>
+  API.get("/auth/users/check-existing", { params });

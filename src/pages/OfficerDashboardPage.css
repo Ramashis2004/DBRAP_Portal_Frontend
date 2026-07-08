@@ -423,6 +423,15 @@ cursor:pointer;
   margin-top: 6px;
 }
 
+.officer-dashboard-form__existing-user-banner {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: #fff8e1;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #92400e;
+}
 .officer-dashboard-form__submit {
   border: none;
   border-radius: 16px;
@@ -483,7 +492,31 @@ cursor:pointer;
   color: #1a3c5a;
   font-weight: 700;
 }
+.officer-dashboard-form__actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
 
+.officer-dashboard-form__reset {
+  padding: 14px 22px;
+  border: 1px solid #d1d5db;
+  border-radius: 16px;
+  background: #1a3c5a;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.officer-dashboard-form__reset:hover {
+  background: #3c75e6;
+}
+
+.officer-dashboard-form__reset:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .officer-dashboard-loading__icon {
   animation: officer-dashboard-spin 1s linear infinite;
 }

@@ -26,6 +26,7 @@ import {
   fetchEICPendingByDivision,
   fetchEICPendingApplicationsByDivision,
   fetchEICPendingApplicationHistory,
+  checkExistingUserByType ,
 } from "../api/api";
 import { PendingPieChart } from "../components/PendingPieChart";
 import SLAConfigPage from "./SLAConfigPage";
@@ -211,6 +212,9 @@ function OfficerDashboardPage() {
   const [isLoadingBlocks, setIsLoadingBlocks] = useState(false);
   const [showCEDashboardApplications, setShowCEDashboardApplications] = useState(false);
 const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+const [existingUser, setExistingUser]       = useState(null); 
+const [isUpdateMode, setIsUpdateMode]       = useState(false); 
+const [isCheckingUser, setIsCheckingUser]   = useState(false);
 
   const loadDashboard = async (userId, preserveMenuState = false) => {
     const response = await fetchOfficerDashboardConfig(userId);
@@ -439,6 +443,15 @@ useEffect(() => {
 }
 
     if (optionUrl === "/createuser" || optionLabel === "create user") {
+       setCreateUserForm(initialCreateUserForm);
+    setFormErrors({});
+    setFormMessage("");
+    setCreatedCredentials(null);
+    setExistingUser(null);
+    setIsUpdateMode(false);
+    setDistricts([]);
+    setDivisions([]);
+    setBlocks([]);
       return;
     }
 if (optionUrl === "/slaconfig" || optionLabel === "sla config") {
@@ -448,42 +461,99 @@ if (optionUrl === "/slaconfig" || optionLabel === "sla config") {
       navigate(optionUrl);
     }
   };
+const checkAndAutoFill = async (overrides = {}) => {
+  const merged = { ...createUserForm, ...overrides };
+  const selectedUT = userTypes.find((ut) => String(ut.id) === String(merged.userTypeId));
+  const typeName = String(selectedUT?.type_name || "").trim().toUpperCase();
 
-  const handleCreateUserFormChange = (event) => {
-    const { name, value } = event.target;
-    const isChangingUserType = name === "userTypeId";
-    const isChangingSubType = name === "subTypeId";
 
-    const nextUserType = isChangingUserType
-      ? userTypes.find((ut) => String(ut.id) === String(value))
-      : selectedUserType;
-    const nextIsMappedCircleUserType = ["CE", "ACE"].includes(nextUserType?.type_name?.toUpperCase());
+  const readyToCheck =
+    (typeName === "EIC") ||
+    (["CE", "ACE"].includes(typeName) && merged.subTypeId) ||
+    (typeName === "JE" && merged.blockCode) ||
+    (!["CE", "ACE", "EIC", "JE"].includes(typeName) && merged.divisionCode);
 
-    setFormMessage("");
-    setFormErrors((current) => ({
-      ...current,
-      [name]: "",
-      ...(isChangingUserType
-        ? { subTypeId: "", circleCode: "", districtCode: "", divisionCode: "", blockCode: "" }
-        : {}),
-      ...(isChangingSubType ? { circleCode: "" } : {}),
-    }));
+  if (!readyToCheck) {
+    console.log("Not ready to check yet for:", typeName);
+    return;
+  }
 
-    setCreateUserForm((current) => ({
+  setIsCheckingUser(true);
+  try {
+    const response = await checkExistingUserByType({
+      userTypeId:   merged.userTypeId,
+      subTypeId:    merged.subTypeId    || undefined,
+      circleCode:   merged.circleCode   || undefined,
+      districtCode: merged.districtCode || undefined,
+      divisionCode: merged.divisionCode || undefined,
+      blockCode:    merged.blockCode    || undefined,
+    });
+
+
+    if (response.data.exists) {
+      const u = response.data.user;
+      setCreateUserForm((prev) => ({
+        ...prev,
+        userName:    u.userName    || "",
+        designation: u.designation || "",
+        mobileNo:    u.mobileNo    || "",
+        emailId:     u.emailId     || "",
+      }));
+      setExistingUser(u);
+      setIsUpdateMode(true);
+
+      await Swal.fire({
+        icon: "info",
+        title: "User Already Exists",
+        html: `A user <strong>${u.userName}</strong> (${u.loginId}) already exists for this location.<br/>You can update their details below.`,
+        confirmButtonText: "OK",
+      });
+    } else {
+      setExistingUser(null);
+      setIsUpdateMode(false);
+    }
+  } catch (err) {
+    setExistingUser(null);
+    setIsUpdateMode(false);
+  } finally {
+    setIsCheckingUser(false);
+  }
+};const handleCreateUserFormChange = (event) => {
+  const { name, value } = event.target;
+  const isChangingUserType  = name === "userTypeId";
+  const isChangingSubType   = name === "subTypeId";
+
+  const nextUserType = isChangingUserType
+    ? userTypes.find((ut) => String(ut.id) === String(value))
+    : selectedUserType;
+  const nextTypeName = String(nextUserType?.type_name || "").trim().toUpperCase();
+  const nextIsMappedCircleUserType = ["CE", "ACE"].includes(nextTypeName);
+
+  setFormMessage("");
+  setFormErrors((current) => ({
+    ...current,
+    [name]: "",
+    ...(isChangingUserType
+      ? { subTypeId: "", circleCode: "", districtCode: "", divisionCode: "", blockCode: "" }
+      : {}),
+    ...(isChangingSubType ? { circleCode: "" } : {}),
+  }));
+
+  // Reset update mode on any structural field change
+  if (isChangingUserType || isChangingSubType) {
+    setExistingUser(null);
+    setIsUpdateMode(false);
+  }
+
+  setCreateUserForm((current) => {
+    const next = {
       ...current,
       [name]: value,
       ...(isChangingUserType
-        ? {
-            subTypeId: "",
-            circleCode: "",
-            districtCode: "",
-            divisionCode: "",
-            blockCode: "",
-          }
+        ? { subTypeId: "", circleCode: "", districtCode: "", divisionCode: "", blockCode: "" }
         : {}),
       ...(isChangingSubType
         ? {
-            // For CE/ACE: auto-fill circleCode from the selected subtype's mapped circles
             circleCode: nextIsMappedCircleUserType
               ? getSubtypeCircleCodes(
                   subTypes.find((st) => String(st.id) === String(value)) || null
@@ -498,15 +568,28 @@ if (optionUrl === "/slaconfig" || optionLabel === "sla config") {
             blockCode: "",
           }
         : {}),
-    }));
+    };
 
-    if (isChangingUserType) {
-      setBlocks([]);
-      setDistricts([]);
-      setDivisions([]);
+    // ── Trigger checks using `next` (not stale state) ──────────────────────
+    if (isChangingUserType && nextTypeName === "EIC") {
+      // EIC: no location needed, check immediately
+      setTimeout(() => checkAndAutoFill(next), 0);
     }
-  };
 
+    if (isChangingSubType && value && ["CE", "ACE"].includes(nextTypeName)) {
+      // CE/ACE: check after subtype selected
+      setTimeout(() => checkAndAutoFill(next), 0);
+    }
+
+    return next;
+  });
+
+  if (isChangingUserType) {
+    setBlocks([]);
+    setDistricts([]);
+    setDivisions([]);
+  }
+};
   const handleCreateUserCircleChange = async (event) => {
     const { value } = event.target;
     setFormMessage("");
@@ -527,7 +610,11 @@ if (optionUrl === "/slaconfig" || optionLabel === "sla config") {
     setDistricts([]);
     setDivisions([]);
     setBlocks([]);
-
+// After setting state in handleCreateUserCircleChange:
+const typeName = selectedUserType?.type_name?.toUpperCase();
+if (typeName === "EIC") {
+  checkAndAutoFill({ ...createUserForm, circleCode: value });
+}
     if (!value) {
       return;
     }
@@ -579,86 +666,159 @@ if (optionUrl === "/slaconfig" || optionLabel === "sla config") {
   };
 
   const handleCreateUserDivisionChange = async (event) => {
-    const { value } = event.target;
-    setFormMessage("");
-    setFormErrors((current) => ({
-      ...current,
-      divisionCode: "",
-      blockCode: "",
-    }));
-    setCreateUserForm((current) => ({
-      ...current,
-      divisionCode: value,
-      blockCode: "",
-    }));
-    setBlocks([]);
+  const { value } = event.target;
+  setFormMessage("");
+  setFormErrors((current) => ({ ...current, divisionCode: "", blockCode: "" }));
+  setCreateUserForm((current) => ({ ...current, divisionCode: value, blockCode: "" }));
+  setBlocks([]);
 
-    if (!value || !requiresBlockSelection) {
-      return;
-    }
+  if (!value) return;
 
+  // Load blocks for JE
+  if (requiresBlockSelection) {
     setIsLoadingBlocks(true);
-
     try {
       const response = await fetchBlocksByDivision(value);
       setBlocks(response.data);
-    } catch (error) {
+    } catch {
       setFormMessage("Unable to load blocks for the selected division.");
     } finally {
       setIsLoadingBlocks(false);
     }
-  };
+  }
 
-  const handleCreateUserSubmit = async (event) => {
-    event.preventDefault();
-    setFormMessage("");
-
-    const validationErrors = validateCreateUserForm({
+  // SE/EE, AEE — check after division selected (not JE, JE needs block too)
+  if (!requiresBlockSelection) {
+    const merged = {
       ...createUserForm,
-      isEicUserType,
-      isMappedCircleUserType,
-      requiresSubTypeSelection,
-      requiresBlockSelection,
-    });
+      divisionCode: value,
+      blockCode: "",
+    };
+    checkAndAutoFill(merged);
+  }
+};
 
-    if (Object.keys(validationErrors).length > 0) {
-      setFormErrors(validationErrors);
-      setCreatedCredentials(null);
-      setFormMessage("Please correct the highlighted fields.");
-      return;
+// ── Block change — triggers JE check ──────────────────────────────────────────
+const handleCreateUserBlockChange = async (event) => {
+  const { value } = event.target;
+  setFormMessage("");
+  setFormErrors((current) => ({ ...current, blockCode: "" }));
+
+  setCreateUserForm((current) => {
+    const next = { ...current, blockCode: value };
+    if (value) {
+      // Use next (fresh) state, not stale createUserForm
+      setTimeout(() => checkAndAutoFill(next), 0);
     }
+    return next;
+  });
+};
+  // const handleCreateUserSubmit = async (event) => {
+  //   event.preventDefault();
+  //   setFormMessage("");
 
-    setIsSubmittingUser(true);
+  //   const validationErrors = validateCreateUserForm({
+  //     ...createUserForm,
+  //     isEicUserType,
+  //     isMappedCircleUserType,
+  //     requiresSubTypeSelection,
+  //     requiresBlockSelection,
+  //   });
 
-    try {
-      const response = await createOfficerUser({
-        ...createUserForm,
-        createdBy: session?.loginId || session?.id || null,
-      });
+  //   if (Object.keys(validationErrors).length > 0) {
+  //     setFormErrors(validationErrors);
+  //     setCreatedCredentials(null);
+  //     setFormMessage("Please correct the highlighted fields.");
+  //     return;
+  //   }
 
-      await loadDashboard(session.id, true);
-      setFormErrors({});
-      const responseMessage = response.data?.message || "User created successfully.";
-      const smsFailureReason =
-        response.data?.smsSent === false && response.data?.smsGatewayResponse
-          ? ` SMS gateway response: ${response.data.smsGatewayResponse}`
-          : "";
-      setFormMessage(`${responseMessage}${smsFailureReason}`);
-      setCreatedCredentials(response.data?.generatedCredentials || null);
-      setCreateUserForm(initialCreateUserForm);
-      setDistricts([]);
-      setDivisions([]);
-      setBlocks([]);
-    } catch (error) {
-      setCreatedCredentials(null);
-      setFormMessage(error.response?.data?.error || "Failed to create user.");
-    } finally {
-      setIsSubmittingUser(false);
-    }
-  };
+  //   setIsSubmittingUser(true);
+
+  //   try {
+  //     const response = await createOfficerUser({
+  //       ...createUserForm,
+  //       createdBy: session?.loginId || session?.id || null,
+  //     });
+
+  //     await loadDashboard(session.id, true);
+  //     setFormErrors({});
+  //     const responseMessage = response.data?.message || "User created successfully.";
+  //     const smsFailureReason =
+  //       response.data?.smsSent === false && response.data?.smsGatewayResponse
+  //         ? ` SMS gateway response: ${response.data.smsGatewayResponse}`
+  //         : "";
+  //     setFormMessage(`${responseMessage}${smsFailureReason}`);
+  //     setCreatedCredentials(response.data?.generatedCredentials || null);
+  //     setCreateUserForm(initialCreateUserForm);
+  //     setDistricts([]);
+  //     setDivisions([]);
+  //     setBlocks([]);
+  //   } catch (error) {
+  //     setCreatedCredentials(null);
+  //     setFormMessage(error.response?.data?.error || "Failed to create user.");
+  //   } finally {
+  //     setIsSubmittingUser(false);
+  //   }
+  // };
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
+  const handleCreateUserSubmit = async (event) => {
+  event.preventDefault();
+  setFormMessage("");
+
+  const validationErrors = validateCreateUserForm({
+    ...createUserForm,
+    isEicUserType,
+    isMappedCircleUserType,
+    requiresSubTypeSelection,
+    requiresBlockSelection,
+  });
+
+  if (Object.keys(validationErrors).length > 0) {
+    setFormErrors(validationErrors);
+    setFormMessage("Please correct the highlighted fields.");
+    return;
+  }
+
+  // Confirm update if in update mode
+  if (isUpdateMode && existingUser) {
+    const confirm = await Swal.fire({
+      icon: "warning",
+      title: "Update User?",
+      html: `This will deactivate <strong>${existingUser.userName}</strong> (${existingUser.loginId}) and create a new user. Continue?`,
+      showCancelButton: true,
+      confirmButtonText: "Yes, Update",
+      cancelButtonText: "Cancel",
+    });
+    if (!confirm.isConfirmed) return;
+  }
+
+  setIsSubmittingUser(true);
+  try {
+    const response = await createOfficerUser({
+      ...createUserForm,
+      createdBy:          session?.loginId || session?.id || null,
+      replaceUserId:      isUpdateMode ? existingUser?.id : undefined, // ← pass old user id
+    });
+
+    await loadDashboard(session.id, true);
+    setFormErrors({});
+    setExistingUser(null);
+    setIsUpdateMode(false);
+    setCreatedCredentials(response.data?.generatedCredentials || null);
+    setFormMessage(response.data?.message || "User created successfully.");
+    setCreateUserForm(initialCreateUserForm);
+    setDistricts([]);
+    setDivisions([]);
+    setBlocks([]);
+  } catch (error) {
+    setCreatedCredentials(null);
+    setFormMessage(error.response?.data?.error || "Failed to create user.");
+  } finally {
+    setIsSubmittingUser(false);
+  }
+};
   return (
     <div className="officer-dashboard-page">
       <div className="officer-dashboard-shell">
@@ -890,17 +1050,7 @@ if (optionUrl === "/slaconfig" || optionLabel === "sla config") {
                 </div>
 
                 <form className="officer-dashboard-form" onSubmit={handleCreateUserSubmit}>
-                  {showCreateUserHint ? (
-                    <p className="officer-dashboard-form__hint">
-                      Login ID will be generated automatically. For JE users, it will be saved as
-                      JE{`<block_code>`}{`<serial_no>`} like JE363901. For CE and ACE users, subtype
-                      wise mapped circle will be filled automatically from the subtype master. ACE
-                      login IDs will be saved as ACE{`<subtype_serial>`}{`<serial_no>`} like ACE0101.
-                      For AEE users, it will be saved as
-                      AEE{`<district_code>`}{`<division_serial>`}{`<serial_no>`} like AEE3090101. Password will be created automatically
-                      and sent to the entered mobile number.
-                    </p>
-                  ) : null}
+                  
 
                   {/* ── User Type ─────────────────────────────────────────── */}
                   <label className="officer-dashboard-form__field">
@@ -910,6 +1060,7 @@ if (optionUrl === "/slaconfig" || optionLabel === "sla config") {
                       value={createUserForm.userTypeId}
                       onChange={handleCreateUserFormChange}
                       className={formErrors.userTypeId ? "has-error" : ""}
+                          disabled={isUpdateMode} 
                       required
                     >
                       <option value="">Select user type</option>
@@ -1059,34 +1210,34 @@ if (optionUrl === "/slaconfig" || optionLabel === "sla config") {
 
                   {/* ── Block (JE only) ───────────────────────────────────── */}
                   {requiresBlockSelection ? (
-                    <label className="officer-dashboard-form__field">
-                      <span>Block</span>
-                      <select
-                        name="blockCode"
-                        value={createUserForm.blockCode}
-                        onChange={handleCreateUserFormChange}
-                        className={formErrors.blockCode ? "has-error" : ""}
-                        disabled={!createUserForm.divisionCode || isLoadingBlocks}
-                        required
-                      >
-                        <option value="">
-                          {!createUserForm.divisionCode
-                            ? "Select division first"
-                            : isLoadingBlocks
-                              ? "Loading blocks..."
-                              : "Select block"}
-                        </option>
-                        {blocks.map((block) => (
-                          <option key={block.block_code} value={block.block_code}>
-                            {block.block_name}
-                          </option>
-                        ))}
-                      </select>
-                      {formErrors.blockCode ? (
-                        <span className="officer-dashboard-form__error">{formErrors.blockCode}</span>
-                      ) : null}
-                    </label>
-                  ) : null}
+  <label className="officer-dashboard-form__field">
+    <span>Block</span>
+    <select
+      name="blockCode"
+      value={createUserForm.blockCode}
+      onChange={handleCreateUserBlockChange} 
+      className={formErrors.blockCode ? "has-error" : ""}
+      disabled={!createUserForm.divisionCode || isLoadingBlocks}
+      required
+    >
+      <option value="">
+        {!createUserForm.divisionCode
+          ? "Select division first"
+          : isLoadingBlocks
+            ? "Loading blocks..."
+            : "Select block"}
+      </option>
+      {blocks.map((block) => (
+        <option key={block.block_code} value={block.block_code}>
+          {block.block_name}
+        </option>
+      ))}
+    </select>
+    {formErrors.blockCode ? (
+      <span className="officer-dashboard-form__error">{formErrors.blockCode}</span>
+    ) : null}
+  </label>
+) : null}
 
                   {/* ── Name ──────────────────────────────────────────────── */}
                   <label className="officer-dashboard-form__field">
@@ -1163,14 +1314,43 @@ if (optionUrl === "/slaconfig" || optionLabel === "sla config") {
 
                   {/* ── Submit ────────────────────────────────────────────── */}
                   <div className="officer-dashboard-form__actions">
-                    <button
-                      type="submit"
-                      className="officer-dashboard-form__submit"
-                      disabled={isSubmittingUser}
-                    >
-                      {isSubmittingUser ? "Creating..." : "Create User"}
-                    </button>
+                   <button
+  type="submit"
+  className="officer-dashboard-form__submit"
+  disabled={isSubmittingUser || isCheckingUser}
+>
+  {isCheckingUser
+    ? "Checking..."
+    : isSubmittingUser
+      ? isUpdateMode ? "Updating..." : "Creating..."
+      : isUpdateMode ? "Update User" : "Create User"}
+</button>
+{isUpdateMode ? (
+    <button
+      type="button"
+      className="officer-dashboard-form__reset"
+      disabled={isSubmittingUser}
+      onClick={() => {
+        setExistingUser(null);
+        setIsUpdateMode(false);
+        setCreateUserForm(initialCreateUserForm);
+        setFormErrors({});
+        setFormMessage("");
+        setDistricts([]);
+        setDivisions([]);
+        setBlocks([]);
+      }}
+    >
+      Reset
+    </button>
+  ) : null}
                   </div>
+                  {isUpdateMode && existingUser ? (
+  <div className="officer-dashboard-form__existing-user-banner">
+    <strong>Existing user found:</strong> {existingUser.userName} ({existingUser.loginId})
+    — will be deactivated on update.
+  </div>
+) : null}
 
                   {formMessage ? (
                     <p className="officer-dashboard-form__message">{formMessage}</p>
