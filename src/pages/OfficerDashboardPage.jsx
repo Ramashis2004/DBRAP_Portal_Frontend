@@ -1360,8 +1360,9 @@ const handleCreateUserBlockChange = async (event) => {
                     <div className="officer-dashboard-form__credentials">
                       <strong>SMS delivery failed. Use these credentials:</strong>
                       <p>Login ID: {createdCredentials.loginId}</p>
-                      <p>Password: {createdCredentials.password}</p>
-                    </div>
+<p>
+Please ask the user to reset the password or resend credentials.
+</p>                    </div>
                   ) : null}
                 </form>
               </div>

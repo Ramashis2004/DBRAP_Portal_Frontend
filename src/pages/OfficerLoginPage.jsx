@@ -215,14 +215,14 @@ const broadcastLogout = (userId) => {
       required
     />
 
-    <span
-  onClick={() => setShowPassword(!showPassword)}
-  className="password-eye-icon"
-  role="button"
-  tabIndex={0}
+   <button
+    type="button"
+    className="password-eye-icon"
+    onClick={() => setShowPassword(prev => !prev)}
+    aria-label={showPassword ? "Hide password" : "Show password"}
 >
-  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-</span>
+    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+</button>
 
   </div>
 </label>

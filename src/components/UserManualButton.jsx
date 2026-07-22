@@ -3,6 +3,39 @@ import { BookOpen, Download, X, LoaderCircle, FileText } from "lucide-react";
 import { getUserManualViewUrl, getUserManualDownloadUrl } from "../api/api";
 import "./UserManualButton.css";
 
+// ── URL allow-list validation (Fortify: Open Redirect remediation) ─────────
+// Never trust a constructed URL as a redirect/navigation target. Instead of
+// using the URL directly, verify it matches an expected, known-safe pattern
+// before it is ever assigned to href/src. This is the "level of indirection"
+// approach Fortify recommends: reject anything that isn't on the allow-list
+// rather than trying to sanitize/rewrite an untrusted value.
+const ALLOWED_MANUAL_PATH_PREFIXES = [
+  "/api/user-manual/view",
+  "/api/user-manual/download",
+  "/api/user-manual/public/view",
+  "/api/user-manual/public/download",
+];
+
+function isSafeManualUrl(candidate) {
+  if (!candidate || typeof candidate !== "string") return false;
+
+  try {
+    
+    const resolved = new URL(candidate, window.location.origin);
+
+    
+    if (resolved.origin !== window.location.origin) return false;
+
+    
+    return ALLOWED_MANUAL_PATH_PREFIXES.some((prefix) =>
+      resolved.pathname.startsWith(prefix)
+    );
+  } catch {
+    // Not a parseable URL at all — reject.
+    return false;
+  }
+}
+
 // ── Shared modal — used by both dashboard button and landing page card ────────
 export function UserManualModal({ open, onClose, viewUrl, downloadUrl, loaded, error, onLoad, onError }) {
   useEffect(() => {
@@ -18,6 +51,11 @@ export function UserManualModal({ open, onClose, viewUrl, downloadUrl, loaded, e
   }, [open]);
 
   if (!open) return null;
+
+ 
+  const safeViewUrl = isSafeManualUrl(viewUrl) ? viewUrl : "";
+  const safeDownloadUrl = isSafeManualUrl(downloadUrl) ? downloadUrl : "";
+  const urlsInvalid = (viewUrl || downloadUrl) && (!safeViewUrl || !safeDownloadUrl);
 
   return (
     <div
@@ -39,14 +77,16 @@ export function UserManualModal({ open, onClose, viewUrl, downloadUrl, loaded, e
             </div>
           </div>
           <div className="user-manual-modal__header-actions">
-            <a
-              href={downloadUrl}
-              download="DBRAP_Applicant_User_Manual.pdf"
-              className="user-manual-download-btn"
-            >
-              <Download size={14} />
-              Download PDF
-            </a>
+            {safeDownloadUrl && (
+              <a
+                href={safeDownloadUrl}
+                download="DBRAP_Applicant_User_Manual.pdf"
+                className="user-manual-download-btn"
+              >
+                <Download size={14} />
+                Download PDF
+              </a>
+            )}
             <button
               type="button"
               className="user-manual-close-btn"
@@ -60,25 +100,27 @@ export function UserManualModal({ open, onClose, viewUrl, downloadUrl, loaded, e
 
         {/* Body */}
         <div className="user-manual-modal__body">
-          {!loaded && !error && (
+          {!loaded && !error && !urlsInvalid && (
             <div className="user-manual-modal__state">
               <LoaderCircle size={28} className="user-manual-modal__spinner" />
               <span>Loading manual...</span>
             </div>
           )}
-          {error && (
+          {(error || urlsInvalid) && (
             <div className="user-manual-modal__state user-manual-modal__state--error">
               <FileText size={40} className="user-manual-modal__error-icon" />
               <p>Preview unavailable — please download instead.</p>
-              <a href={downloadUrl} download="DBRAP_Officer_User_Manual.pdf" className="user-manual-download-btn">
-                <Download size={14} />
-                Download PDF
-              </a>
+              {safeDownloadUrl && (
+                <a href={safeDownloadUrl} download="DBRAP_Officer_User_Manual.pdf" className="user-manual-download-btn">
+                  <Download size={14} />
+                  Download PDF
+                </a>
+              )}
             </div>
           )}
-          {viewUrl && (
+          {safeViewUrl && !urlsInvalid && (
             <iframe
-              src={`${viewUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+              src={`${safeViewUrl}#toolbar=0&navpanes=0&scrollbar=1`}
               title="User Manual PDF Preview"
               className={`user-manual-modal__iframe${loaded && !error ? " is-loaded" : ""}`}
               onLoad={onLoad}
@@ -100,11 +142,16 @@ function UserManualButton() {
   const [downloadUrl, setDownloadUrl] = useState("");
 
   const openModal = () => {
-    setViewUrl(getUserManualViewUrl());
-    setDownloadUrl(getUserManualDownloadUrl());
+    const rawViewUrl = getUserManualViewUrl();
+    const rawDownloadUrl = getUserManualDownloadUrl();
+
+    // Validate at the source, as soon as the URLs are produced, so an
+    // unvalidated value never even makes it into component state.
+    setViewUrl(isSafeManualUrl(rawViewUrl) ? rawViewUrl : "");
+    setDownloadUrl(isSafeManualUrl(rawDownloadUrl) ? rawDownloadUrl : "");
     setOpen(true);
     setLoaded(false);
-    setError(false);
+    setError(!isSafeManualUrl(rawViewUrl) || !isSafeManualUrl(rawDownloadUrl));
   };
 
   return (

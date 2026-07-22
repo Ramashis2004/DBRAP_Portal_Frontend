@@ -6,9 +6,8 @@ import {
 } from "lucide-react";
 import "./ForgotPasswordPage.css";
 
-// ── API base (reuse same base URL your loginOfficer uses) ────────────────────
-//const API = axios.create({ baseURL: import.meta.env.VITE_API_URL || "/api" });
 import { sendOtp, verifyOtp, resetPassword } from "../api/api";
+
 // ── Step indicator ────────────────────────────────────────────────────────────
 function StepDots({ current }) {
   const labels = ["Enter ID", "Verify OTP", "New Password"];
@@ -50,13 +49,10 @@ function StepSendOtp({ onNext }) {
     setLoading(true);
     setError("");
     try {
-    //   const { data } = await API.post("/officer/forgot-password/send-otp", {
-    //     username: username.trim(),
-    //   });
-    const { data } = await sendOtp({
-      username: username.trim(),
-    });
-      //console.log("OTP sent successfully. User ID:", username.trim(), "Mobile Number:", data.maskedMobile);
+      const { data } = await sendOtp({
+        username: username.trim(),
+      });
+
       onNext({
         username: username.trim(),
         maskedMobile: data.maskedMobile,
@@ -149,6 +145,14 @@ function StepVerifyOtp({ data, onNext, onBack }) {
   }, [resendCooldownSeconds]);
 
   useEffect(() => {
+    return () => {
+        setOtp("");
+        setError("");
+        setSuccess("");
+    };
+}, []);
+  useEffect(() => {
+    
     if (resendBlocked && resendCooldownSeconds === 0) {
       setResendBlocked(false);
       setLockoutMessage("");
@@ -177,18 +181,23 @@ function StepVerifyOtp({ data, onNext, onBack }) {
     setError("");
 
     try {
+      const trimmedOtp = otp.trim();
       await verifyOtp({
         username: data.username,
-        otp: otp.trim(),
+        otp: trimmedOtp,
       });
-      onNext({ ...data, otp: otp.trim() });
+
+      setOtp("");
+      onNext({ ...data, otp: trimmedOtp });
     } catch (err) {
       setError(err.response?.data?.error || "Incorrect OTP. Please try again.");
     } finally {
       setLoading(false);
     }
   };
-
+const handleBackClick = () => {
+    onBack();
+};
   const handleResend = async () => {
     setResending(true);
     setError("");
@@ -196,7 +205,6 @@ function StepVerifyOtp({ data, onNext, onBack }) {
 
     try {
       const response = await sendOtp({ username: data.username });
-      //console.log("OTP sent successfully. User ID:", data.username, "Mobile Number:", response.data?.maskedMobile || data.maskedMobile);
       const nextCooldown = Number(response.data?.retryAfterSeconds || response.data?.resendAfterSeconds || 25);
       const isBlocked = Boolean(response.data?.resendBlocked);
 
@@ -265,7 +273,7 @@ function StepVerifyOtp({ data, onNext, onBack }) {
       </form>
 
       <div className="fp-row">
-        <button className="fp-link" type="button" onClick={onBack}>? Change ID</button>
+        <button className="fp-link" type="button" onClick={handleBackClick}>Change ID?</button>
         <button
           className="fp-link"
           type="button"
@@ -290,7 +298,21 @@ function StepResetPassword({ data, onDone }) {
   const [show, setShow]       = useState({ password: false, confirm: false });
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState("");
+useEffect(() => {
+    return () => {
+        setForm({
+            password: "",
+            confirm: ""
+        });
 
+        setShow({
+            password: false,
+            confirm: false
+        });
+
+        setError("");
+    };
+}, []);
   const toggle = (field) => setShow((p) => ({ ...p, [field]: !p[field] }));
   const onChange = (field) => (e) => {
     setError("");
@@ -304,16 +326,13 @@ function StepResetPassword({ data, onDone }) {
 
     setLoading(true); setError("");
     try {
-    //   await API.post("/officer/forgot-password/reset", {
-    //     username:    data.username,
-    //     otp:         data.otp,
-    //     newPassword: form.password,
-    //   });
-    await resetPassword({
-  username: data.username,
-  otp: data.otp,
-  newPassword: form.password,
-});
+      await resetPassword({
+        username: data.username,
+        otp: data.otp,
+        newPassword: form.password,
+      });
+
+      setForm({ password: "", confirm: "" });
       onDone();
     } catch (err) {
       setError(err.response?.data?.error || "Failed to reset password. Try again.");
@@ -326,8 +345,9 @@ function StepResetPassword({ data, onDone }) {
     <div className="fp-body">
       <div className="fp-icon fp-icon--amber"><ShieldCheck size={24} /></div>
       <h2>Set New Password</h2>
-      <p className="fp-hint">Choose a strong password for <strong>{data.username}</strong>.</p>
-
+<p className="fp-hint">
+  Choose a strong password for your account.
+</p>
       <form className="fp-form" onSubmit={handleSubmit}>
         <label className="fp-field">
           <span>New Password</span>
@@ -398,6 +418,11 @@ export default function ForgotPasswordPage() {
 
   const goNext = (newData) => { setData(newData); setStep((s) => s + 1); };
 
+  const handleDone = () => {
+    setData({});
+    setDone(true);
+  };
+
   return (
     <div className="fp-page">
       <div className="fp-shell">
@@ -439,7 +464,7 @@ export default function ForgotPasswordPage() {
               onBack={() => setStep(1)}
             />
           ) : (
-            <StepResetPassword data={data} onDone={() => setDone(true)} />
+            <StepResetPassword data={data} onDone={handleDone} />
           )}
         </section>
       </div>

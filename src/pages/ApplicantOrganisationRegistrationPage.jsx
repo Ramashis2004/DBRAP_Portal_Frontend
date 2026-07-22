@@ -63,22 +63,35 @@ function Row({ label, value }) {
 // ── PDF Preview overlay (identical to CEDashboardApplications) ────────────────
 function PdfPreviewOverlay({ preview, onClose }) {
   if (!preview) return null;
+
+  // preview.url ultimately comes from getOrganisationDocumentUrl() /
+  // getSiteVisitReportUrl() in api.js, which now returns null if the
+  // constructed URL fails same-origin / allow-listed-path / http(s)-only
+  // validation (Fortify: Open Redirect + XSS: Poor Validation
+  // remediation). It can also be a locally created blob: URL from
+  // URL.createObjectURL() for in-progress file selections, which is safe
+  // (browser-generated, never touches localStorage/tainted input) — the
+  // check below just guards against a missing/empty value either way.
+  const hasValidUrl = typeof preview.url === "string" && preview.url.length > 0;
+
   return (
     <div className="pv-preview-overlay">
       <div className="pv-preview-card">
         <div className="pv-preview-header">
           <h2 className="pv-preview-header__title">{preview.title}</h2>
           <div className="pv-preview-header__actions">
-            <a
-              href={preview.url}
-              download
-              className="pv-preview-btn-download"
-              target="_blank"
-              rel="noreferrer"
-            >
-              <Download size={14} />
-              Download PDF
-            </a>
+            {hasValidUrl && (
+              <a
+                href={preview.url}
+                download
+                className="pv-preview-btn-download"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Download size={14} />
+                Download PDF
+              </a>
+            )}
             <button
               className="pv-preview-btn-close"
               onClick={onClose}
@@ -89,11 +102,17 @@ function PdfPreviewOverlay({ preview, onClose }) {
           </div>
         </div>
         <div className="pv-preview-content">
-          <iframe
-            src={`${preview.url}#toolbar=0`}
-            className="pv-preview-frame"
-            title="PDF Preview"
-          />
+          {hasValidUrl ? (
+            <iframe
+              src={`${preview.url}#toolbar=0`}
+              className="pv-preview-frame"
+              title="PDF Preview"
+            />
+          ) : (
+            <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>
+              Preview unavailable.
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -106,7 +125,11 @@ function ExistingApplicationCard({ application, onBack }) {
 
   const renderDocumentLink = (documentType, label = "View File") => {
     if (!application?.[documentType]) return "NA";
+    // getOrganisationDocumentUrl() returns null if the URL fails the
+    // allow-list validation in api.js — fall back to "NA" instead of
+    // wiring a preview button to a null/invalid URL.
     const url = getOrganisationDocumentUrl(application.application_id, documentType);
+    if (!url) return "NA";
     return (
       <button
         type="button"
@@ -688,19 +711,20 @@ const forwardedTo = divisionName
               <div className="pv-preview-header">
                 <h2 className="pv-preview-header__title">{pdfPreview.title}</h2>
                 <div className="pv-preview-header__actions">
-                  
-                   <a href={pdfPreview.url}
-                    download={pdfPreview.fileName}
-                    className="pv-preview-btn-download"
-                  >
-                    <Download size={14} />
-                    Download PDF
-                  </a>
+                  {pdfPreview.url && (
+                    <a href={pdfPreview.url}
+                      download={pdfPreview.fileName}
+                      className="pv-preview-btn-download"
+                    >
+                      <Download size={14} />
+                      Download PDF
+                    </a>
+                  )}
                   <button
                     type="button"
                     className="pv-preview-btn-close"
                     onClick={() => {
-                      URL.revokeObjectURL(pdfPreview.url); // ✅ cleanup
+                      if (pdfPreview.url) URL.revokeObjectURL(pdfPreview.url); // ✅ cleanup
                       setPdfPreview(null);
                     }}
                     title="Close Preview"
@@ -710,11 +734,17 @@ const forwardedTo = divisionName
                 </div>
               </div>
               <div className="pv-preview-content">
-                <iframe
-                  src={`${pdfPreview.url}#toolbar=0`}
-                  className="pv-preview-frame"
-                  title="PDF Preview"
-                />
+                {pdfPreview.url ? (
+                  <iframe
+                    src={`${pdfPreview.url}#toolbar=0`}
+                    className="pv-preview-frame"
+                    title="PDF Preview"
+                  />
+                ) : (
+                  <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>
+                    Preview unavailable.
+                  </div>
+                )}
               </div>
             </div>
             </div>

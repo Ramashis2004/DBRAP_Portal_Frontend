@@ -9,8 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import Swal from "sweetalert2";
-import { logoutOfficer } from "../api/api";
-import { fetchApplicantNavigation } from "../api/api";
+import { logoutOfficer,fetchApplicantNavigation} from "../api/api";
 import "./ApplicantDashboardPage.css";
 
 function ApplicantLayout() {

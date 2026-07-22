@@ -216,9 +216,15 @@ const [remarks, setRemarks] = useState("");
 
   const renderDetailValue = (label, value, app) => {
     if (label === "Site Visit Report" && value) {
+      // getSiteVisitReportUrl() returns null when the URL fails the
+      // same-origin / allow-listed-path validation performed in api.js
+      // (Fortify: Open Redirect remediation) — never hand a null/invalid
+      // value to href.
+      const reportUrl = getSiteVisitReportUrl(app.application_id);
+      if (!reportUrl) return "Unavailable";
       return (
         <a
-          href={getSiteVisitReportUrl(app.application_id)}
+          href={reportUrl}
           target="_blank"
           rel="noreferrer"
           style={{
@@ -254,7 +260,11 @@ const [remarks, setRemarks] = useState("");
   };
 const renderDocumentLink = (app, documentType, label = "View File") => {
     if (!app?.[documentType]) return "NA";
+    // getOrganisationDocumentUrl() returns null if it fails the allow-list
+    // check in api.js — fall back to "NA" instead of opening a broken
+    // preview with an invalid src.
     const url = getOrganisationDocumentUrl(app.application_id, documentType);
+    if (!url) return "NA";
     return (
       <button
         onClick={() => setPdfPreview({ url, title: label })}
@@ -475,19 +485,28 @@ value={`${app.water_requirement} L/Day`}
  <SectionBox title="Site Visit Report">
           <Row label="Site Visit Report" value={
             detailView.site_visit_report
-              ? <button
-                  onClick={() => setPdfPreview({
-                    url: getSiteVisitReportUrl(detailView.application_id),
-                    title: "Site Visit Report"
-                  })}
-                  style={{
-                    background: "none", border: "none", color: "#2563eb",
-                    textDecoration: "underline", cursor: "pointer", padding: 0,
-                    fontSize: "inherit", fontWeight: "inherit"
-                  }}
-                >
-                  View File
-                </button>
+              ? (() => {
+                  // getSiteVisitReportUrl() returns null when validation
+                  // in api.js rejects the URL — don't wire a preview
+                  // button to a null href.
+                  const reportUrl = getSiteVisitReportUrl(detailView.application_id);
+                  if (!reportUrl) return "Unavailable";
+                  return (
+                    <button
+                      onClick={() => setPdfPreview({
+                        url: reportUrl,
+                        title: "Site Visit Report"
+                      })}
+                      style={{
+                        background: "none", border: "none", color: "#2563eb",
+                        textDecoration: "underline", cursor: "pointer", padding: 0,
+                        fontSize: "inherit", fontWeight: "inherit"
+                      }}
+                    >
+                      View File
+                    </button>
+                  );
+                })()
               : "NA"
           } />
         </SectionBox>
@@ -513,16 +532,18 @@ value={`${app.water_requirement} L/Day`}
             <div className="pv-preview-header">
               <h2 className="pv-preview-header__title">{pdfPreview.title}</h2>
               <div className="pv-preview-header__actions">
-                <a
-                  href={pdfPreview.url}
-                  download
-                  className="pv-preview-btn-download"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <Download size={14} />
-                  Download PDF
-                </a>
+                {pdfPreview.url && (
+                  <a
+                    href={pdfPreview.url}
+                    download
+                    className="pv-preview-btn-download"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Download size={14} />
+                    Download PDF
+                  </a>
+                )}
                 <button
                   className="pv-preview-btn-close"
                   onClick={() => setPdfPreview(null)}
@@ -533,11 +554,17 @@ value={`${app.water_requirement} L/Day`}
               </div>
             </div>
             <div className="pv-preview-content">
-              <iframe
-                src={`${pdfPreview.url}#toolbar=0`}
-                className="pv-preview-frame"
-                title="PDF Preview"
-              />
+              {pdfPreview.url ? (
+                <iframe
+                  src={`${pdfPreview.url}#toolbar=0`}
+                  className="pv-preview-frame"
+                  title="PDF Preview"
+                />
+              ) : (
+                <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>
+                  Preview unavailable.
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1537,4 +1564,3 @@ borderBottom:"1px dashed #e7e5e4"
 }
 
 export default JEDashboardPage;
-

@@ -24,7 +24,6 @@ const swalError   = (title, text) => Swal.fire({ icon: "error",   title, text, c
 const swalSuccess = (title, text) => Swal.fire({ icon: "success", title, text, confirmButtonColor: "#3d1f0f" });
 const swalWarning = (title, text) => Swal.fire({ icon: "warning", title, text, confirmButtonColor: "#3d1f0f" });
 
-const generateOTP     = () => Math.floor(100000 + Math.random() * 900000).toString();
 const generateCaptcha = () => {
   const left  = Math.floor(10 + Math.random() * 40);
   const right = Math.floor(1  + Math.random() * 9);
@@ -58,7 +57,6 @@ function ApplicantLoginPage() {
   const [mobileNumber, setMobileNumber] = useState("");
   const [mobileError,  setMobileError]  = useState("");
   const [otpInput,     setOtpInput]     = useState("");
-  const [sentOtp,      setSentOtp]      = useState("");
   const [isOtpSent,    setIsOtpSent]    = useState(false);
 
   // ── Password tab state ────────────────────────────────────────────────────
@@ -80,7 +78,7 @@ function ApplicantLoginPage() {
     setActiveTab(tab);
     // OTP state
     setMobileNumber(""); setMobileError(""); setOtpInput("");
-    setSentOtp(""); setIsOtpSent(false);
+    setIsOtpSent(false);
     // Password state
     setUserId(""); setPassword(""); setShowPassword(false);
     setUserIdError(""); setPasswordError("");
@@ -130,34 +128,20 @@ function ApplicantLoginPage() {
     const v = e.target.value.replace(/\D/g, "").slice(0, 10);
     setMobileNumber(v);
     setMobileError(validateMobile(v));
-    setOtpInput(""); setSentOtp(""); setIsOtpSent(false);
+    setOtpInput(""); setIsOtpSent(false);
   };
 
+  
   const sendOTP = async () => {
     const err = validateMobile(mobileNumber);
     if (err) { setMobileError(err); return; }
 
     setIsSubmitting(true);
-    let otp = "";
     try {
       await checkApplicantLoginMobile(mobileNumber);
-      otp = generateOTP();
-      setSentOtp(otp);
 
-//       const data = new FormData();
-//       data.append("template_id",  "1007529288081313959");
-//       data.append("phonenumber",  mobileNumber);
-//       data.append("department_id","D047009");
-//       data.append("action",       "sendOTPSMS");
-//       data.append("source",       "ODIGOV");
-//       data.append("sms_content",
-//         `Your OTP for Gramsewa Nidhi Portal is ${otp}. Please do not share this with anyone. Panchayati Raj & Drinking Water Dept. - Govt. of Odisha`
-//       );
-// console.log("OTP sent successfully. Mobile Number:", mobileNumber);
-//       await axios.post("https://govtsms.odisha.gov.in/api/api.php", data);
-
-//await axios.post("/api/applicant-auth/send-otp", { mobile: mobileNumber, otp });
-      await sendApplicantOtp(mobileNumber, otp);
+      
+      await sendApplicantOtp(mobileNumber);
 
       setIsOtpSent(true);
       await swalSuccess("OTP Sent", `OTP has been sent to ${mobileNumber}.`);
@@ -170,10 +154,7 @@ function ApplicantLoginPage() {
         await swalError("Unable to Send OTP", error.response.data.error);
         return;
       }
-      //console.error("OTP error:", error);
-     // console.log("BYPASS: OTP is " + otp);
-      setIsOtpSent(true);
-    //  await swalWarning("OTP Generated", `SMS could not be sent. Use this OTP for testing: ${otp}`);
+      await swalError("Unable to Send OTP", "Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -183,15 +164,15 @@ function ApplicantLoginPage() {
     e.preventDefault();
 
     if (!isOtpSent) { await swalWarning("OTP Required", "Please send OTP first."); return; }
-    if (otpInput !== sentOtp) { await swalError("Invalid OTP", "The OTP you entered is incorrect."); return; }
     if (captchaInput.trim() !== captcha.answer) {
       await swalError("Invalid Captcha", "Please enter the correct captcha answer.");
       refreshCaptcha(); return;
     }
 
+    
     setIsSubmitting(true);
     try {
-      const response  = await loginApplicant({ mobile_number: mobileNumber });
+      const response  = await loginApplicant({ mobile_number: mobileNumber, otp: otpInput });
       const applicant = response.data?.applicant;
       saveApplicantSession(applicant, response.data?.token);
       await swalSuccess("Login Successful", `Welcome ${applicant.name || applicant.mobileNo}.`);
@@ -202,9 +183,9 @@ function ApplicantLoginPage() {
         if (!shouldContinue) return;
 
         try {
-          const response = await loginApplicant({ mobile_number: mobileNumber, forceLogin: true });
+          const response = await loginApplicant({ mobile_number: mobileNumber, otp: otpInput, forceLogin: true });
           const applicant = response.data?.applicant;
-          broadcastLogout(applicant.id); // ← ADD
+          broadcastLogout(applicant.id);
 
           saveApplicantSession(applicant, response.data?.token);
           await swalSuccess("Login Successful", `Welcome ${applicant.name || applicant.mobileNo}.`);
@@ -215,7 +196,7 @@ function ApplicantLoginPage() {
         return;
       }
 
-      await swalError("Login Failed", error.response?.data?.error || "Something went wrong.");
+      await swalError("Login Failed", error.response?.data?.error || "Invalid or expired OTP.");
     } finally {
       setIsSubmitting(false);
     }
@@ -281,7 +262,7 @@ function ApplicantLoginPage() {
             return;
           }
           const applicant = response.data?.applicant;
-          broadcastLogout(applicant.id); // ← ADD
+          broadcastLogout(applicant.id);
 
           saveApplicantSession(applicant, response.data?.token);
           await swalSuccess("Login Successful", `Welcome ${applicant.name || applicant.loginId}.`);
@@ -520,7 +501,9 @@ function ApplicantLoginPage() {
 }
 const broadcastLogout = (userId) => {
   const channel = new BroadcastChannel("applicant_session");
-  channel.postMessage({ type: "FORCE_LOGOUT", userId });
+  //channel.postMessage({ type: "FORCE_LOGOUT", userId });
+  channel.postMessage({ type: "FORCE_LOGOUT" });
+
   channel.close();
 };
 export default ApplicantLoginPage;

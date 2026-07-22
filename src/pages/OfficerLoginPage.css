@@ -267,30 +267,42 @@
     grid-template-columns: 1fr;
   }
 
-  .password-eye-icon{
-display:flex;
-align-items:center;
-justify-content:center;
-
-cursor:pointer;
-
-padding:0;
-margin-left:8px;
-
-background:transparent !important;
-border:none !important;
-outline:none !important;
-box-shadow:none !important;
-
-flex-shrink:0;
+  
 }
 
-.password-eye-icon svg{
-display:block;
-color:#7f8d98;
+.password-eye-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+
+  padding: 0;
+  margin-left: 8px;
+
+  background: transparent;
+  border: none;
+  outline: none;
+  box-shadow: none;
+
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  flex-shrink: 0;
 }
 
-.password-eye-icon:hover svg{
-color:#1a3c5a;
+.password-eye-icon svg {
+  display: block;
+  color: #7f8d98;
 }
+
+.password-eye-icon:hover svg {
+  color: #1a3c5a;
+}
+
+.password-eye-icon:focus,
+.password-eye-icon:focus-visible {
+  outline: none;
+  box-shadow: none;
 }

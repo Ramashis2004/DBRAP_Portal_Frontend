@@ -385,18 +385,57 @@ export const uploadSiteVisitReport = (applicationId, file, inspectionDate, inspe
   );
 };
 
+// ── URL allow-list validation ────────────────────────────────────────────
+
+const ALLOWED_API_PATH_PREFIXES = [
+  "/api/organisation/organisations/", // site visit report + org documents
+  "/api/payment-verification/",       // money receipt
+  "/api/applicant-payment/receipt/",  // applicant payment receipt
+  "/api/user-manual/",                // user manual (view/download/public)
+];
+
+function isSafeApiUrl(candidate) {
+  if (!candidate || typeof candidate !== "string") return false;
+  try {
+    const resolved = new URL(candidate, window.location.origin);
+
+    // Reject anything that isn't http/https outright — this is what stops
+    // a "javascript:", "data:", "vbscript:", etc. payload from ever being
+    // treated as safe, regardless of origin/path checks below. This is
+    // the piece that specifically closes the XSS/poor-validation finding.
+    if (resolved.protocol !== window.location.protocol) return false;
+    if (resolved.protocol !== "http:" && resolved.protocol !== "https:") return false;
+
+    if (resolved.origin !== window.location.origin) return false;
+    return ALLOWED_API_PATH_PREFIXES.some((prefix) =>
+      resolved.pathname.startsWith(prefix)
+    );
+  } catch {
+    return false;
+  }
+}
+
 const addTokenToUrl = (url) => {
+  // Validate the endpoint itself before doing anything else with it — if
+  // it's not one of our known-safe API paths, refuse to build a link.
+  if (!isSafeApiUrl(url)) {
+    console.error("Blocked unsafe document/manual URL:", url);
+    return null;
+  }
+
   try {
     const officerSession = JSON.parse(localStorage.getItem("officerSession"));
     const applicantSession = JSON.parse(localStorage.getItem("applicantSession"));
     const token = officerSession?.token || applicantSession?.token;
-    if (token) {
-      return `${url}?token=${encodeURIComponent(token)}`;
-    }
+    const finalUrl = token ? `${url}?token=${encodeURIComponent(token)}` : url;
+
+    // Re-validate the fully-assembled URL (defense in depth — confirms the
+    // token concatenation didn't change the origin/path already checked).
+    return isSafeApiUrl(finalUrl) ? finalUrl : null;
   } catch (e) {
     console.error("Error parsing session to get token:", e);
+    return isSafeApiUrl(url) ? url : null;
   }
-  return url;
 };
 
 export const getSiteVisitReportUrl = (applicationId) =>

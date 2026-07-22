@@ -63,6 +63,7 @@ function ChangePasswordPage() {
   const [visibleFields, setVisibleFields] = useState({});
 
   useEffect(() => {
+       
     if (!session?.data?.id && !isPublicChange) {
       navigate("/login", { replace: true });
     }
@@ -96,7 +97,7 @@ function ChangePasswordPage() {
 
     const passwordError = validatePassword(formData.newPassword);
     if (passwordError) {
-      setErrorMessage(passwordError);
+    setErrorMessage("Password does not meet the required policy.");
       return;
     }
 
@@ -133,6 +134,7 @@ function ChangePasswordPage() {
         return;
       }
 
+      
       let updatedSession;
       if (response.data?.token && response.data?.user) {
         const u = response.data.user;
@@ -140,7 +142,6 @@ function ChangePasswordPage() {
           updatedSession = {
             id: u.id,
             loginId: u.loginId,
-            mobileNo: u.mobileNo,
             name: u.name,
             roleId: u.roleId,
             passwordChangeRequired: false,
@@ -162,6 +163,7 @@ function ChangePasswordPage() {
           };
         }
       } else {
+       
         updatedSession = {
           ...session.data,
           passwordChangeRequired: false,
@@ -169,15 +171,37 @@ function ChangePasswordPage() {
       }
       localStorage.setItem(session.storageKey, JSON.stringify(updatedSession));
 
-      await Swal.fire({
-        icon: "success",
-        title: "Password Changed",
-        text: "Your password has been updated successfully.",
-        confirmButtonColor: "#1a3c5a",
-      });
+      // await Swal.fire({
+      //   icon: "success",
+      //   title: "Password Changed",
+      //   text: "Your password has been updated successfully.",
+      //   confirmButtonColor: "#1a3c5a",
+      // });
 
-      navigate(session.dashboardPath, { replace: true });
+      // navigate(session.dashboardPath, { replace: true });
+      setFormData({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+});
+
+setVisibleFields({});
+
+await Swal.fire({
+    icon: "success",
+    title: "Password Changed",
+    text: "Your password has been updated successfully."
+});
+
+navigate(session.dashboardPath, {
+    replace: true
+});
     } catch (error) {
+         setFormData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+    });
       setErrorMessage(error.response?.data?.error || "Unable to change password. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -188,30 +212,30 @@ function ChangePasswordPage() {
     return null;
   }
 
-  const renderPasswordField = ({ name, label, autoComplete }) => (
-    <label className="change-password-field">
-      <span>{label}</span>
-      <div className="change-password-input">
-        <Lock size={18} />
-        <input
-          type={visibleFields[name] ? "text" : "password"}
-          name={name}
-          value={formData[name]}
-          onChange={handleChange}
-          autoComplete={autoComplete}
-          disabled={isSubmitting}
-          required
-        />
-        <button
-          type="button"
-          onClick={() => toggleVisibility(name)}
-          aria-label={visibleFields[name] ? "Hide password" : "Show password"}
-        >
-          {visibleFields[name] ? <EyeOff size={17} /> : <Eye size={17} />}
-        </button>
-      </div>
-    </label>
-  );
+  // const renderPasswordField = ({ name, label, autoComplete }) => (
+  //   <label className="change-password-field">
+  //     <span>{label}</span>
+  //     <div className="change-password-input">
+  //       <Lock size={18} />
+  //       <input
+  //         type={visibleFields[name] ? "text" : "password"}
+  //         name={name}
+  //         value={formData[name]}
+  //         onChange={handleChange}
+  //         autoComplete={autoComplete}
+  //         disabled={isSubmitting}
+  //         required
+  //       />
+  //       <button
+  //         type="button"
+  //         onClick={() => toggleVisibility(name)}
+  //         aria-label={visibleFields[name] ? "Hide password" : "Show password"}
+  //       >
+  //         {visibleFields[name] ? <EyeOff size={17} /> : <Eye size={17} />}
+  //       </button>
+  //     </div>
+  //   </label>
+  // );
 
   return (
     <div className="change-password-page">
@@ -239,25 +263,100 @@ function ChangePasswordPage() {
 
         <div className="change-password-user">
           <span>{isPublicChange ? "Changing password for" : "Signed in as"}</span>
-          <strong>{isPublicChange ? username : (session?.data?.loginId || session?.data?.username || session?.data?.id)}</strong>
+          <strong>{isPublicChange ? username : (session?.data?.name || session?.data?.id)}</strong>
         </div>
 
         <form className="change-password-form" onSubmit={handleSubmit}>
-          {renderPasswordField({
-            name: "currentPassword",
-            label: "Current Password",
-            autoComplete: "current-password",
-          })}
-          {renderPasswordField({
-            name: "newPassword",
-            label: "New Password",
-            autoComplete: "new-password",
-          })}
-          {renderPasswordField({
-            name: "confirmPassword",
-            label: "Confirm New Password",
-            autoComplete: "new-password",
-          })}
+          <label className="change-password-field">
+    <span>Current Password</span>
+
+    <div className="change-password-input">
+        <Lock size={18} />
+
+        <input
+            type={visibleFields.currentPassword ? "text" : "password"}
+            name="currentPassword"
+            value={formData.currentPassword}
+            onChange={handleChange}
+            autoComplete="current-password"
+            required
+        />
+
+        <button
+            type="button"
+            onClick={() => toggleVisibility("currentPassword")}
+            aria-label={
+                visibleFields.currentPassword
+                    ? "Hide password"
+                    : "Show password"
+            }
+        >
+            {visibleFields.currentPassword
+                ? <EyeOff size={17}/>
+                : <Eye size={17}/>}
+        </button>
+    </div>
+</label>
+         <label className="change-password-field">
+    <span>New Password</span>
+
+    <div className="change-password-input">
+        <Lock size={18} />
+
+        <input
+            type={visibleFields.newPassword ? "text" : "password"}
+            name="newPassword"
+            value={formData.newPassword}
+            onChange={handleChange}
+            autoComplete="new-password"
+            required
+        />
+
+        <button
+            type="button"
+            onClick={() => toggleVisibility("newPassword")}
+            aria-label={
+                visibleFields.newPassword
+                    ? "Hide password"
+                    : "Show password"
+            }
+        >
+            {visibleFields.newPassword
+                ? <EyeOff size={17}/>
+                : <Eye size={17}/>}
+        </button>
+    </div>
+</label>
+        <label className="change-password-field">
+    <span>Confirm Password</span>
+
+    <div className="change-password-input">
+        <Lock size={18} />
+
+        <input
+            type={visibleFields.confirmPassword ? "text" : "password"}
+            name="confirmPassword"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            autoComplete="confirm-password"
+            required
+        />
+
+        <button
+            type="button"
+            onClick={() => toggleVisibility("confirmPassword")}
+            aria-label={
+                visibleFields.confirmPassword
+                    ? "Hide password"
+                    : "Show password"
+            }
+        >
+            {visibleFields.confirmPassword
+                ? <EyeOff size={17}/>
+                : <Eye size={17}/>}
+        </button>
+    </div>
+</label>
 
           <div className="change-password-rules">
             <CheckCircle2 size={18} />
