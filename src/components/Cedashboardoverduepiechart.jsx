@@ -83,25 +83,25 @@ const formatDateTime = (value) => {
 function hitTestPie(mx, my, vals, total) {
   if (total <= 0) return null;
 
-  let cum = -Math.PI / 2;
-  for (let i = 0; i < BUCKETS.length; i++) {
-    const ratio = vals[i] / total;
-    const angle = ratio * 2 * Math.PI;
-    const a1 = cum, a2 = cum + angle;
-    cum += angle;
-    if (vals[i] <= 0) continue;
+  const dx = mx - CX, dy = my - CY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist > R) return null;
 
-    const dx = mx - CX, dy = my - CY;
-    const normAng = ((Math.atan2(dy, dx) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-    const na1 = ((a1 % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-    const na2 = ((a2 % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-    const inArc = na1 <= na2 ? (normAng >= na1 && normAng <= na2) : (normAng >= na1 || normAng <= na2);
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    if (distance <= R && inArc) return BUCKETS[i].key;
+  const rawAngle = Math.atan2(dy, dx);
+  const twoPi = 2 * Math.PI;
+  let cum = -Math.PI / 2;
+
+  for (let i = 0; i < BUCKETS.length; i++) {
+    const angle = (vals[i] / total) * twoPi;
+    if (vals[i] > 0) {
+      let diff = rawAngle - cum;
+      diff = ((diff % twoPi) + twoPi) % twoPi;
+      if (diff <= angle) return BUCKETS[i].key;
+    }
+    cum += angle;
   }
   return null;
 }
-
 // ── Division drill-down panel ─────────────────────────────────────────────────
 function drawPie2D(ctx, vals, total, activeKey) {
   ctx.clearRect(0, 0, W, H);

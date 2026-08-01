@@ -73,7 +73,9 @@ function PdfPreviewOverlay({ preview, onClose }) {
   // (browser-generated, never touches localStorage/tainted input) — the
   // check below just guards against a missing/empty value either way.
   const hasValidUrl = typeof preview.url === "string" && preview.url.length > 0;
-
+const handleClosePreview = () => {
+    onClose();
+};
   return (
     <div className="pv-preview-overlay">
       <div className="pv-preview-card">
@@ -94,7 +96,7 @@ function PdfPreviewOverlay({ preview, onClose }) {
             )}
             <button
               className="pv-preview-btn-close"
-              onClick={onClose}
+              onClick={handleClosePreview}
               title="Close Preview"
             >
               <X size={18} />

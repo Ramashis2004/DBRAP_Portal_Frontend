@@ -77,7 +77,7 @@ const PublicDashboardTable = ({ title, columns, rows }) => (
         <thead>
           <tr>
             {columns.map((column) => (
-              <th key={column.key}>{column.label}</th>
+              <th key={column.field}>{column.label}</th>
             ))}
           </tr>
         </thead>
@@ -90,7 +90,7 @@ const PublicDashboardTable = ({ title, columns, rows }) => (
             rows.map((row, index) => (
               <tr key={row.id || index}>
                 {columns.map((column) => (
-                  <td key={column.key}>{formatDashboardValue(row[column.key])}</td>
+                  <td key={column.field}>{formatDashboardValue(row[column.field])}</td>
                 ))}
               </tr>
             ))
@@ -154,32 +154,32 @@ const LandingPage = () => {
   }, []);
 
   const applicationColumns = [
-    { key: "sl_no", label: "Sl.No" },
-    { key: "service_name", label: "Name of the Service" },
-    { key: "district_name", label: "District" },
-    { key: "applications_received", label: "No. of applications received" },
-    { key: "applications_processed_approved", label: "No. of applications processed / approved" },
-    { key: "applications_pending", label: "No. of applications pending" },
-    { key: "ortpsa_timeline", label: "ORTPSA timeline in (Days)" },
-    { key: "applications_approved_within_timeline", label: "No. of applications approved within timeline / 9 days" },
-    { key: "avg_time_taken", label: "Avg. time taken  in (Days)" },
-    { key: "min_time_taken", label: "Min. time taken in (Days)" },
-    { key: "max_time_taken", label: "Max. time taken in (Days)" },
+    { field: "sl_no", label: "Sl.No" },
+    { field: "service_name", label: "Name of the Service" },
+    { field: "district_name", label: "District" },
+    { field: "applications_received", label: "No. of applications received" },
+    { field: "applications_processed_approved", label: "No. of applications processed / approved" },
+    { field: "applications_pending", label: "No. of applications pending" },
+    { field: "ortpsa_timeline", label: "ORTPSA timeline in (Days)" },
+    { field: "applications_approved_within_timeline", label: "No. of applications approved within timeline / 9 days" },
+    { field: "avg_time_taken", label: "Avg. time taken  in (Days)" },
+    { field: "min_time_taken", label: "Min. time taken in (Days)" },
+    { field: "max_time_taken", label: "Max. time taken in (Days)" },
   ];
 
   const inspectionColumns = [
-    { key: "inspections_to_be_conducted", label: "Total no. of Application Received" },
-    { key: "inspections_conducted_within_timeline", label: "Total number of inspections conducted within timeline" },
-    { key: "inspections_conducted_beyond_timeline", label: "Total number of inspections conducted beyond timeline" },
-    { key: "pending_inspections", label: "Total number of pending inspections" },
-    { key: "enterprises_exempted_self_certification", label: "Number of enterprises exempted based on self-certification" },
-    { key: "enterprises_exempted_third_party_certification", label: "Number of enterprises exempted based on third-party certification" },
+    { field: "inspections_to_be_conducted", label: "Total no. of Application Received" },
+    { field: "inspections_conducted_within_timeline", label: "Total number of inspections conducted within timeline" },
+    { field: "inspections_conducted_beyond_timeline", label: "Total number of inspections conducted beyond timeline" },
+    { field: "pending_inspections", label: "Total number of pending inspections" },
+    { field: "enterprises_exempted_self_certification", label: "Number of enterprises exempted based on self-certification" },
+    { field: "enterprises_exempted_third_party_certification", label: "Number of enterprises exempted based on third-party certification" },
   ];
 
   const inspectionReportColumns = [
-    { key: "inspections_conducted", label: "Total number of inspections conducted" },
-    { key: "reports_uploaded_within_24_hours", label: "Total number of inspections' report uploaded within 24 hours" },
-    { key: "reports_uploaded_beyond_24_hours", label: "Total number of inspections' report uploaded beyond 24 hours" },
+    { field: "inspections_conducted", label: "Total number of inspections conducted" },
+    { field: "reports_uploaded_within_24_hours", label: "Total number of inspections' report uploaded within 24 hours" },
+    { field: "reports_uploaded_beyond_24_hours", label: "Total number of inspections' report uploaded beyond 24 hours" },
   ];
 
   return (

@@ -53,9 +53,17 @@ export function UserManualModal({ open, onClose, viewUrl, downloadUrl, loaded, e
   if (!open) return null;
 
  
-  const safeViewUrl = isSafeManualUrl(viewUrl) ? viewUrl : "";
-  const safeDownloadUrl = isSafeManualUrl(downloadUrl) ? downloadUrl : "";
-  const urlsInvalid = (viewUrl || downloadUrl) && (!safeViewUrl || !safeDownloadUrl);
+  const validatedViewUrl = isSafeManualUrl(viewUrl)
+  ? viewUrl
+  : null;
+
+const validatedDownloadUrl = isSafeManualUrl(downloadUrl)
+  ? downloadUrl
+  : null;
+
+const urlsInvalid =
+  (viewUrl || downloadUrl) &&
+  (!validatedViewUrl || !validatedDownloadUrl);
 
   return (
     <div
@@ -77,9 +85,9 @@ export function UserManualModal({ open, onClose, viewUrl, downloadUrl, loaded, e
             </div>
           </div>
           <div className="user-manual-modal__header-actions">
-            {safeDownloadUrl && (
+            {validatedDownloadUrl && (
               <a
-                href={safeDownloadUrl}
+                href={validatedDownloadUrl}
                 download="DBRAP_Applicant_User_Manual.pdf"
                 className="user-manual-download-btn"
               >
@@ -110,17 +118,17 @@ export function UserManualModal({ open, onClose, viewUrl, downloadUrl, loaded, e
             <div className="user-manual-modal__state user-manual-modal__state--error">
               <FileText size={40} className="user-manual-modal__error-icon" />
               <p>Preview unavailable — please download instead.</p>
-              {safeDownloadUrl && (
-                <a href={safeDownloadUrl} download="DBRAP_Officer_User_Manual.pdf" className="user-manual-download-btn">
+              {validatedDownloadUrl && (
+                <a href={validatedDownloadUrl} download="DBRAP_Officer_User_Manual.pdf" className="user-manual-download-btn">
                   <Download size={14} />
                   Download PDF
                 </a>
               )}
             </div>
           )}
-          {safeViewUrl && !urlsInvalid && (
+          {validatedViewUrl && !urlsInvalid && (
             <iframe
-              src={`${safeViewUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+              src={`${validatedViewUrl}#toolbar=0&navpanes=0&scrollbar=1`}
               title="User Manual PDF Preview"
               className={`user-manual-modal__iframe${loaded && !error ? " is-loaded" : ""}`}
               onLoad={onLoad}

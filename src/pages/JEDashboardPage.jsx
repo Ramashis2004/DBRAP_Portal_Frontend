@@ -221,22 +221,49 @@ const [remarks, setRemarks] = useState("");
       // (Fortify: Open Redirect remediation) — never hand a null/invalid
       // value to href.
       const reportUrl = getSiteVisitReportUrl(app.application_id);
-      if (!reportUrl) return "Unavailable";
-      return (
-        <a
-          href={reportUrl}
-          target="_blank"
-          rel="noreferrer"
-          style={{
+      // if (!reportUrl) return "Unavailable";
+      // return (
+      //   <a
+      //     href={reportUrl}
+      //     target="_blank"
+      //     rel="noreferrer"
+      //     style={{
+      //       color: "#1d4ed8",
+      //       textDecoration: "underline",
+      //       textDecorationStyle: "dotted",
+      //       wordBreak: "break-word",
+      //     }}
+      //   >
+      //     View File
+      //   </a>
+      // );
+      const validatedReportUrl =
+    reportUrl &&
+    isSafeManualUrl(reportUrl)
+        ? reportUrl
+        : null;
+
+return validatedReportUrl ? (
+
+<a
+    href={validatedReportUrl}
+    target="_blank"
+    rel="noopener noreferrer"
+    style={{
             color: "#1d4ed8",
             textDecoration: "underline",
             textDecorationStyle: "dotted",
             wordBreak: "break-word",
           }}
-        >
-          View File
-        </a>
-      );
+>
+
+View File
+
+</a>
+
+) : (
+    "Unavailable"
+);
     }
 
     if (label === "Site Visit Report") {

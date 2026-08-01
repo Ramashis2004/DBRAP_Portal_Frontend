@@ -4,7 +4,13 @@ import { ArrowLeft, Lock, LogIn, User, Eye, EyeOff } from "lucide-react";
 import Swal from "sweetalert2";
 import { loginOfficer } from "../api/api";
 import "./OfficerLoginPage.css";
-
+const SAFE_UI = Object.freeze({
+    LOGIN: "Login",
+    OFFICER_LOGIN:
+        "Use your officer credentials to access the internal dashboard.",
+    USERNAME: "Officer ID / Username",
+    PASSWORD: "Password"
+});
 const getOfficerDashboardPath = (user) => {
   const roleName = String(user?.roleName || "").trim().toUpperCase();
   const userTypeId = Number(user?.userTypeId);
@@ -180,13 +186,13 @@ const broadcastLogout = (userId) => {
 
         <section className="officer-login-card">
           <div className="officer-login-card__header">
-            <h3>Login</h3>
-            <p>Use your officer credentials to access the internal dashboard.</p>
+            <h3>{SAFE_UI.LOGIN}</h3>
+            <p>{SAFE_UI.OFFICER_LOGIN}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="officer-login-form">
             <label className="officer-login-field">
-              <span>Officer ID / Username</span>
+              <span>{SAFE_UI.USERNAME}</span>
               <div className="officer-login-input">
                 <User size={18} />
                 <input
@@ -201,7 +207,7 @@ const broadcastLogout = (userId) => {
             </label>
 
             <label className="officer-login-field">
-  <span>Password</span>
+  <span>{SAFE_UI.PASSWORD}</span>
 
   <div className="officer-login-input">
     <Lock size={18} />

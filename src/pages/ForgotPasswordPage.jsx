@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState,useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft, User, KeyRound, ShieldCheck,
@@ -7,13 +7,43 @@ import {
 import "./ForgotPasswordPage.css";
 
 import { sendOtp, verifyOtp, resetPassword } from "../api/api";
+const SAFE_UI = Object.freeze({
+
+    TITLES: Object.freeze({
+
+        FORGOT_PASSWORD: "Forgot Password?",
+
+        ENTER_OTP: "Enter OTP",
+
+        NEW_PASSWORD: "Set New Password",
+
+        SUCCESS: "Password Reset!",
+
+        ACCOUNT_RECOVERY: "Account Recovery",
+        NEW_PASS: "New Password",
+       CONFIRM_PASSWORD: "Confirm Password"
+
+
+    }),
+
+    MESSAGE: Object.freeze({
+
+        ENTER_ID:
+            "Enter your Officer ID and we'll send a 6-digit OTP to your registered mobile number."
+
+    })
+
+});
 
 // ── Step indicator ────────────────────────────────────────────────────────────
 function StepDots({ current }) {
-  const labels = ["Enter ID", "Verify OTP", "New Password"];
-  return (
+const SAFE_LABELS = Object.freeze([
+    "Enter ID",
+    "Verify OTP",
+    "New Password"
+]);  return (
     <div className="fp-stepper">
-      {labels.map((label, i) => {
+     {SAFE_LABELS.map((label, i)  => {
         const n    = i + 1;
         const done = n < current;
         const active = n === current;
@@ -23,7 +53,7 @@ function StepDots({ current }) {
               {done ? <CheckCircle2 size={13} /> : n}
             </div>
             <span className="fp-stepper__label">{label}</span>
-            {n < labels.length && <div className="fp-stepper__line" />}
+            {n < SAFE_LABELS.length && <div className="fp-stepper__line" />}
           </div>
         );
       })}
@@ -69,10 +99,10 @@ function StepSendOtp({ onNext }) {
   return (
     <div className="fp-body">
       <div className="fp-icon fp-icon--amber"><User size={24} /></div>
-      <h2>Forgot Password?</h2>
+      <h2>{SAFE_UI.TITLES.FORGOT_PASSWORD}</h2>
       <p className="fp-hint">
-        Enter your Officer ID and we'll send a 6-digit OTP to your registered mobile number.
       </p>
+        {SAFE_UI.MESSAGE.ENTER_ID}
 
       <form className="fp-form" onSubmit={handleSubmit}>
         <label className="fp-field">
@@ -109,6 +139,12 @@ function StepVerifyOtp({ data, onNext, onBack }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [resendCooldownSeconds, setResendCooldownSeconds] = useState(Number(data.resendAfterSeconds || 25));
+
+  const safeMaskedMobile = useMemo(
+    () => String(data.maskedMobile || ""),
+    [data.maskedMobile]
+);
+
   const [resendBlocked, setResendBlocked] = useState(Boolean(data.resendBlocked));
   const [lockoutMessage, setLockoutMessage] = useState(
     data.resendBlocked ? "You have exceed your time limit of send OTP try after 30 minutes." : ""
@@ -169,6 +205,10 @@ function StepVerifyOtp({ data, onNext, onBack }) {
 
     return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
   };
+
+  const resendCountdownText = Object.freeze({
+    value: String(formatCountdown(resendCooldownSeconds))
+});
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -232,9 +272,9 @@ const handleBackClick = () => {
   return (
     <div className="fp-body">
       <div className="fp-icon fp-icon--amber"><KeyRound size={24} /></div>
-      <h2>Enter OTP</h2>
+      <h2>{SAFE_UI.TITLES.ENTER_OTP}</h2>
       <p className="fp-hint">
-        A 6-digit OTP was sent to <strong>{data.maskedMobile}</strong>.{" "}
+        A 6-digit OTP was sent to <strong>{safeMaskedMobile}</strong>.{" "}
         It is valid for <strong>10 minutes</strong>.
       </p>
 
@@ -258,13 +298,13 @@ const handleBackClick = () => {
         {lockoutMessage ? <Alert type="error" text={lockoutMessage} /> : null}
         {!resendBlocked && resendCooldownSeconds > 0 ? (
           <p className="fp-hint fp-hint--compact">
-            You can resend OTP in <strong>{formatCountdown(resendCooldownSeconds)}</strong>.
-          </p>
+    You can resend OTP in <strong>{resendCountdownText.value}</strong>.
+</p>
         ) : null}
         {resendBlocked ? (
-          <p className="fp-hint fp-hint--compact">
-            OTP resend is blocked for <strong>{formatCountdown(resendCooldownSeconds)}</strong>.
-          </p>
+        <p className="fp-hint fp-hint--compact">
+    OTP resend is blocked for <strong>{resendCountdownText.value}</strong>.
+</p>
         ) : null}
 
         <button className="fp-btn" type="submit" disabled={loading}>
@@ -344,13 +384,13 @@ useEffect(() => {
   return (
     <div className="fp-body">
       <div className="fp-icon fp-icon--amber"><ShieldCheck size={24} /></div>
-      <h2>Set New Password</h2>
+      <h2>{SAFE_UI.TITLES.NEW_PASSWORD}</h2>
 <p className="fp-hint">
   Choose a strong password for your account.
 </p>
       <form className="fp-form" onSubmit={handleSubmit}>
         <label className="fp-field">
-          <span>New Password</span>
+          <span>{SAFE_UI.TITLES.NEW_PASS}</span>
           <div className="fp-pw-wrap">
             <input
               type={show.password ? "text" : "password"}
@@ -367,7 +407,7 @@ useEffect(() => {
         </label>
 
         <label className="fp-field">
-          <span>Confirm Password</span>
+          <span>{SAFE_UI.TITLES.CONFIRM_PASSWORD}</span>
           <div className="fp-pw-wrap">
             <input
               type={show.confirm ? "text" : "password"}
@@ -400,7 +440,7 @@ function SuccessScreen() {
   return (
     <div className="fp-body fp-body--center">
       <div className="fp-icon fp-icon--green"><CheckCircle2 size={28} /></div>
-      <h2>Password Reset!</h2>
+<h2>{SAFE_UI.TITLES.SUCCESS}</h2>
       <p className="fp-hint">
         Your password has been updated successfully.
         You can now log in with your new credentials.
@@ -415,7 +455,7 @@ export default function ForgotPasswordPage() {
   const [step, setStep] = useState(1);
   const [data, setData] = useState({});
   const [done, setDone] = useState(false);
-
+const safeStep = Number(step);
   const goNext = (newData) => { setData(newData); setStep((s) => s + 1); };
 
   const handleDone = () => {
@@ -436,7 +476,7 @@ export default function ForgotPasswordPage() {
             <div className="fp-hero__circle">
               <KeyRound size={44} strokeWidth={1.3} />
             </div>
-            <h1>Account Recovery</h1>
+            <h1>{SAFE_UI.TITLES.ACCOUNT_RECOVERY}</h1>
             <p>
               Regain access to your DBRAP officer account in three quick steps.
               An OTP will be sent to your registered mobile number.
@@ -451,13 +491,13 @@ export default function ForgotPasswordPage() {
 
         {/* ── Right form panel ── */}
         <section className="fp-card">
-          {!done && <StepDots current={step} />}
+          {!done && <StepDots current={safeStep} />}
 
           {done ? (
             <SuccessScreen />
-          ) : step === 1 ? (
+          ) : safeStep === 1 ? (
             <StepSendOtp onNext={goNext} />
-          ) : step === 2 ? (
+          ) : safeStep === 2 ? (
             <StepVerifyOtp
               data={data}
               onNext={goNext}

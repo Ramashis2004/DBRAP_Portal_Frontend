@@ -50,7 +50,31 @@ API.interceptors.response.use(
   }
 );
 
+// ================= SAFE API ENDPOINTS =================
 
+export const SAFE_ENDPOINTS = Object.freeze({
+
+    USER_MANUAL_VIEW:
+        "/api/user-manual/view",
+
+    USER_MANUAL_DOWNLOAD:
+        "/api/user-manual/download",
+
+    USER_MANUAL_PUBLIC_VIEW:
+        "/api/user-manual/public/view",
+
+    USER_MANUAL_PUBLIC_DOWNLOAD:
+        "/api/user-manual/public/download",
+
+    SITE_VISIT_REPORT:
+        "/api/organisation/organisations",
+
+    MONEY_RECEIPT:
+        "/api/payment/money-receipt",
+
+    SITE_VISIT_PREVIEW:
+        "/api/organisation/site-visit-preview"
+});
 export const sendApplicantOtp = (mobile, otp) =>
   API.post("/applicant-auth/send-otp", { mobile, otp });
 
@@ -415,34 +439,94 @@ function isSafeApiUrl(candidate) {
   }
 }
 
-const addTokenToUrl = (url) => {
-  // Validate the endpoint itself before doing anything else with it — if
-  // it's not one of our known-safe API paths, refuse to build a link.
-  if (!isSafeApiUrl(url)) {
-    console.error("Blocked unsafe document/manual URL:", url);
-    return null;
-  }
+// const addTokenToUrl = (url) => {
+//   // Validate the endpoint itself before doing anything else with it — if
+//   // it's not one of our known-safe API paths, refuse to build a link.
+//   if (!isSafeApiUrl(url)) {
+//     console.error("Blocked unsafe document/manual URL:", url);
+//     return null;
+//   }
 
-  try {
-    const officerSession = JSON.parse(localStorage.getItem("officerSession"));
-    const applicantSession = JSON.parse(localStorage.getItem("applicantSession"));
-    const token = officerSession?.token || applicantSession?.token;
-    const finalUrl = token ? `${url}?token=${encodeURIComponent(token)}` : url;
+//   try {
+//     const officerSession = JSON.parse(localStorage.getItem("officerSession"));
+//     const applicantSession = JSON.parse(localStorage.getItem("applicantSession"));
+//     const token = officerSession?.token || applicantSession?.token;
+//     const finalUrl = token ? `${url}?token=${encodeURIComponent(token)}` : url;
 
-    // Re-validate the fully-assembled URL (defense in depth — confirms the
-    // token concatenation didn't change the origin/path already checked).
-    return isSafeApiUrl(finalUrl) ? finalUrl : null;
-  } catch (e) {
-    console.error("Error parsing session to get token:", e);
-    return isSafeApiUrl(url) ? url : null;
-  }
-};
+//     // Re-validate the fully-assembled URL (defense in depth — confirms the
+//     // token concatenation didn't change the origin/path already checked).
+//     return isSafeApiUrl(finalUrl) ? finalUrl : null;
+//   } catch (e) {
+//     console.error("Error parsing session to get token:", e);
+//     return isSafeApiUrl(url) ? url : null;
+//   }
+// };
 
-export const getSiteVisitReportUrl = (applicationId) =>
-  addTokenToUrl(`${API.defaults.baseURL}/organisation/organisations/${applicationId}/site-visit-report`);
+export function addTokenToUrl(path) {
 
-export const getOrganisationDocumentUrl = (applicationId, documentType) =>
-  addTokenToUrl(`${API.defaults.baseURL}/organisation/organisations/${applicationId}/documents/${documentType}`);
+    if (!path)
+        return "";
+
+    const token = getAccessToken();
+function getAccessToken() {
+
+    try {
+
+        const officer =
+            JSON.parse(localStorage.getItem("officerSession"));
+
+        const applicant =
+            JSON.parse(localStorage.getItem("applicantSession"));
+
+        return officer?.token || applicant?.token || "";
+
+    } catch {
+
+        return "";
+    }
+
+}
+    const url = new URL(path, window.location.origin);
+
+    if (!isSafeApiUrl(url.toString()))
+        return "";
+
+    if (token)
+        url.searchParams.set("token", token);
+
+    return url.toString();
+
+}
+
+// export const getSiteVisitReportUrl = (applicationId) =>
+//   addTokenToUrl(`${API.defaults.baseURL}/organisation/organisations/${applicationId}/site-visit-report`);
+
+export function getSiteVisitReportUrl(applicationId) {
+
+    const url = new URL(
+        SAFE_ENDPOINTS.SITE_VISIT_REPORT,
+        window.location.origin
+    );
+
+    url.pathname += `/${applicationId}/site-visit-report`;
+
+    return addTokenToUrl(url.pathname);
+
+}
+// export const getOrganisationDocumentUrl = (applicationId, documentType) =>
+//   addTokenToUrl(`${API.defaults.baseURL}/organisation/organisations/${applicationId}/documents/${documentType}`);
+
+export function getOrganisationDocumentUrl(applicationId, documentType) {
+
+    const url = new URL(
+        SAFE_ENDPOINTS.SITE_VISIT_REPORT,
+        window.location.origin
+    );
+
+    url.pathname += `/${applicationId}/documents/${documentType}`;
+
+    return addTokenToUrl(url.pathname);
+}
 
 // ── Applicant ─────────────────────────────────────────────────────────────────
 export const fetchApplicantApplicationCount = (userId) =>
@@ -468,8 +552,20 @@ export const fetchPaymentVerificationApplications = (userId) =>
 export const verifyPaymentReceipt = (applicationId, action, remarks, userId) =>
   API.patch(`/payment-verification/${applicationId}/verify`, { action, remarks, userId });
 
-export const getMoneyReceiptUrl = (applicationId) =>
-  addTokenToUrl(`${API.defaults.baseURL}/payment-verification/${applicationId}/money-receipt`);
+// export const getMoneyReceiptUrl = (applicationId) =>
+//   addTokenToUrl(`${API.defaults.baseURL}/payment-verification/${applicationId}/money-receipt`);
+
+export function getMoneyReceiptUrl(applicationId) {
+
+    const url = new URL(
+        SAFE_ENDPOINTS.MONEY_RECEIPT,
+        window.location.origin
+    );
+
+    url.pathname += `/${applicationId}/money-receipt`;
+
+    return addTokenToUrl(url.pathname);
+}
 
 // ── Connection Details ────────────────────────────────────────────────────────
 export const fetchConnectionApplications = (blockCode) =>
@@ -527,17 +623,29 @@ export const uploadPaymentReceipt = (formData) =>
 export const getReceiptUrl = (applicationId) =>
   addTokenToUrl(`${API.defaults.baseURL}/applicant-payment/receipt/${applicationId}`);
 
+// export const getUserManualViewUrl = () =>
+//   addTokenToUrl(`${API.defaults.baseURL}/user-manual/view`);
+
 export const getUserManualViewUrl = () =>
-  addTokenToUrl(`${API.defaults.baseURL}/user-manual/view`);
+    addTokenToUrl(SAFE_ENDPOINTS.USER_MANUAL_VIEW);
+
+// export const getUserManualDownloadUrl = () =>
+//   addTokenToUrl(`${API.defaults.baseURL}/user-manual/download`);
 
 export const getUserManualDownloadUrl = () =>
-  addTokenToUrl(`${API.defaults.baseURL}/user-manual/download`);
+    addTokenToUrl(SAFE_ENDPOINTS.USER_MANUAL_DOWNLOAD);
+
+// export const getPublicUserManualViewUrl = () =>
+//   `/api/user-manual/public/view`;
+
+// export const getPublicUserManualDownloadUrl = () =>
+//   `/api/user-manual/public/download`;
 
 export const getPublicUserManualViewUrl = () =>
-  `/api/user-manual/public/view`;
+    SAFE_ENDPOINTS.USER_MANUAL_PUBLIC_VIEW;
 
 export const getPublicUserManualDownloadUrl = () =>
-  `/api/user-manual/public/download`;
+    SAFE_ENDPOINTS.USER_MANUAL_PUBLIC_DOWNLOAD;
 
 export const checkExistingUserByType = (params) =>
   API.get("/auth/users/check-existing", { params });

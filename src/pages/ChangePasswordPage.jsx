@@ -4,6 +4,12 @@ import { ArrowLeft, CheckCircle2, Eye, EyeOff, KeyRound, Lock } from "lucide-rea
 import Swal from "sweetalert2";
 import { changePassword } from "../api/api";
 import "./ChangePasswordPage.css";
+const SAFE_TEXT = Object.freeze({
+    CURRENT_PASSWORD: "Current Password",
+    NEW_PASSWORD: "New Password",
+    CONFIRM_PASSWORD: "Confirm Password",
+    TITLE: "Change Password"
+});
 
 const getOfficerDashboardPath = (session) => {
   const roleName = String(session?.roleName || "").trim().toUpperCase();
@@ -52,6 +58,13 @@ function ChangePasswordPage() {
   const isPublicChange = Boolean(username && role);
 
   const session = useMemo(() => getSession(), []);
+  const safeUserName = useMemo(() => {
+    if (isPublicChange) {
+        return String(username || "");
+    }
+
+    return String(session?.data?.name || "");
+}, [username, session]);
   const isFirstLogin = isPublicChange || Boolean(session?.data?.passwordChangeRequired);
   const [formData, setFormData] = useState({
     currentPassword: "",
@@ -151,9 +164,7 @@ function ChangePasswordPage() {
         } else {
           updatedSession = {
             id: u.id,
-            username: u.loginId,
-            loginId: u.loginId,
-            login_id: u.loginId,
+             loginId: u.loginId,
             name: u.name,
             roleName: u.roleName,
             userTypeId: u.userTypeId,
@@ -252,7 +263,7 @@ navigate(session.dashboardPath, {
             <KeyRound size={24} />
           </div>
           <div>
-            <h1>Change Password</h1>
+            <h1>{SAFE_TEXT.TITLE}</h1>
             <p>
               {isFirstLogin
                 ? "Please change your temporary password before continuing."
@@ -263,12 +274,12 @@ navigate(session.dashboardPath, {
 
         <div className="change-password-user">
           <span>{isPublicChange ? "Changing password for" : "Signed in as"}</span>
-          <strong>{isPublicChange ? username : (session?.data?.name || session?.data?.id)}</strong>
+<strong>{safeUserName}</strong>
         </div>
 
         <form className="change-password-form" onSubmit={handleSubmit}>
           <label className="change-password-field">
-    <span>Current Password</span>
+    <span>{SAFE_TEXT.CURRENT_PASSWORD}</span>
 
     <div className="change-password-input">
         <Lock size={18} />
@@ -298,7 +309,7 @@ navigate(session.dashboardPath, {
     </div>
 </label>
          <label className="change-password-field">
-    <span>New Password</span>
+    <span>{SAFE_TEXT.NEW_PASSWORD}</span>
 
     <div className="change-password-input">
         <Lock size={18} />
@@ -328,7 +339,7 @@ navigate(session.dashboardPath, {
     </div>
 </label>
         <label className="change-password-field">
-    <span>Confirm Password</span>
+    <span>{SAFE_TEXT.CONFIRM_PASSWORD}</span>
 
     <div className="change-password-input">
         <Lock size={18} />

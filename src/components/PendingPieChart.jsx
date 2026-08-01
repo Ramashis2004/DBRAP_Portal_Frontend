@@ -67,22 +67,27 @@ const formatPendingDays = (days) => {
 // ── Pie hit-test ──────────────────────────────────────────────────────────────
 function hitTestPie(mx, my, vals, total) {
   if (total <= 0) return null;
+
+  const dx = mx - CX, dy = my - CY;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist > R) return null;
+
+  const rawAngle = Math.atan2(dy, dx);
+  const twoPi = 2 * Math.PI;
   let cum = -Math.PI / 2;
+
   for (let i = 0; i < BUCKETS.length; i++) {
-    const angle = (vals[i] / total) * 2 * Math.PI;
-    const a1 = cum, a2 = cum + angle;
+    const angle = (vals[i] / total) * twoPi;
+    if (vals[i] > 0) {
+      // Offset of the click angle from this slice's start, wrapped into [0, 2π).
+      // Comparing an offset+span pair (instead of two independently-wrapped
+      // absolute angles) avoids the 100%-slice edge case where a1 and a2
+      // wrap to the same value and the old comparison matched nothing.
+      let diff = rawAngle - cum;
+      diff = ((diff % twoPi) + twoPi) % twoPi;
+      if (diff <= angle) return BUCKETS[i].key;
+    }
     cum += angle;
-    if (vals[i] <= 0) continue;
-    const dx = mx - CX, dy = my - CY;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist > R) continue;
-    const normAng = ((Math.atan2(dy, dx) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-    const na1 = ((a1 % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-    const na2 = ((a2 % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
-    const inArc = na1 <= na2
-      ? normAng >= na1 && normAng <= na2
-      : normAng >= na1 || normAng <= na2;
-    if (inArc) return BUCKETS[i].key;
   }
   return null;
 }
