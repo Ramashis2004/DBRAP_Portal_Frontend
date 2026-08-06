@@ -2,13 +2,8 @@ import { useState, useEffect } from "react";
 import { BookOpen, Download, X, LoaderCircle, FileText } from "lucide-react";
 import { getUserManualViewUrl, getUserManualDownloadUrl } from "../api/api";
 import "./UserManualButton.css";
+import { useMemo } from "react";
 
-// ── URL allow-list validation (Fortify: Open Redirect remediation) ─────────
-// Never trust a constructed URL as a redirect/navigation target. Instead of
-// using the URL directly, verify it matches an expected, known-safe pattern
-// before it is ever assigned to href/src. This is the "level of indirection"
-// approach Fortify recommends: reject anything that isn't on the allow-list
-// rather than trying to sanitize/rewrite an untrusted value.
 const ALLOWED_MANUAL_PATH_PREFIXES = [
   "/api/user-manual/view",
   "/api/user-manual/download",
@@ -50,20 +45,40 @@ export function UserManualModal({ open, onClose, viewUrl, downloadUrl, loaded, e
     return () => { document.body.style.overflow = ""; };
   }, [open]);
 
-  if (!open) return null;
 
- 
-  const validatedViewUrl = isSafeManualUrl(viewUrl)
-  ? viewUrl
-  : null;
-
-const validatedDownloadUrl = isSafeManualUrl(downloadUrl)
-  ? downloadUrl
-  : null;
+ const validatedViewUrl = viewUrl || "";
+const validatedDownloadUrl = downloadUrl || "";
 
 const urlsInvalid =
   (viewUrl || downloadUrl) &&
   (!validatedViewUrl || !validatedDownloadUrl);
+const iframeSrc = useMemo(() => {
+    if (!validatedViewUrl) return "";
+
+    try {
+        const safe = new URL(validatedViewUrl, window.location.origin);
+        safe.hash = "toolbar=0&navpanes=0&scrollbar=1";
+        return safe.toString();
+    } catch (e) {
+       // console.error("Invalid preview URL:", validatedViewUrl);
+        return "";
+    }
+}, [validatedViewUrl]);
+
+const downloadHref = useMemo(() => {
+    if (!validatedDownloadUrl) return "";
+
+    try {
+        return new URL(
+            validatedDownloadUrl,
+            window.location.origin
+        ).toString();
+    } catch (e) {
+        //console.error("Invalid download URL:", validatedDownloadUrl);
+        return "";
+    }
+}, [validatedDownloadUrl]);
+  if (!open) return null;
 
   return (
     <div
@@ -87,7 +102,7 @@ const urlsInvalid =
           <div className="user-manual-modal__header-actions">
             {validatedDownloadUrl && (
               <a
-                href={validatedDownloadUrl}
+                href={downloadHref}
                 download="DBRAP_Applicant_User_Manual.pdf"
                 className="user-manual-download-btn"
               >
@@ -119,7 +134,7 @@ const urlsInvalid =
               <FileText size={40} className="user-manual-modal__error-icon" />
               <p>Preview unavailable — please download instead.</p>
               {validatedDownloadUrl && (
-                <a href={validatedDownloadUrl} download="DBRAP_Officer_User_Manual.pdf" className="user-manual-download-btn">
+                <a href={downloadHref} download="DBRAP_Officer_User_Manual.pdf" className="user-manual-download-btn">
                   <Download size={14} />
                   Download PDF
                 </a>
@@ -128,7 +143,8 @@ const urlsInvalid =
           )}
           {validatedViewUrl && !urlsInvalid && (
             <iframe
-              src={`${validatedViewUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+              //src={`${validatedViewUrl}#toolbar=0&navpanes=0&scrollbar=1`}
+                  src={iframeSrc}
               title="User Manual PDF Preview"
               className={`user-manual-modal__iframe${loaded && !error ? " is-loaded" : ""}`}
               onLoad={onLoad}
@@ -146,21 +162,36 @@ function UserManualButton() {
   const [open, setOpen]         = useState(false);
   const [loaded, setLoaded]     = useState(false);
   const [error, setError]       = useState(false);
-  const [viewUrl, setViewUrl]   = useState("");
-  const [downloadUrl, setDownloadUrl] = useState("");
+  //const [viewUrl, setViewUrl]   = useState("");
+ // const [downloadUrl, setDownloadUrl] = useState("");
+const validatedViewUrl = useMemo(() => {
+    if (!open) return "";
 
+    const url = getUserManualViewUrl();
+
+    if (!isSafeManualUrl(url)) {
+        return "";
+    }
+
+    return new URL(url, window.location.origin).toString();
+}, [open]);
+
+const validatedDownloadUrl = useMemo(() => {
+    if (!open) return "";
+
+    const url = getUserManualDownloadUrl();
+
+    if (!isSafeManualUrl(url)) {
+        return "";
+    }
+
+    return new URL(url, window.location.origin).toString();
+}, [open]);
   const openModal = () => {
-    const rawViewUrl = getUserManualViewUrl();
-    const rawDownloadUrl = getUserManualDownloadUrl();
-
-    // Validate at the source, as soon as the URLs are produced, so an
-    // unvalidated value never even makes it into component state.
-    setViewUrl(isSafeManualUrl(rawViewUrl) ? rawViewUrl : "");
-    setDownloadUrl(isSafeManualUrl(rawDownloadUrl) ? rawDownloadUrl : "");
-    setOpen(true);
     setLoaded(false);
-    setError(!isSafeManualUrl(rawViewUrl) || !isSafeManualUrl(rawDownloadUrl));
-  };
+    setError(false);
+    setOpen(true);
+};
 
   return (
     <>
@@ -178,8 +209,8 @@ function UserManualButton() {
       <UserManualModal
         open={open}
         onClose={() => setOpen(false)}
-        viewUrl={viewUrl}
-        downloadUrl={downloadUrl}
+    viewUrl={validatedViewUrl}
+    downloadUrl={validatedDownloadUrl}
         loaded={loaded}
         error={error}
         onLoad={() => setLoaded(true)}

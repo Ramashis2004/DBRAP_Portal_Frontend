@@ -216,38 +216,28 @@ const [remarks, setRemarks] = useState("");
 
   const renderDetailValue = (label, value, app) => {
     if (label === "Site Visit Report" && value) {
-      // getSiteVisitReportUrl() returns null when the URL fails the
-      // same-origin / allow-listed-path validation performed in api.js
-      // (Fortify: Open Redirect remediation) — never hand a null/invalid
-      // value to href.
       const reportUrl = getSiteVisitReportUrl(app.application_id);
-     
-      const validatedReportUrl =
-    reportUrl &&
-    isSafeManualUrl(reportUrl)
-        ? reportUrl
-        : null;
 
-return validatedReportUrl ? (
+if (!reportUrl || !isSafeManualUrl(reportUrl)) {
+    return "Unavailable";
+}
 
-<a
-    href={validatedReportUrl}
-    target="_blank"
-    rel="noopener noreferrer"
-      style={{
+const reportHref = new URL(reportUrl, window.location.origin).toString();
+
+return (
+    <a
+        href={reportHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
             color: "#1d4ed8",
             textDecoration: "underline",
             textDecorationStyle: "dotted",
             wordBreak: "break-word",
-          }}
->
-
-View File
-
-</a>
-
-) : (
-    "Unavailable"
+        }}
+    >
+        View File
+    </a>
 );
     }
 
