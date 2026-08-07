@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { secureStorage } from "../main";
 import { ArrowLeft, Lock, LogIn, User, Eye, EyeOff } from "lucide-react";
 import Swal from "sweetalert2";
 import { loginOfficer } from "../api/api";
@@ -47,20 +48,22 @@ function OfficerLoginPage() {
   };
 
   const openDashboard = (user, token) => {
+    const sessionData = JSON.stringify({
+      id: user.id,
+      username: user.loginId,
+      loginId: user.loginId,
+      login_id: user.loginId,
+      name: user.name,
+      roleName: user.roleName,
+      userTypeId: user.userTypeId,
+      passwordChangeRequired: Boolean(user.passwordChangeRequired),
+      loginTime: new Date().toISOString(),
+      token: token,
+    });
+
     localStorage.setItem(
       "officerSession",
-      JSON.stringify({
-        id: user.id,
-        username: user.loginId,
-        loginId: user.loginId,
-        login_id: user.loginId,
-        name: user.name,
-        roleName: user.roleName,
-        userTypeId: user.userTypeId,
-        passwordChangeRequired: Boolean(user.passwordChangeRequired),
-        loginTime: new Date().toISOString(),
-        token: token,
-      })
+      secureStorage.encrypt(sessionData)
     );
 
     navigate(user.passwordChangeRequired ? "/change-password" : getOfficerDashboardPath(user));

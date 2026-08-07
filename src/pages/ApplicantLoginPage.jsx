@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { secureStorage } from "../main";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -90,7 +91,7 @@ function ApplicantLoginPage() {
   const refreshCaptcha = () => { setCaptcha(generateCaptcha()); setCaptchaInput(""); };
 
   const saveApplicantSession = (applicant, token) => {
-    localStorage.setItem("applicantSession", JSON.stringify({
+    const sessionData = JSON.stringify({
       id: applicant.id,
       loginId: applicant.loginId,
       mobileNo: applicant.mobileNo,
@@ -99,7 +100,8 @@ function ApplicantLoginPage() {
       passwordChangeRequired: Boolean(applicant.passwordChangeRequired),
       loginTime: new Date().toISOString(),
       token: token,
-    }));
+    });
+    localStorage.setItem("applicantSession", secureStorage.encrypt(sessionData));
   };
 
   const confirmActiveSessionTakeover = async (message) => {

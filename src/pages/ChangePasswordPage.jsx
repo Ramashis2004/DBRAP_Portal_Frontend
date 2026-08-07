@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { secureStorage } from "../main";
 import { ArrowLeft, CheckCircle2, Eye, EyeOff, KeyRound, Lock } from "lucide-react";
 import Swal from "sweetalert2";
 import { changePassword } from "../api/api";
@@ -180,7 +181,7 @@ function ChangePasswordPage() {
           passwordChangeRequired: false,
         };
       }
-      localStorage.setItem(session.storageKey, JSON.stringify(updatedSession));
+      localStorage.setItem(session.storageKey, secureStorage.encrypt(JSON.stringify(updatedSession)));
 
       // await Swal.fire({
       //   icon: "success",
