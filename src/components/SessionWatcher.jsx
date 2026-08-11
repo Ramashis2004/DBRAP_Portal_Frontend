@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router";
 import { sessionChannel } from "../utils/sessionChannel";
 import { logoutOfficer } from "../api/api";
 
@@ -176,3 +176,4 @@ function SessionWatcher() {
 }
 
 export default SessionWatcher;
+

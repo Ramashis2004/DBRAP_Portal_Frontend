@@ -78,6 +78,9 @@ export const SAFE_ENDPOINTS = Object.freeze({
 export const sendApplicantOtp = (mobile, otp) =>
   API.post("/applicant-auth/send-otp", { mobile, otp });
 
+export const sendApplicantRegistrationOtp = (mobile, otp) =>
+  API.post("/auth/applicant/send-otp", { mobile, otp });
+
 export const fetchPublicDashboardSummary = () => {
   return API.get("/public-dashboard/summary");
 };

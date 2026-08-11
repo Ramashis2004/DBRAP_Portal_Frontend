@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { checkApplicantMobile, registerApplicant } from "../api/api";
+import { useNavigate } from "react-router";
+import { checkApplicantMobile, registerApplicant, sendApplicantRegistrationOtp } from "../api/api";
 import Swal from "sweetalert2";
-import axios from "axios";
-import { sendApplicantOtp } from "../api/api";
 const swalSuccess = (title, text) =>
   Swal.fire({ icon: "success", title, text, confirmButtonColor: "#3d1f0f" });
 
@@ -99,7 +97,7 @@ function RegisterForm() {
       // console.log("OTP sent successfully. Mobile Number:", mobileNumber);
       // await axios.post("https://govtsms.odisha.gov.in/api/api.php", data);
       //await axios.post("/api/applicant-auth/send-otp", { mobile: mobileNumber, otp });
-await sendApplicantOtp(mobileNumber, otp);
+      await sendApplicantRegistrationOtp(mobileNumber, otp);
       await swalSuccess("OTP Sent!", `OTP has been sent to ${mobileNumber}.`);
       setStep(2);
       setResendTimer(30);
@@ -385,3 +383,4 @@ useEffect(() => {
 
 
 export default RegisterForm;
+

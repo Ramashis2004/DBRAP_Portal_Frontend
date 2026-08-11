@@ -55,3 +55,4 @@ function LandingUserManualCard() {
 }
 
 export default LandingUserManualCard;
+

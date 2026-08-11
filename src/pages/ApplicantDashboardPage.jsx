@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { FilePlus2, FileText,Droplets } from "lucide-react";
 import { useMemo, useEffect, useState } from "react";
 import { fetchApplicantApplicationCount } from "../api/api";

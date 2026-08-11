@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import Swal from "sweetalert2";
 import {
   ChevronDown,
@@ -298,3 +298,4 @@ if (optionUrl.includes("updateConnectionDetails") || optionLabel.includes("updat
 }
 
 export default JEApplicationReceivedPage;
+

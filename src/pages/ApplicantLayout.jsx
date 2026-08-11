@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, Outlet } from "react-router-dom";
+import { useNavigate, Outlet } from "react-router";
 import {
   ChevronDown,
   ChevronRight,
@@ -226,3 +226,4 @@ const handleLogout = async () => {
 }
 
 export default ApplicantLayout;
+

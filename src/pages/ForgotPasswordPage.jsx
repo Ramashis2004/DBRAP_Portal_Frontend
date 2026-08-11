@@ -1,5 +1,5 @@
 import { useEffect, useState,useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "react-router";
 import {
   ArrowLeft, User, KeyRound, ShieldCheck,
   CheckCircle2, Eye, EyeOff, RefreshCw,
@@ -511,3 +511,4 @@ const safeStep = Number(step);
     </div>
   );
 }
+

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router";
 import { secureStorage } from "../main";
 import { ArrowLeft, CheckCircle2, Eye, EyeOff, KeyRound, Lock } from "lucide-react";
 import Swal from "sweetalert2";
@@ -387,3 +387,4 @@ navigate(session.dashboardPath, {
 }
 
 export default ChangePasswordPage;
+

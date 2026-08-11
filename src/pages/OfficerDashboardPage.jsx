@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import Swal from "sweetalert2";
 import {
   ChevronDown,
@@ -474,7 +474,7 @@ const checkAndAutoFill = async (overrides = {}) => {
     (!["CE", "ACE", "EIC", "JE"].includes(typeName) && merged.divisionCode);
 
   if (!readyToCheck) {
-    console.log("Not ready to check yet for:", typeName);
+    //console.log("Not ready to check yet for:", typeName);
     return;
   }
 
@@ -1381,3 +1381,4 @@ Please ask the user to reset the password or resend credentials.
 }
 
 export default OfficerDashboardPage;
+

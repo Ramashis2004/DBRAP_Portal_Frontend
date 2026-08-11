@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import Swal from "sweetalert2";
 import { ArrowLeft, Pencil, Plus } from "lucide-react";
 import { fetchSlaStages, saveSlaStage } from "../api/api";
@@ -314,3 +314,4 @@ function SLAConfigPage({ inline = false }) {
 }
 
 export default SLAConfigPage;
+

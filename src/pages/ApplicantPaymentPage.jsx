@@ -2,7 +2,7 @@
 // Rendered inside ApplicantLayout — no sidebar needed here
 
 import { useEffect, useRef, useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import Swal from "sweetalert2";
 import { Download, ExternalLink, ReceiptText, Upload, X } from "lucide-react";
 import { fetchPaymentDetails, uploadPaymentReceipt, getReceiptUrl } from "../api/api";
@@ -491,3 +491,4 @@ function InfoItem({ label, value }) {
 }
 
 export default ApplicantPaymentPage;
+

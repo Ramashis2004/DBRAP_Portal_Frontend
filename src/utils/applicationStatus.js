@@ -122,3 +122,4 @@ export const formatDayProgress = (prefix, from, to) => {
   const days = daysBetween(from, to);
   return `${prefix} ${days} ${days === 1 ? "day" : "days"}`;
 };
+

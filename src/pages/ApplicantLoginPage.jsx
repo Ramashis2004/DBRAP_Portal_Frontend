@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 import axios from "axios";
 import { secureStorage } from "../main";
 import {
@@ -509,3 +509,4 @@ const broadcastLogout = (userId) => {
   channel.close();
 };
 export default ApplicantLoginPage;
+

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router";
 import { secureStorage } from "../main";
 import { ArrowLeft, Lock, LogIn, User, Eye, EyeOff } from "lucide-react";
 import Swal from "sweetalert2";
@@ -252,3 +252,4 @@ const broadcastLogout = (userId) => {
 }
 
 export default OfficerLoginPage;
+

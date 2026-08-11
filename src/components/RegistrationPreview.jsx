@@ -136,3 +136,4 @@ const closeDocument = () => {
 }
 
 export default RegistrationPreview;
+

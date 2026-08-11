@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router";
 import LandingPage from "./pages/LandingPage";
 import OfficerDashboardPage from "./pages/OfficerDashboardPage";
 import SEDashboardPage from "./pages/SEDashboardPage";
@@ -79,3 +79,4 @@ function App() {
 }
 
 export default App;
+

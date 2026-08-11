@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import {
   Droplet,
@@ -497,3 +497,4 @@ Empowering through digital governance.
 }
 
 export default LandingPage;
+

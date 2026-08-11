@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import Swal from "sweetalert2";
 
 import {
@@ -1026,3 +1026,4 @@ const [statusFilter, setStatusFilter] = useState("all");
 }
 
 export default SEDashboardPage;
+
