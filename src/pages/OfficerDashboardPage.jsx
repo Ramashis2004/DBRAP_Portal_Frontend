@@ -273,7 +273,7 @@ const [isCheckingUser, setIsCheckingUser]   = useState(false);
 
     const timer = setTimeout(() => {
       setFormMessage("");
-    }, 5000);
+    }, 8080);
 
     return () => clearTimeout(timer);
   }, [formMessage]);
@@ -285,7 +285,7 @@ const [isCheckingUser, setIsCheckingUser]   = useState(false);
 
     const timer = setTimeout(() => {
       setShowCreateUserHint(false);
-    }, 5000);
+    }, 8080);
 
     return () => clearTimeout(timer);
   }, [showCreateUserHint]);

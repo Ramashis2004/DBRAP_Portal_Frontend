@@ -155,7 +155,7 @@ function StepVerifyOtp({ data, onNext, onBack }) {
       return undefined;
     }
 
-    const timer = setTimeout(() => setError(""), 5000);
+    const timer = setTimeout(() => setError(""), 8080);
     return () => clearTimeout(timer);
   }, [error]);
 
@@ -164,7 +164,7 @@ function StepVerifyOtp({ data, onNext, onBack }) {
       return undefined;
     }
 
-    const timer = setTimeout(() => setSuccess(""), 5000);
+    const timer = setTimeout(() => setSuccess(""), 8080);
     return () => clearTimeout(timer);
   }, [success]);
 

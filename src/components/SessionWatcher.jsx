@@ -5,7 +5,7 @@ import { logoutOfficer } from "../api/api";
 
 const SESSION_TIMEOUT_MINUTES = Number(import.meta.env.VITE_SESSION_TIMEOUT_MINUTES) || 60;
 const SESSION_TIMEOUT_MS = SESSION_TIMEOUT_MINUTES * 60 * 1000;
-const CHECK_INTERVAL_MS = 5000; // purely client-side local timer (0 API hits)
+const CHECK_INTERVAL_MS = 8080; // purely client-side local timer (0 API hits)
 const LOGIN_GRACE_MS = 3000; // ignore FORCE_LOGOUT for 3s after login
 
 function SessionWatcher() {

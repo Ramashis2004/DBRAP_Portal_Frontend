@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
+import './index.css'
 
 const XOR_KEY = "dbrap_secure_storage_key_2026";
 
@@ -19,7 +20,7 @@ export const secureStorage = {
       xorBytes[i] = bytes[i] ^ XOR_KEY.charCodeAt(i % XOR_KEY.length);
     }
     
-    // Convert bytes to binary string
+    // Convert bytes to binary string safely
     let binary = "";
     for (let i = 0; i < xorBytes.length; i++) {
       binary += String.fromCharCode(xorBytes[i]);
@@ -82,5 +83,7 @@ Storage.prototype.getItem = function (key) {
 };
 
 ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
     <App />
-) 
+  </React.StrictMode>
+);
