@@ -652,3 +652,14 @@ export const getPublicUserManualDownloadUrl = () =>
 
 export const checkExistingUserByType = (params) =>
   API.get("/auth/users/check-existing", { params });
+
+// ── Odisha One Integration ────────────────────────────────────────────────────
+export const fetchOdishaOneSession = (handoffToken) =>
+  API.get("/odisha-one/session", { params: { handoffToken } });
+
+export const postOdishaOneCancel = (payload) =>
+  API.post("/odisha-one/cancel", payload);
+
+export const postOdishaOneSuccess = (payload) =>
+  API.post("/odisha-one/success", payload);
+

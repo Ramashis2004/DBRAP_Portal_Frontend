@@ -1,5 +1,4 @@
-
-import { useEffect, useState ,useRef  } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import Swal from "sweetalert2";
 import { Download, X } from "lucide-react";
@@ -12,6 +11,9 @@ import {
   registerApplicantOrganisation,
   updateReturnedApplicantOrganisation,
   getOrganisationDocumentUrl,
+  fetchOdishaOneSession,
+  postOdishaOneCancel,
+  postOdishaOneSuccess,
 } from "../api/api";
 import {
   formatApplicationStatus,
@@ -64,18 +66,11 @@ function Row({ label, value }) {
 function PdfPreviewOverlay({ preview, onClose }) {
   if (!preview) return null;
 
-  // preview.url ultimately comes from getOrganisationDocumentUrl() /
-  // getSiteVisitReportUrl() in api.js, which now returns null if the
-  // constructed URL fails same-origin / allow-listed-path / http(s)-only
-  // validation (Fortify: Open Redirect + XSS: Poor Validation
-  // remediation). It can also be a locally created blob: URL from
-  // URL.createObjectURL() for in-progress file selections, which is safe
-  // (browser-generated, never touches localStorage/tainted input) — the
-  // check below just guards against a missing/empty value either way.
   const hasValidUrl = typeof preview.url === "string" && preview.url.length > 0;
-const handleClosePreview = () => {
+  const handleClosePreview = () => {
     onClose();
-};
+  };
+
   return (
     <div className="pv-preview-overlay">
       <div className="pv-preview-card">
@@ -122,14 +117,11 @@ const handleClosePreview = () => {
 }
 
 // ── Existing Application — CE-style detail layout ─────────────────────────────
-function ExistingApplicationCard({ application, onBack }) {
+function ExistingApplicationCard({ application, onBack, onReturnToOdishaOne, isOdishaOne }) {
   const [pdfPreview, setPdfPreview] = useState(null);
 
   const renderDocumentLink = (documentType, label = "View File") => {
     if (!application?.[documentType]) return "NA";
-    // getOrganisationDocumentUrl() returns null if the URL fails the
-    // allow-list validation in api.js — fall back to "NA" instead of
-    // wiring a preview button to a null/invalid URL.
     const url = getOrganisationDocumentUrl(application.application_id, documentType);
     if (!url) return "NA";
     return (
@@ -155,11 +147,31 @@ function ExistingApplicationCard({ application, onBack }) {
   return (
     <div className="applicant-org-embedded">
       <div className="applicant-org-card">
-        <button type="button" className="applicant-org-back" onClick={onBack}>
-          &larr; Back to Dashboard
-        </button>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <button type="button" className="applicant-org-back" onClick={onBack}>
+            &larr; Back to Dashboard
+          </button>
+          {isOdishaOne && (
+            <button
+              type="button"
+              onClick={onReturnToOdishaOne}
+              style={{
+                padding: "6px 14px",
+                background: "#0284c7",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: "0.85rem",
+              }}
+            >
+              Return to Odisha One
+            </button>
+          )}
+        </div>
 
-        <h2 style={{ marginTop: 0 }}>Organisation Registration</h2>
+        <h2 style={{ marginTop: 12 }}>Organisation Registration</h2>
 
         {/* ── Already submitted banner ── */}
         <div className="aor-existing-banner">
@@ -225,10 +237,9 @@ function ExistingApplicationCard({ application, onBack }) {
           </div>
         </div>
 
-        
       </div>
 
-      {/* PDF preview overlay — same as CEDashboardApplications */}
+      {/* PDF preview overlay */}
       <PdfPreviewOverlay preview={pdfPreview} onClose={() => setPdfPreview(null)} />
     </div>
   );
@@ -276,16 +287,46 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
   const [existingApplication, setExistingApplication] = useState(null);
   const [returnedApplication, setReturnedApplication] = useState(null);
   const [loading, setLoading]                         = useState(true);
-const [pdfPreview, setPdfPreview] = useState(null);
-  useEffect(() => {
-    const session = JSON.parse(localStorage.getItem("applicantSession") || "null");
-    if (!session?.id) {
-      navigate("/applicant-login", { replace: true });
-      return;
-    }
+  const [pdfPreview, setPdfPreview]                   = useState(null);
 
+  // Odisha One Integration State
+  const [isOdishaOne, setIsOdishaOne]                 = useState(false);
+  const [ooMetadata, setOoMetadata]                   = useState(null);
+
+  useEffect(() => {
     const load = async () => {
       try {
+        let session = JSON.parse(localStorage.getItem("applicantSession") || "null");
+        let ooData = null;
+
+        // Check if coming via Odisha One landing redirect (oo_session query param)
+        const queryParams = new URLSearchParams(window.location.search);
+        const ooSessionToken = queryParams.get("oo_session");
+
+        if (ooSessionToken) {
+          try {
+            const ooRes = await fetchOdishaOneSession(ooSessionToken);
+            if (ooRes.data?.session) {
+              ooData = ooRes.data.session;
+              session = {
+                token: ooData.token,
+                id: ooData.applicant.id,
+                name: ooData.applicant.name,
+              };
+              localStorage.setItem("applicantSession", JSON.stringify(session));
+              setIsOdishaOne(true);
+              setOoMetadata(ooData);
+            }
+          } catch (ooErr) {
+            console.error("Failed to load Odisha One session:", ooErr);
+          }
+        }
+
+        if (!session?.id) {
+          navigate("/applicant-login", { replace: true });
+          return;
+        }
+
         const [profileResponse, districtResponse, applicationResponse] = await Promise.all([
           fetchApplicantProfile(session.id),
           fetchDistricts(),
@@ -303,11 +344,13 @@ const [pdfPreview, setPdfPreview] = useState(null);
           return;
         }
 
+        const initialOrgName = ooData?.applicant?.organisationName || application?.organisation_name || applicant.organisation_name || "";
+
         setFormData((current) => ({
           ...current,
           applicant_user_id: applicant.id,
           name:              applicant.name              || "",
-          organisation_name: application?.organisation_name || applicant.organisation_name || "",
+          organisation_name: initialOrgName,
           gender:            applicant.gender            || "",
           email:             applicant.email             || "",
           mobile_number:     applicant.mobile_number     || "",
@@ -337,7 +380,6 @@ const [pdfPreview, setPdfPreview] = useState(null);
           }
         }
       } catch (error) {
-        //console.error("Applicant organisation form load failed:", error);
         await swalError(
           "Unable to Load",
           error.response?.data?.error || "Unable to load applicant details."
@@ -354,6 +396,44 @@ const [pdfPreview, setPdfPreview] = useState(null);
   const handleBack = () => {
     if (embedded && onBack) onBack();
     else navigate("/applicant-dashboard");
+  };
+
+  // API 3 Cancel / Return to Odisha One Handler
+  const handleReturnToOdishaOne = async () => {
+    if (!ooMetadata) {
+      handleBack();
+      return;
+    }
+
+    try {
+      const cancelRes = await postOdishaOneCancel({
+        requestId: ooMetadata.requestId,
+        serviceId: ooMetadata.serviceId,
+        subServiceId: ooMetadata.subServiceId,
+        ooUserCode: ooMetadata.ooUserCode,
+        cancelUrl: ooMetadata.tpiUrls?.CANCELURL,
+      });
+
+      if (cancelRes.data?.cancelUrl && cancelRes.data?.encData) {
+        const form = document.createElement("form");
+        form.method = "POST";
+        form.action = cancelRes.data.cancelUrl;
+
+        const hiddenInput = document.createElement("input");
+        hiddenInput.type = "hidden";
+        hiddenInput.name = "encData";
+        hiddenInput.value = cancelRes.data.encData;
+        form.appendChild(hiddenInput);
+
+        document.body.appendChild(form);
+        form.submit();
+      } else {
+        handleBack();
+      }
+    } catch (err) {
+      console.error("Cancel redirect error:", err);
+      handleBack();
+    }
   };
 
   const handleChange = (event) => {
@@ -456,6 +536,15 @@ const [pdfPreview, setPdfPreview] = useState(null);
       "gram_panchayat_code", "gram_panchayat", "village", "habitation",
       "type_of_connection", "water_requirement",
     ].forEach((key) => payload.append(key, formData[key]));
+
+    if (isOdishaOne && ooMetadata) {
+      payload.append("oo_user_code", ooMetadata.ooUserCode || "");
+      payload.append("oo_request_id", ooMetadata.requestId || "");
+      payload.append("oo_service_id", ooMetadata.serviceId || "");
+      payload.append("oo_subservice_id", ooMetadata.subServiceId || "");
+      payload.append("registration_source", "ODISHA_ONE");
+    }
+
     Object.entries(files).forEach(([key, file]) => payload.append(key, file));
 
     Swal.fire({
@@ -471,9 +560,55 @@ const [pdfPreview, setPdfPreview] = useState(null);
         : await registerApplicantOrganisation(payload);
       const applicationId = response.data?.data?.application_id;
       const divisionName  = response.data?.data?.division_name; 
-const forwardedTo = divisionName
-  ? `${divisionName} SE`
-  : "SE"; 
+      const forwardedTo = divisionName ? `${divisionName} SE` : "SE"; 
+
+      // API 4 Success Redirect Flow for Odisha One
+      if (isOdishaOne && ooMetadata) {
+        try {
+          const successRes = await postOdishaOneSuccess({
+            applicationId,
+            requestId: ooMetadata.requestId,
+            serviceId: ooMetadata.serviceId,
+            subServiceId: ooMetadata.subServiceId,
+            ooUserCode: ooMetadata.ooUserCode,
+            successUrl: ooMetadata.tpiUrls?.SUCCESSURL,
+          });
+
+          Swal.close();
+
+          const result = await Swal.fire({
+            icon: "success",
+            title: "Application Submitted",
+            html: `Application ID:<br/>
+             <b style="font-family:monospace;font-size:1.2rem;">${applicationId}</b><br/>
+             Application Forwarded to ${forwardedTo} for further Processing.`,
+            showCancelButton: true,
+            confirmButtonText: "Return to Odisha One Portal",
+            cancelButtonText: "Go to Dashboard",
+            confirmButtonColor: "#0284c7",
+            cancelButtonColor: "#3d1f0f",
+          });
+
+          if (result.isConfirmed && successRes.data?.successUrl && successRes.data?.encData) {
+            const form = document.createElement("form");
+            form.method = "POST";
+            form.action = successRes.data.successUrl;
+
+            const hiddenInput = document.createElement("input");
+            hiddenInput.type = "hidden";
+            hiddenInput.name = "encData";
+            hiddenInput.value = successRes.data.encData;
+            form.appendChild(hiddenInput);
+
+            document.body.appendChild(form);
+            form.submit();
+            return;
+          }
+        } catch (successErr) {
+          console.error("Odisha One API 4 success notification error:", successErr);
+        }
+      }
+
       await Swal.fire({
         icon: "success",
         title: returnedApplication ? "Application Resubmitted" : "Application Submitted",
@@ -510,16 +645,44 @@ const forwardedTo = divisionName
 
   // ── Existing application → CE-style detail view ──
   if (existingApplication) {
-    return <ExistingApplicationCard application={existingApplication} onBack={handleBack} />;
+    return (
+      <ExistingApplicationCard
+        application={existingApplication}
+        onBack={handleBack}
+        onReturnToOdishaOne={handleReturnToOdishaOne}
+        isOdishaOne={isOdishaOne}
+      />
+    );
   }
 
   // ── New application registration form ──
   return (
     <div className="applicant-org-embedded">
       <form className="applicant-org-card" onSubmit={submitApplication}>
-        <button type="button" className="applicant-org-back" onClick={handleBack}>
-          &larr; Back to Dashboard
-        </button>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+          <button type="button" className="applicant-org-back" onClick={handleBack}>
+            &larr; Back to Dashboard
+          </button>
+          {isOdishaOne && (
+            <button
+              type="button"
+              onClick={handleReturnToOdishaOne}
+              style={{
+                padding: "6px 14px",
+                background: "#0284c7",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                fontWeight: "600",
+                fontSize: "0.85rem",
+              }}
+            >
+              Return to Odisha One
+            </button>
+          )}
+        </div>
+
         <h2>Organisation Registration</h2>
         {returnedApplication ? (
           <div className="aor-existing-banner" style={{ marginBottom: "18px" }}>
@@ -561,7 +724,17 @@ const forwardedTo = divisionName
             {step === 1 && (
               <div className="applicant-org-panel">
                 <Field label="Name of the Organisation" required>
-                  <input value={formData.organisation_name} disabled />
+                  <input
+                    name="organisation_name"
+                    value={formData.organisation_name}
+                    onChange={handleChange}
+                    disabled={isOdishaOne}
+                  />
+                  {isOdishaOne && (
+                    <small style={{ color: "#059669", fontWeight: "500", marginTop: "4px", display: "block" }}>
+                      ✓ Verified from Odisha One
+                    </small>
+                  )}
                 </Field>
                 <Field label="Type of Establishment/Business" required>
                   <input name="establishment_type" value={formData.establishment_type} onChange={handleChange} />
@@ -610,24 +783,15 @@ const forwardedTo = divisionName
               </div>
             )}
 
-            {/* {step === 2 && (
+            {step === 2 && (
               <div className="applicant-org-panel">
-                <FileField name="property_proof"       label="Property Proof"       onChange={handleFileChange} existing={returnedApplication?.property_proof} />
-                <FileField name="registration_proof"   label="Registration Proof"   onChange={handleFileChange} existing={returnedApplication?.registration_proof} />
-                <FileField name="ownership_proof"      label="Ownership Proof"      onChange={handleFileChange} existing={returnedApplication?.ownership_proof} />
-                <FileField name="owner_indemnity_bond" label="Owner Indemnity Bond" onChange={handleFileChange} existing={returnedApplication?.owner_indemnity_bond} />
-                <FileField name="identity_proof"       label="Identity Proof"       onChange={handleFileChange} existing={returnedApplication?.identity_proof} />
+                <FileField name="property_proof"       label="Property Proof"       onChange={handleFileChange} existing={returnedApplication?.property_proof}       selectedFile={files.property_proof} />
+                <FileField name="registration_proof"   label="Registration Proof"   onChange={handleFileChange} existing={returnedApplication?.registration_proof}   selectedFile={files.registration_proof} />
+                <FileField name="ownership_proof"      label="Ownership Proof"      onChange={handleFileChange} existing={returnedApplication?.ownership_proof}      selectedFile={files.ownership_proof} />
+                <FileField name="owner_indemnity_bond" label="Owner Indemnity Bond" onChange={handleFileChange} existing={returnedApplication?.owner_indemnity_bond} selectedFile={files.owner_indemnity_bond} />
+                <FileField name="identity_proof"       label="Identity Proof"       onChange={handleFileChange} existing={returnedApplication?.identity_proof}       selectedFile={files.identity_proof} />
               </div>
-            )} */}
-{step === 2 && (
-  <div className="applicant-org-panel">
-    <FileField name="property_proof"       label="Property Proof"       onChange={handleFileChange} existing={returnedApplication?.property_proof}       selectedFile={files.property_proof} />
-    <FileField name="registration_proof"   label="Registration Proof"   onChange={handleFileChange} existing={returnedApplication?.registration_proof}   selectedFile={files.registration_proof} />
-    <FileField name="ownership_proof"      label="Ownership Proof"      onChange={handleFileChange} existing={returnedApplication?.ownership_proof}      selectedFile={files.ownership_proof} />
-    <FileField name="owner_indemnity_bond" label="Owner Indemnity Bond" onChange={handleFileChange} existing={returnedApplication?.owner_indemnity_bond} selectedFile={files.owner_indemnity_bond} />
-    <FileField name="identity_proof"       label="Identity Proof"       onChange={handleFileChange} existing={returnedApplication?.identity_proof}       selectedFile={files.identity_proof} />
-  </div>
-)}
+            )}
             {step === 3 && (
               <div className="applicant-org-panel">
                 <Field label="Connection Type" required>
@@ -670,28 +834,28 @@ const forwardedTo = divisionName
                       <div key={label}>
                         <span>{displayLabel}</span>
                         {title === "Documents" && files[label] ? (
-  <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-    <button
-      type="button"
-      onClick={() => {
-        const url = URL.createObjectURL(files[label]);  // ✅ local File object
-        setPdfPreview({
-          url,
-          title: label.replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-          fileName: files[label].name,
-        });
-      }}
-      style={{
-        padding: "2px 10px", fontSize: "0.75rem",
-        background: "#3d1f0f", color: "#fff",
-        border: "none", borderRadius: "4px",
-        cursor: "pointer", whiteSpace: "nowrap",
-      }}
-    >
-      View File
-    </button>
-  </div>
-) : (
+                          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const url = URL.createObjectURL(files[label]);
+                                setPdfPreview({
+                                  url,
+                                  title: label.replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+                                  fileName: files[label].name,
+                                });
+                              }}
+                              style={{
+                                padding: "2px 10px", fontSize: "0.75rem",
+                                background: "#3d1f0f", color: "#fff",
+                                border: "none", borderRadius: "4px",
+                                cursor: "pointer", whiteSpace: "nowrap",
+                              }}
+                            >
+                              View File
+                            </button>
+                          </div>
+                        ) : (
                           <strong>{value || "-"}</strong>
                         )}
                       </div>
@@ -706,7 +870,8 @@ const forwardedTo = divisionName
             </div>
           </div>
         )}
-          {/* ── PDF Preview Overlay ── */}
+
+        {/* ── PDF Preview Overlay ── */}
         {pdfPreview && (
           <div className="pv-preview-overlay">
             <div className="pv-preview-card">
@@ -726,7 +891,7 @@ const forwardedTo = divisionName
                     type="button"
                     className="pv-preview-btn-close"
                     onClick={() => {
-                      if (pdfPreview.url) URL.revokeObjectURL(pdfPreview.url); // ✅ cleanup
+                      if (pdfPreview.url) URL.revokeObjectURL(pdfPreview.url);
                       setPdfPreview(null);
                     }}
                     title="Close Preview"
@@ -749,8 +914,8 @@ const forwardedTo = divisionName
                 )}
               </div>
             </div>
-            </div>
-          )}
+          </div>
+        )}
       </form>
     </div>
   );
@@ -764,16 +929,6 @@ function Field({ label, required, children }) {
     </label>
   );
 }
-
-// function FileField({ name, label, onChange, existing }) {
-//   return (
-//     <label className="applicant-org-field">
-//       <RequiredLabel>{label}</RequiredLabel>
-//       <input type="file" name={name} accept=".pdf" onChange={onChange} />
-//       <small>{existing ? "Existing file will be kept if you do not upload a new PDF." : "Max size: 2MB. Only PDF files are allowed."}</small>
-//     </label>
-//   );
-// }
 
 function FileField({ name, label, onChange, existing, selectedFile }) {
   const inputRef = useRef(null);
@@ -816,9 +971,9 @@ function FileField({ name, label, onChange, existing, selectedFile }) {
           Existing file will be kept if you do not upload a new PDF.
         </small>
       )}
-      <small>Max size: 2MB. Only PDF files are allowed.</small> {/* ← always shown */}
+      <small>Max size: 2MB. Only PDF files are allowed.</small>
     </div>
   );
 }
-export default ApplicantOrganisationRegistrationPage;
 
+export default ApplicantOrganisationRegistrationPage;
