@@ -296,13 +296,13 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
   useEffect(() => {
     const load = async () => {
       try {
-        let session = JSON.parse(localStorage.getItem("applicantSession") || "null");
-        let ooData = null;
-
-        // Check if coming via Odisha One landing redirect (oo_session query param)
         const queryParams = new URLSearchParams(window.location.search);
         const ooSessionToken = queryParams.get("oo_session");
 
+        let session = null;
+        let ooData = null;
+
+        // Check if coming via Odisha One landing redirect (oo_session query param)
         if (ooSessionToken) {
           try {
             const ooRes = await fetchOdishaOneSession(ooSessionToken);
@@ -322,18 +322,30 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
           }
         }
 
+        if (!session) {
+          session = JSON.parse(localStorage.getItem("applicantSession") || "null");
+        }
+
         if (!session?.id) {
           navigate("/applicant-login", { replace: true });
           return;
         }
 
         const [profileResponse, districtResponse, applicationResponse] = await Promise.all([
-          fetchApplicantProfile(session.id),
-          fetchDistricts(),
+          fetchApplicantProfile(session.id).catch(() => null),
+          fetchDistricts().catch(() => ({ data: { districts: [] } })),
           fetchApplicantApplication(session.id).catch(() => null),
         ]);
 
-        const applicant = profileResponse.data.applicant;
+        const applicant = profileResponse?.data?.applicant || {
+          id: session.id,
+          name: session.name || ooData?.applicant?.name || "",
+          organisation_name: ooData?.applicant?.organisationName || "",
+          email: ooData?.applicant?.email || "",
+          mobile_number: ooData?.applicant?.mobileNo || "",
+          gender: ooData?.applicant?.gender || "",
+        };
+
         const application = applicationResponse?.data?.application || null;
         const isReturnedApplication =
           String(application?.application_status || "").toUpperCase() === "APPLICATION_RETURNED_TO_APPLICANT";
@@ -353,7 +365,7 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
           organisation_name: initialOrgName,
           gender:            applicant.gender            || "",
           email:             applicant.email             || "",
-          mobile_number:     applicant.mobile_number     || "",
+          mobile_number:     applicant.mobile_number || applicant.mobile_no || "",
           establishment_type: application?.establishment_type || "",
           district_code: application?.district_code || "",
           district: application?.district || "",

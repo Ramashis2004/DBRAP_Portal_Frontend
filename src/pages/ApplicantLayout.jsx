@@ -28,7 +28,9 @@ function ApplicantLayout() {
   }, []);
 
   useEffect(() => {
-    if (!applicantSession?.id) {
+    // Skip redirect if user is landing from Odisha One with a handoff token
+    const hasOoSession = new URLSearchParams(window.location.search).has("oo_session");
+    if (!applicantSession?.id && !hasOoSession) {
       navigate("/applicant-login", { replace: true });
     }
   }, [applicantSession, navigate]);
@@ -107,7 +109,13 @@ const handleLogout = async () => {
     navigate("/applicant-login");                // ✅ correct route
   }
 };
-  if (!applicantSession?.id) return null;
+  // Allow Odisha One landing flow to render even before session is established
+  const hasOoSession = new URLSearchParams(window.location.search).has("oo_session");
+  if (!applicantSession?.id) {
+    // For Odisha One users, render only the Outlet (no sidebar) so the page can establish its session
+    if (hasOoSession) return <Outlet />;
+    return null;
+  }
 
   return (
     <div className="applicant-dashboard-page">

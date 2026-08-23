@@ -29,12 +29,15 @@ API.interceptors.response.use(
         "/auth/login",
         "/applicant-auth/login",
         "/applicant-auth/login-password",
-        "/password/change"
+        "/password/change",
+        "/odisha-one"
       ];
       const shouldBypass = bypassUrls.some((path) => url.includes(path));
 
       if (!shouldBypass) {
-        const isApplicant = !!localStorage.getItem("applicantSession");
+        const isApplicant =
+          !!localStorage.getItem("applicantSession") ||
+          new URLSearchParams(window.location.search).has("oo_session");
         // Clear sessions
         localStorage.removeItem("officerSession");
         localStorage.removeItem("applicantSession");
