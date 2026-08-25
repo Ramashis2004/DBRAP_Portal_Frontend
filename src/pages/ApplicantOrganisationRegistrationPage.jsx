@@ -22,6 +22,8 @@ import {
 import "./ApplicantOrganisationRegistrationPage.css";
 
 const STEPS = ["Applicant Details", "Organisation Details", "Documents", "Connection"];
+const ODISHA_ONE_PORTAL_URL = import.meta.env.VITE_ODISHA_ONE_PORTAL_URL || "https://staging-odishaone.com/citizen/user/my-account";
+
 
 const swalWarning = (title, text) =>
   Swal.fire({ icon: "warning", title, text, confirmButtonColor: "#3d1f0f" });
@@ -314,11 +316,29 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
                 name: ooData.applicant.name,
               };
               localStorage.setItem("applicantSession", JSON.stringify(session));
+              sessionStorage.setItem("odishaOneMetadata", JSON.stringify(ooData));
+              sessionStorage.setItem("isOdishaOne", "true");
               setIsOdishaOne(true);
               setOoMetadata(ooData);
             }
           } catch (ooErr) {
             console.error("Failed to load Odisha One session:", ooErr);
+          }
+        } else {
+          // Restore Odisha One session metadata if available from sessionStorage
+          const savedIsOdishaOne = sessionStorage.getItem("isOdishaOne");
+          const savedMetadataStr = sessionStorage.getItem("odishaOneMetadata");
+          if (savedIsOdishaOne === "true" && savedMetadataStr) {
+            try {
+              const parsedMetadata = JSON.parse(savedMetadataStr);
+              if (parsedMetadata && typeof parsedMetadata === "object") {
+                setIsOdishaOne(true);
+                setOoMetadata(parsedMetadata);
+                ooData = parsedMetadata;
+              }
+            } catch (e) {
+              console.error("Failed to parse odishaOneMetadata from sessionStorage:", e);
+            }
           }
         }
 
@@ -412,18 +432,35 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
 
   // API 3 Cancel / Return to Odisha One Handler
   const handleReturnToOdishaOne = async () => {
-    if (!ooMetadata) {
-      handleBack();
+    let metadata = ooMetadata;
+    if (!metadata) {
+      try {
+        const savedMetadataStr = sessionStorage.getItem("odishaOneMetadata");
+        if (savedMetadataStr) {
+          metadata = JSON.parse(savedMetadataStr);
+        }
+      } catch (e) {
+        console.error("Failed to parse odishaOneMetadata from sessionStorage:", e);
+      }
+    }
+
+    const fallbackRedirectToOdishaOne = () => {
+      window.location.href = ODISHA_ONE_PORTAL_URL;
+    };
+
+    if (!metadata || !metadata.requestId) {
+      fallbackRedirectToOdishaOne();
       return;
     }
 
     try {
       const cancelRes = await postOdishaOneCancel({
-        requestId: ooMetadata.requestId,
-        serviceId: ooMetadata.serviceId,
-        subServiceId: ooMetadata.subServiceId,
-        ooUserCode: ooMetadata.ooUserCode,
-        cancelUrl: ooMetadata.tpiUrls?.CANCELURL,
+        requestId: metadata.requestId,
+        serviceId: metadata.serviceId,
+        subServiceId: metadata.subServiceId,
+        ooUserCode: metadata.ooUserCode,
+        ooUserToken: metadata.ooUserToken,
+        cancelUrl: metadata.tpiUrls?.CANCELURL,
       });
 
       if (cancelRes.data?.cancelUrl && cancelRes.data?.encData) {
@@ -440,11 +477,11 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
         document.body.appendChild(form);
         form.submit();
       } else {
-        handleBack();
+        fallbackRedirectToOdishaOne();
       }
     } catch (err) {
       console.error("Cancel redirect error:", err);
-      handleBack();
+      fallbackRedirectToOdishaOne();
     }
   };
 
@@ -583,7 +620,9 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
             serviceId: ooMetadata.serviceId,
             subServiceId: ooMetadata.subServiceId,
             ooUserCode: ooMetadata.ooUserCode,
+            ooUserToken: ooMetadata.ooUserToken,
             successUrl: ooMetadata.tpiUrls?.SUCCESSURL,
+            ooStatus: "Pending",
           });
 
           Swal.close();
