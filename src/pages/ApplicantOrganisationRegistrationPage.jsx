@@ -150,9 +150,11 @@ function ExistingApplicationCard({ application, onBack, onReturnToOdishaOne, isO
     <div className="applicant-org-embedded">
       <div className="applicant-org-card">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <button type="button" className="applicant-org-back" onClick={onBack}>
-            &larr; Back to Dashboard
-          </button>
+          {!isOdishaOne && (
+            <button type="button" className="applicant-org-back" onClick={onBack}>
+              &larr; Back to Dashboard
+            </button>
+          )}
           {isOdishaOne && (
             <button
               type="button"
@@ -611,7 +613,7 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
       const divisionName  = response.data?.data?.division_name; 
       const forwardedTo = divisionName ? `${divisionName} SE` : "SE"; 
 
-      // API 4 Success Redirect Flow for Odisha One
+      // API 4 Success Redirect Flow for Odisha One (Auto-redirect without confirmation modal)
       if (isOdishaOne && ooMetadata) {
         try {
           const successRes = await postOdishaOneSuccess({
@@ -625,22 +627,7 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
             ooStatus: "Pending",
           });
 
-          Swal.close();
-
-          const result = await Swal.fire({
-            icon: "success",
-            title: "Application Submitted",
-            html: `Application ID:<br/>
-             <b style="font-family:monospace;font-size:1.2rem;">${applicationId}</b><br/>
-             Application Forwarded to ${forwardedTo} for further Processing.`,
-            showCancelButton: true,
-            confirmButtonText: "Return to Odisha One Portal",
-            cancelButtonText: "Go to Dashboard",
-            confirmButtonColor: "#0284c7",
-            cancelButtonColor: "#3d1f0f",
-          });
-
-          if (result.isConfirmed && successRes.data?.successUrl && successRes.data?.encData) {
+          if (successRes.data?.successUrl && successRes.data?.encData) {
             const form = document.createElement("form");
             form.method = "POST";
             form.action = successRes.data.successUrl;
@@ -711,9 +698,11 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
     <div className="applicant-org-embedded">
       <form className="applicant-org-card" onSubmit={submitApplication}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-          <button type="button" className="applicant-org-back" onClick={handleBack}>
-            &larr; Back to Dashboard
-          </button>
+          {!isOdishaOne && (
+            <button type="button" className="applicant-org-back" onClick={handleBack}>
+              &larr; Back to Dashboard
+            </button>
+          )}
           {isOdishaOne && (
             <button
               type="button"

@@ -109,12 +109,23 @@ const handleLogout = async () => {
     navigate("/applicant-login");                // ✅ correct route
   }
 };
-  // Allow Odisha One landing flow to render even before session is established
   const hasOoSession = new URLSearchParams(window.location.search).has("oo_session");
+  const isOdishaOneUser = Boolean(applicantSession?.isOdishaOne || hasOoSession);
+
   if (!applicantSession?.id) {
-    // For Odisha One users, render only the Outlet (no sidebar) so the page can establish its session
     if (hasOoSession) return <Outlet />;
     return null;
+  }
+
+  // Hide Sidebar and Header for Odisha One users
+  if (isOdishaOneUser) {
+    return (
+      <div className="applicant-dashboard-page" style={{ padding: 0 }}>
+        <main style={{ width: "100%", padding: 0, margin: 0 }}>
+          <Outlet />
+        </main>
+      </div>
+    );
   }
 
   return (
