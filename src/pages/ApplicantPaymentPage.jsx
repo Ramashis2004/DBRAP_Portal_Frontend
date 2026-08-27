@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router";
 import Swal from "sweetalert2";
 import { Download, ExternalLink, ReceiptText, Upload, X } from "lucide-react";
-import { fetchPaymentDetails, uploadPaymentReceipt, getReceiptUrl } from "../api/api";
+import { fetchPaymentDetails, uploadPaymentReceipt, getReceiptUrl, fetchOdishaOneSession } from "../api/api";
 import "./ApplicantPaymentPage.css";
 
 // ── Status badge ──────────────────────────────────────────────────────────────
@@ -21,13 +21,13 @@ const statusBadge = (status) => {
 function ApplicantPaymentPage() {
   const navigate = useNavigate();
 
-  const applicantSession = useMemo(() => {
+  const [sessionUser, setSessionUser] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("applicantSession") || "null");
     } catch {
       return null;
     }
-  }, []);
+  });
 
   const [appData, setAppData]       = useState(null);
   const [loading, setLoading]       = useState(true);
@@ -42,35 +42,57 @@ function ApplicantPaymentPage() {
   const [pdfPreview, setPdfPreview] = useState(null);
 
   const fileRef = useRef(null);
-// ── Replace these two constants near the bottom of ApplicantPaymentPage ──────
 
-const appStatus = String(appData?.application_status || "").toUpperCase();
+  const appStatus = String(appData?.application_status || "").toUpperCase();
 
-const isVerified          = appStatus === "PAYMENT_RECEIPT_VERIFIED";
-const isPendingVerify     = appStatus === "PAYMENT_RECEIPT_UPLOADED";
-const isFirstRejection    = appStatus === "PAYMENT_RECEIPT_REJECTED";
-const isPermanentReject   = appStatus === "APPLICATION_REJECTED";
+  const isVerified          = appStatus === "PAYMENT_RECEIPT_VERIFIED";
+  const isPendingVerify     = appStatus === "PAYMENT_RECEIPT_UPLOADED";
+  const isFirstRejection    = appStatus === "PAYMENT_RECEIPT_REJECTED";
+  const isPermanentReject   = appStatus === "APPLICATION_REJECTED";
 
-// Uploaded & awaiting / already verified — no more upload
-const alreadyUploaded = isVerified || isPendingVerify;
+  // Uploaded & awaiting / already verified — no more upload
+  const alreadyUploaded = isVerified || isPendingVerify;
 
-// Can upload on first approval OR re-upload on first rejection
-const canUploadReceipt =
-  appStatus === "APPLICATION_APPROVED" || isFirstRejection;
-  useEffect(() => {
-    if (!applicantSession?.id) {
-      navigate("/applicant-login", { replace: true });
-    }
-  }, [applicantSession, navigate]);
+  // Can upload on first approval OR re-upload on first rejection
+  const canUploadReceipt =
+    appStatus === "APPLICATION_APPROVED" || isFirstRejection;
 
   useEffect(() => {
-    if (!applicantSession?.id) return;
+    const initSessionAndLoad = async () => {
+      let activeSession = sessionUser;
 
-    const load = async () => {
+      // Handle oo_session URL parameter from Odisha One landing redirect
+      const queryParams = new URLSearchParams(window.location.search);
+      const ooSessionToken = queryParams.get("oo_session");
+
+      if (ooSessionToken) {
+        try {
+          const ooRes = await fetchOdishaOneSession(ooSessionToken);
+          if (ooRes.data?.session) {
+            const ooData = ooRes.data.session;
+            activeSession = {
+              token: ooData.token,
+              id: ooData.applicant.id,
+              name: ooData.applicant.name,
+            };
+            localStorage.setItem("applicantSession", JSON.stringify(activeSession));
+            sessionStorage.setItem("odishaOneMetadata", JSON.stringify(ooData));
+            sessionStorage.setItem("isOdishaOne", "true");
+            setSessionUser(activeSession);
+          }
+        } catch (ooErr) {
+          console.error("Failed to load Odisha One session on Payment Page:", ooErr);
+        }
+      }
+
+      if (!activeSession?.id) {
+        navigate("/applicant-login", { replace: true });
+        return;
+      }
+
       try {
-        const res = await fetchPaymentDetails(applicantSession.id);
+        const res = await fetchPaymentDetails(activeSession.id);
         const data = res.data?.data || null;
-        //console.log("Payment details response:", res.data);
         setAppData(data);
 
         if (data?.amount) setAmount(String(data.amount));
@@ -79,15 +101,14 @@ const canUploadReceipt =
           if (!isNaN(d)) setDateOfPayment(d.toISOString().slice(0, 10));
         }
       } catch (err) {
-        //console.error("Load error:", err);
         setAppData(null);
       } finally {
         setLoading(false);
       }
     };
 
-    load();
-  }, [applicantSession]);
+    initSessionAndLoad();
+  }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
