@@ -446,44 +446,40 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
       }
     }
 
-    const fallbackRedirectToOdishaOne = () => {
-      window.location.href = ODISHA_ONE_PORTAL_URL;
-    };
-
     if (!metadata || !metadata.requestId) {
-      fallbackRedirectToOdishaOne();
+      swalWarning("Session Missing", "Odisha One session metadata is missing or expired.");
       return;
     }
 
     try {
       const cancelRes = await postOdishaOneCancel({
-        requestId: metadata.requestId,
-        serviceId: metadata.serviceId,
-        subServiceId: metadata.subServiceId,
-        ooUserCode: metadata.ooUserCode,
-        ooUserToken: metadata.ooUserToken,
-        cancelUrl: metadata.tpiUrls?.CANCELURL,
+        requestId:    metadata.requestId,
+        serviceId:    metadata.serviceId,
+        subServiceId: metadata.subServiceId || "",
+        ooUserCode:   metadata.ooUserCode,
+        ooUserToken:  metadata.ooUserToken,
+        cancelUrl:    metadata.tpiUrls?.CANCELURL,
       });
 
       if (cancelRes.data?.cancelUrl && cancelRes.data?.encData) {
-        const form = document.createElement("form");
+        const form  = document.createElement("form");
         form.method = "POST";
         form.action = cancelRes.data.cancelUrl;
 
         const hiddenInput = document.createElement("input");
-        hiddenInput.type = "hidden";
-        hiddenInput.name = "encData";
+        hiddenInput.type  = "hidden";
+        hiddenInput.name  = "encData";
         hiddenInput.value = cancelRes.data.encData;
         form.appendChild(hiddenInput);
 
         document.body.appendChild(form);
-        form.submit();
+        form.submit(); // Browser sends POST with encData to Odisha One CANCELURL
       } else {
-        fallbackRedirectToOdishaOne();
+        swalError("Cancel Error", "Unable to generate cancel redirect payload for Odisha One.");
       }
     } catch (err) {
-      console.error("Cancel redirect error:", err);
-      fallbackRedirectToOdishaOne();
+      console.error("API-3 cancel redirect error:", err);
+      swalError("Redirect Error", "Failed to communicate with cancel endpoint.");
     }
   };
 

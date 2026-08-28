@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router";
 import Swal from "sweetalert2";
 import { Download, ExternalLink, ReceiptText, Upload, X } from "lucide-react";
-import { fetchPaymentDetails, uploadPaymentReceipt, getReceiptUrl, fetchOdishaOneSession } from "../api/api";
+import { fetchPaymentDetails, uploadPaymentReceipt, getReceiptUrl, fetchOdishaOneSession, postOdishaOneRequiredCorrection } from "../api/api";
 import "./ApplicantPaymentPage.css";
 
 // ── Status badge ──────────────────────────────────────────────────────────────
@@ -146,6 +146,42 @@ function ApplicantPaymentPage() {
       fd.append("money_receipt", receiptFile);
 
       await uploadPaymentReceipt(fd);
+
+      // ── API-12: Redirect back to Odisha One after PAYMENT_RECEIPT_UPLOADED ──
+      const isOdishaOne = sessionStorage.getItem("isOdishaOne") === "true";
+      if (isOdishaOne) {
+        try {
+          const ooMeta = JSON.parse(sessionStorage.getItem("odishaOneMetadata") || "{}");
+          const api12Res = await postOdishaOneRequiredCorrection({
+            requestId:             ooMeta.requestId,
+            serviceId:             ooMeta.serviceId,
+            subServiceId:          ooMeta.subServiceId || "",
+            ooUserCode:            ooMeta.ooUserCode,
+            ooUserToken:           ooMeta.ooUserToken,
+            applicationId:         appData.application_id,
+            applicationStatus:     "PAYMENT_RECEIPT_UPLOADED",
+            ooStatus:              "Pending",
+            requiredCorrectionUrl: ooMeta.tpiUrls?.REQUIREDCORRECTIONURL,
+          });
+
+          if (api12Res.data?.redirectUrl && api12Res.data?.encData) {
+            const form    = document.createElement("form");
+            form.method   = "POST";
+            form.action   = api12Res.data.redirectUrl;
+            const input   = document.createElement("input");
+            input.type    = "hidden";
+            input.name    = "encData";
+            input.value   = api12Res.data.encData;
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+            return;
+          }
+        } catch (api12Err) {
+          console.error("API-12 redirect error:", api12Err);
+        }
+      }
+
       await Swal.fire("Success", "Payment receipt uploaded successfully. Application forwarded to " + appData.block + " JE for verification.", "success");
 
       const refreshed = await fetchPaymentDetails(applicantSession.id);

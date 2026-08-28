@@ -666,3 +666,5 @@ export const postOdishaOneCancel = (payload) =>
 export const postOdishaOneSuccess = (payload) =>
   API.post("/odisha-one/success", payload);
 
+export const postOdishaOneRequiredCorrection = (payload) =>
+  API.post("/odisha-one/required-correction", payload);
