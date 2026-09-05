@@ -73,7 +73,7 @@ export const SAFE_ENDPOINTS = Object.freeze({
         "/api/organisation/organisations",
 
     MONEY_RECEIPT:
-        "/api/payment/money-receipt",
+      "/api/applicant-payment/receipt",
 
     SITE_VISIT_PREVIEW:
         "/api/organisation/site-visit-preview"
@@ -125,6 +125,12 @@ export const changePassword = (data) => {
 
 export const registerApplicantOrganisation = (data) => {
   return API.post("/applicant-application/register-organisation", data);
+};
+
+export const submitApplicantServiceRequest = (data) => {
+  return API.post("/applicant-application/service-request", data, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
 };
 
 export const checkApplicantMobile = (mobileNumber) => {
@@ -568,7 +574,7 @@ export function getMoneyReceiptUrl(applicationId) {
         window.location.origin
     );
 
-    url.pathname += `/${applicationId}/money-receipt`;
+    url.pathname += `/${applicationId}`;
 
     return addTokenToUrl(url.pathname);
 }
@@ -579,6 +585,11 @@ export const fetchConnectionApplications = (blockCode) =>
 
 export const submitConnectionDetails = (payload) =>
   API.post("/officer/connection-details/update", payload);
+export const fetchDisconnectionApplications = (blockCode) =>
+  API.get("/officer/disconnection/applications", { params: { blockCode } });
+
+export const submitDisconnection = (payload) =>
+  API.post("/officer/disconnection/submit", payload);
 
 // ── SLA Config ────────────────────────────────────────────────────────────────
 export const fetchSlaStages = () => API.get("/sla-config/stages");

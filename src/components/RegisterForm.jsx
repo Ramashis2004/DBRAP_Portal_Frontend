@@ -149,23 +149,31 @@ useEffect(() => {
       const response = await registerApplicant(formData);
       const userId = response.data?.data?.id;
 
-      await Swal.fire({
-        icon: "success",
-        title: "Applicant Registered!",
-        html: userId
-          ? `Applicant has been registered.<br/><br/>
-             <div style="margin-top:8px;font-weight:700;color:#4b5563;">User ID:</div>
-             <div style="margin-top:10px;">
-               <span style="display:inline-block;font-size:1.2rem;font-family:monospace;background:#fef3c7;padding:6px 14px;border-radius:6px;font-weight:700;color:#92400e;">
-                 ${userId}
-               </span>
-             </div><br/>
-             <small style="color:#6b7280;">Please save this ID for future reference.</small>`
-          : "Applicant has been registered successfully.",
-        confirmButtonColor: "#3d1f0f",
-        confirmButtonText: "Done"
-      });
-
+      // await Swal.fire({
+      //   icon: "success",
+      //   title: "Applicant Registered!",
+      //   html: userId
+      //     ? `Applicant has been registered.<br/><br/>
+      //        <div style="margin-top:8px;font-weight:700;color:#4b5563;">User ID:</div>
+      //        <div style="margin-top:10px;">
+      //          <span style="display:inline-block;font-size:1.2rem;font-family:monospace;background:#fef3c7;padding:6px 14px;border-radius:6px;font-weight:700;color:#92400e;">
+      //            ${userId}
+      //          </span>
+      //        </div><br/>
+      //        <small style="color:#6b7280;">Please save this ID for future reference.</small>`
+      //     : "Applicant has been registered successfully.",
+      //   confirmButtonColor: "#3d1f0f",
+      //   confirmButtonText: "Done"
+      // });
+await Swal.fire({
+  icon: "success",
+  title: "Applicant Registered!",
+  text: userId
+    ? `Applicant has been registered.\n\nUser ID: ${userId}\n\nPlease save this ID for future reference.`
+    : "Applicant has been registered successfully.",
+  confirmButtonColor: "#3d1f0f",
+  confirmButtonText: "Done"
+});
       resetRegistrationForm();
     } catch (error) {
       //console.error(error);

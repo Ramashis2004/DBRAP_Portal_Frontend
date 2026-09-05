@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
+import PdfPreviewViewer from "../components/PdfPreviewViewer";
+import PdfPreviewHeader from "../components/PdfPreviewHeader";
 import Swal from "sweetalert2";
 import { Download, X } from "lucide-react";
 import {
@@ -76,37 +78,10 @@ function PdfPreviewOverlay({ preview, onClose }) {
   return (
     <div className="pv-preview-overlay">
       <div className="pv-preview-card">
-        <div className="pv-preview-header">
-          <h2 className="pv-preview-header__title">{preview.title}</h2>
-          <div className="pv-preview-header__actions">
-            {hasValidUrl && (
-              <a
-                href={preview.url}
-                download
-                className="pv-preview-btn-download"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <Download size={14} />
-                Download PDF
-              </a>
-            )}
-            <button
-              className="pv-preview-btn-close"
-              onClick={handleClosePreview}
-              title="Close Preview"
-            >
-              <X size={18} />
-            </button>
-          </div>
-        </div>
+        <PdfPreviewHeader title={preview.title} url={hasValidUrl ? preview.url : ""} onClose={handleClosePreview} />
         <div className="pv-preview-content">
           {hasValidUrl ? (
-            <iframe
-              src={`${preview.url}#toolbar=0`}
-              className="pv-preview-frame"
-              title="PDF Preview"
-            />
+            <PdfPreviewViewer url={preview.url} title={preview.title} />
           ) : (
             <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>
               Preview unavailable.
@@ -121,10 +96,59 @@ function PdfPreviewOverlay({ preview, onClose }) {
 // ── Existing Application — CE-style detail layout ─────────────────────────────
 function ExistingApplicationCard({ application, onBack, onReturnToOdishaOne, isOdishaOne }) {
   const [pdfPreview, setPdfPreview] = useState(null);
+  const isTransferredApplication = Boolean(
+    application.transfer_user_flag &&
+    application.original_application_id &&
+    application.request_type === "CANCELLATION"
+  );
+  const isAmendmentApproved = application.application_status === "AMENDMENT_APPROVED";
+  const organisationName = isAmendmentApproved
+    ? application.new_organisation_name || application.organisation_name
+    : isTransferredApplication
+      ? application.connection_organisation_name || application.organisation_name
+      : application.organisation_name;
+  const establishmentType = isAmendmentApproved
+    ? application.new_establishment_type || application.establishment_type
+    : isTransferredApplication
+      ? application.connection_establishment_type || application.establishment_type
+      : application.establishment_type;
+  const connectionType = isAmendmentApproved
+    ? application.new_type_of_connection || application.type_of_connection
+    : isTransferredApplication
+      ? application.connection_type_of_connection || application.type_of_connection
+      : application.type_of_connection;
+  const waterRequirement = isAmendmentApproved
+    ? application.new_water_requirement || application.water_requirement
+    : isTransferredApplication
+      ? application.connection_water_requirement || application.water_requirement
+      : application.water_requirement;
+  const displayApplicant = isTransferredApplication
+    ? {
+        name: application.name,
+        gender: application.gender,
+        email: application.email,
+        mobile_number: application.mobile_number,
+      }
+    : application;
+  const displayLocation = isTransferredApplication
+    ? {
+        district: application.connection_district || application.district,
+        block: application.connection_block || application.block,
+        gram_panchayat: application.connection_gram_panchayat || application.gram_panchayat,
+        village: application.connection_village || application.village,
+        habitation: application.connection_habitation || application.habitation,
+      }
+    : application;
 
   const renderDocumentLink = (documentType, label = "View File") => {
-    if (!application?.[documentType]) return "NA";
-    const url = getOrganisationDocumentUrl(application.application_id, documentType);
+    const sourceApplicationId = isTransferredApplication
+      ? application.connection_application_id || application.original_application_id
+      : application.application_id;
+    const sourceDocument = isTransferredApplication
+      ? application[`connection_${documentType}`]
+      : application[documentType];
+    if (!sourceDocument) return "NA";
+    const url = getOrganisationDocumentUrl(sourceApplicationId, documentType);
     if (!url) return "NA";
     return (
       <button
@@ -199,34 +223,42 @@ function ExistingApplicationCard({ application, onBack, onReturnToOdishaOne, isO
           <div className="ce-dashboard-app-section-grid">
 
             <SectionBox title="Application Details">
-              <Row label="Application ID"       value={application.application_id} />
-              <Row label="Application Received" value={formatDisplayDate(application.created_at)} />
-              <Row label="Application Status"   value={formatApplicationStatus(application.application_status)} />
+              <Row label="Application ID"       value={isTransferredApplication ? application.connection_application_id : application.application_id} />
+              <Row label="Application Received" value={formatDisplayDate(isTransferredApplication ? application.connection_created_at : application.created_at)} />
+              <Row label="Application Status"   value={formatApplicationStatus(isTransferredApplication ? application.connection_application_status : application.application_status)} />
             </SectionBox>
 
             <SectionBox title="Applicant Details">
-              <Row label="Name"          value={application.name} />
-              <Row label="Gender"        value={application.gender} />
-              <Row label="Email"         value={application.email} />
-              <Row label="Mobile Number" value={application.mobile_number} />
+              <Row label="Name"          value={displayApplicant.name} />
+              <Row label="Gender"        value={displayApplicant.gender} />
+              <Row label="Email"         value={displayApplicant.email} />
+              <Row label="Mobile Number" value={displayApplicant.mobile_number} />
             </SectionBox>
 
             <SectionBox title="Organisation Details">
-              <Row label="Organisation Name"  value={application.organisation_name} />
-              <Row label="Establishment Type" value={application.establishment_type} />
-              <Row label="District"           value={application.district} />
-              <Row label="Block"              value={application.block} />
-              <Row label="Gram Panchayat"     value={application.gram_panchayat} />
-              <Row label="Village"            value={application.village} />
-              <Row label="Habitation"         value={application.habitation} />
+              <Row label="Organisation Name"  value={organisationName} />
+              <Row label="Establishment Type" value={establishmentType} />
+              <Row label="District"           value={displayLocation.district} />
+              <Row label="Block"              value={displayLocation.block} />
+              <Row label="Gram Panchayat"     value={displayLocation.gram_panchayat} />
+              <Row label="Village"            value={displayLocation.village} />
+              <Row label="Habitation"         value={displayLocation.habitation} />
             </SectionBox>
 
             <SectionBox title="Connection Details">
-              <Row label="Connection Type"               value={application.type_of_connection} />
+              <Row label="Connection Type"               value={connectionType} />
               <Row label="Water Requirement (Litre/Day)" value={
-                application.water_requirement ? `${application.water_requirement} L/Day` : null
+                waterRequirement ? `${waterRequirement} L/Day` : null
               } />
             </SectionBox>
+
+            {application.transfer_user_flag && application.original_application_id && (
+              <SectionBox title="Transfer Details">
+                <Row label="Transferred To Another User" value="Yes" />
+                <Row label="New User Name" value={application.transfer_user_name} />
+                <Row label="New User Mobile" value={application.transfer_user_mobile} />
+              </SectionBox>
+            )}
 
             <SectionBox title="Documents">
               {DOCUMENT_ROWS.map(([label, documentType]) => (
@@ -292,6 +324,8 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
   const [returnedApplication, setReturnedApplication] = useState(null);
   const [loading, setLoading]                         = useState(true);
   const [pdfPreview, setPdfPreview]                   = useState(null);
+  const [isTransferApplication, setIsTransferApplication] = useState(false);
+  const [transferSourceApplicationId, setTransferSourceApplicationId] = useState("");
 
   // Odisha One Integration State
   const [isOdishaOne, setIsOdishaOne]                 = useState(false);
@@ -324,7 +358,7 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
               setOoMetadata(ooData);
             }
           } catch (ooErr) {
-            console.error("Failed to load Odisha One session:", ooErr);
+           // console.error("Failed to load Odisha One session:", ooErr);
           }
         } else {
           // Restore Odisha One session metadata if available from sessionStorage
@@ -339,7 +373,7 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
                 ooData = parsedMetadata;
               }
             } catch (e) {
-              console.error("Failed to parse odishaOneMetadata from sessionStorage:", e);
+             // console.error("Failed to parse odishaOneMetadata from sessionStorage:", e);
             }
           }
         }
@@ -369,16 +403,70 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
         };
 
         const application = applicationResponse?.data?.application || null;
+        const transferApplication = application?.transfer_user_flag &&
+          application?.request_type === "CANCELLATION" &&
+          String(application.transfer_user_id) === String(session.id)
+          ? application
+          : null;
+        const submittedTransferApplication = application?.transfer_user_flag &&
+          !application?.request_type &&
+          String(application.transfer_user_id) === String(session.id);
+        const connectionApplication = application?.original_application_id && !submittedTransferApplication
+          ? {
+              ...application,
+              application_id: application.connection_application_id,
+              application_status: application.connection_application_status,
+              organisation_name: application.connection_organisation_name,
+              establishment_type: application.connection_establishment_type,
+              type_of_connection: application.connection_type_of_connection,
+              water_requirement: application.connection_water_requirement,
+              district: application.connection_district,
+              district_code: application.connection_district_code || application.district_code,
+              block: application.connection_block,
+              block_code: application.connection_block_code || application.block_code,
+              gram_panchayat: application.connection_gram_panchayat,
+              gram_panchayat_code: application.connection_gram_panchayat_code || application.gram_panchayat_code,
+              village: application.connection_village,
+              habitation: application.connection_habitation,
+              created_at: application.connection_created_at,
+              property_proof: application.connection_property_proof,
+              registration_proof: application.connection_registration_proof,
+              ownership_proof: application.connection_ownership_proof,
+              owner_indemnity_bond: application.connection_owner_indemnity_bond,
+              identity_proof: application.connection_identity_proof,
+            }
+          : application;
         const isReturnedApplication =
-          String(application?.application_status || "").toUpperCase() === "APPLICATION_RETURNED_TO_APPLICANT";
+          String(connectionApplication?.application_status || "").toUpperCase() === "APPLICATION_RETURNED_TO_APPLICANT";
+        const isDisconnectedApplication =
+          String(connectionApplication?.application_status || "").toUpperCase() === "CONNECTION_DISCONNECTED";
+        const isCompletedTransferApplication =
+          Boolean(transferApplication) &&
+          String(application?.application_status || "").toUpperCase() === "CONNECTION_DETAILS_UPDATED";
 
-        if (application && !isReturnedApplication) {
+        if (isCompletedTransferApplication) {
           setExistingApplication(application);
           setLoading(false);
           return;
         }
 
-        const initialOrgName = ooData?.applicant?.organisationName || application?.organisation_name || applicant.organisation_name || "";
+        if (connectionApplication && !transferApplication && !isReturnedApplication && !isDisconnectedApplication) {
+          setExistingApplication(connectionApplication);
+          setLoading(false);
+          return;
+        }
+
+        setIsTransferApplication(Boolean(transferApplication));
+        setTransferSourceApplicationId(transferApplication?.application_id || "");
+        const sourceApplication = transferApplication ? connectionApplication : application;
+        const isAmendmentApproved =
+          String(application?.application_status || "").toUpperCase() === "AMENDMENT_APPROVED";
+        const initialOrgName =
+          transferApplication?.transfer_user_organisation ||
+          (transferApplication ? applicant.organisation_name : "") ||
+          ooData?.applicant?.organisationName ||
+          (isAmendmentApproved ? application?.new_organisation_name : application?.organisation_name) ||
+          applicant.organisation_name || "";
 
         setFormData((current) => ({
           ...current,
@@ -387,20 +475,36 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
           organisation_name: initialOrgName,
           gender:            applicant.gender            || "",
           email:             applicant.email             || "",
-          mobile_number:     applicant.mobile_number || applicant.mobile_no || "",
-          establishment_type: application?.establishment_type || "",
-          district_code: application?.district_code || "",
-          district: application?.district || "",
-          block_code: application?.block_code || "",
-          block: application?.block || "",
-          gram_panchayat_code: application?.gram_panchayat_code || "",
-          gram_panchayat: application?.gram_panchayat || "",
-          village: application?.village || "",
-          habitation: application?.habitation || "",
-          type_of_connection: application?.type_of_connection || "",
-          water_requirement: application?.water_requirement || "",
+
+          mobile_number:     applicant.mobile_number     || applicant.mobile_no || "",
+          establishment_type: isDisconnectedApplication
+            ? ""
+            : (isAmendmentApproved ? sourceApplication?.new_establishment_type : sourceApplication?.establishment_type) || "",
+          district_code: isDisconnectedApplication ? "" : sourceApplication?.district_code || "",
+          district: isDisconnectedApplication ? "" : sourceApplication?.district || "",
+          block_code: isDisconnectedApplication ? "" : sourceApplication?.block_code || "",
+          block: isDisconnectedApplication ? "" : sourceApplication?.block || "",
+          gram_panchayat_code: isDisconnectedApplication ? "" : sourceApplication?.gram_panchayat_code || "",
+          gram_panchayat: isDisconnectedApplication ? "" : sourceApplication?.gram_panchayat || "",
+          village: isDisconnectedApplication ? "" : sourceApplication?.village || "",
+          habitation: isDisconnectedApplication ? "" : sourceApplication?.habitation || "",
+          type_of_connection: isDisconnectedApplication
+            ? ""
+            : (isAmendmentApproved ? sourceApplication?.new_type_of_connection : sourceApplication?.type_of_connection) || "",
+          water_requirement: isDisconnectedApplication
+            ? ""
+            : (isAmendmentApproved ? sourceApplication?.new_water_requirement : sourceApplication?.water_requirement) || "",
         }));
         setDistricts(districtResponse.data || []);
+
+        if (transferApplication && sourceApplication?.district_code) {
+          const blockResponse = await fetchBlocks(sourceApplication.district_code);
+          setBlocks(blockResponse.data || []);
+          if (sourceApplication.block_code) {
+            const panchayatResponse = await fetchPanchayats(sourceApplication.block_code);
+            setPanchayats(panchayatResponse.data || []);
+          }
+        }
 
         if (isReturnedApplication) {
           setReturnedApplication(application);
@@ -442,7 +546,7 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
           metadata = JSON.parse(savedMetadataStr);
         }
       } catch (e) {
-        console.error("Failed to parse odishaOneMetadata from sessionStorage:", e);
+        //console.error("Failed to parse odishaOneMetadata from sessionStorage:", e);
       }
     }
 
@@ -478,7 +582,7 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
         swalError("Cancel Error", "Unable to generate cancel redirect payload for Odisha One.");
       }
     } catch (err) {
-      console.error("API-3 cancel redirect error:", err);
+      //console.error("API-3 cancel redirect error:", err);
       swalError("Redirect Error", "Failed to communicate with cancel endpoint.");
     }
   };
@@ -584,6 +688,11 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
       "type_of_connection", "water_requirement",
     ].forEach((key) => payload.append(key, formData[key]));
 
+    if (isTransferApplication) {
+      payload.append("transfer_user_flag", "true");
+      payload.append("transfer_source_application_id", transferSourceApplicationId);
+    }
+
     if (isOdishaOne && ooMetadata) {
       payload.append("oo_user_code", ooMetadata.ooUserCode || "");
       payload.append("oo_request_id", ooMetadata.requestId || "");
@@ -639,18 +748,27 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
             return;
           }
         } catch (successErr) {
-          console.error("Odisha One API 4 success notification error:", successErr);
+         // console.error("Odisha One API 4 success notification error:", successErr);
         }
       }
 
+      // await Swal.fire({
+      //   icon: "success",
+      //   title: returnedApplication ? "Application Resubmitted" : "Application Submitted",
+      //   html: `Application ID:<br/>
+      //    <b style="font-family:monospace;font-size:1.2rem;">${applicationId}</b><br/>
+      //    Application Forwarded to ${forwardedTo} for further Processing.`,
+      //   confirmButtonColor: "#3d1f0f",
+      // });
+
       await Swal.fire({
-        icon: "success",
-        title: returnedApplication ? "Application Resubmitted" : "Application Submitted",
-        html: `Application ID:<br/>
-         <b style="font-family:monospace;font-size:1.2rem;">${applicationId}</b><br/>
-         Application Forwarded to ${forwardedTo} for further Processing.`,
-        confirmButtonColor: "#3d1f0f",
-      });
+  icon: "success",
+  title: returnedApplication
+    ? "Application Resubmitted"
+    : "Application Submitted",
+  text: `Application ID: ${applicationId}\n\nApplication forwarded to ${forwardedTo} for further processing.`,
+  confirmButtonColor: "#3d1f0f",
+});
       handleBack();
     } catch (error) {
       await swalError("Submission Failed", error.response?.data?.error || "Something went wrong.");
@@ -663,6 +781,7 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
     ["Applicant Details", [["Name", formData.name], ["Gender", formData.gender], ["Email", formData.email], ["Mobile Number", formData.mobile_number]]],
     ["Organisation Details", [["Organisation Name", formData.organisation_name], ["Establishment Type", formData.establishment_type], ["District", formData.district], ["Block", formData.block], ["Gram Panchayat", formData.gram_panchayat], ["Village", formData.village], ["Habitation", formData.habitation]]],
     ["Documents", Object.entries(files).map(([key, file]) => [key, file?.name || "-"])],
+    ...(isTransferApplication ? [["Transfer Details", [["Original Application ID", transferSourceApplicationId], ["Transfer User", "Yes"]]]] : []),
     ["Connection", [["Connection Type", formData.type_of_connection], ["Water Requirement", formData.water_requirement]]],
   ];
 
@@ -764,7 +883,7 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
                     name="organisation_name"
                     value={formData.organisation_name}
                     onChange={handleChange}
-                    disabled={isOdishaOne}
+                    disabled
                   />
                   {isOdishaOne && (
                     <small style={{ color: "#059669", fontWeight: "500", marginTop: "4px", display: "block" }}>
@@ -773,10 +892,10 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
                   )}
                 </Field>
                 <Field label="Type of Establishment/Business" required>
-                  <input name="establishment_type" value={formData.establishment_type} onChange={handleChange} />
+                  <input name="establishment_type" value={formData.establishment_type} onChange={handleChange} disabled={isTransferApplication} />
                 </Field>
                 <Field label="District" required>
-                  <select value={formData.district_code} onChange={handleDistrictChange}>
+                  <select value={formData.district_code} onChange={handleDistrictChange} disabled={isTransferApplication}>
                     <option value="">Select District</option>
                     {districts.map((d) => (
                       <option key={d.district_code} value={d.district_code}>{d.district_name}</option>
@@ -784,7 +903,7 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
                   </select>
                 </Field>
                 <Field label="Block" required>
-                  <select value={formData.block_code} onChange={handleBlockChange} disabled={!formData.district_code}>
+                  <select value={formData.block_code} onChange={handleBlockChange} disabled={isTransferApplication || !formData.district_code}>
                     <option value="">Select Block</option>
                     {blocks.map((b) => (
                       <option key={b.block_code} value={b.block_code}>{b.block_name}</option>
@@ -802,7 +921,7 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
                         gram_panchayat: selectedPanchayat?.panchayat_name || "",
                       }));
                     }}
-                    disabled={!formData.block_code}
+                    disabled={isTransferApplication || !formData.block_code}
                   >
                     <option value="">Select Panchayat</option>
                     {panchayats.map((p) => (
@@ -811,10 +930,10 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
                   </select>
                 </Field>
                 <Field label="Village" required>
-                  <input name="village" value={formData.village} onChange={handleChange} />
+                  <input name="village" value={formData.village} onChange={handleChange} disabled={isTransferApplication} />
                 </Field>
                 <Field label="Habitation">
-                  <input name="habitation" value={formData.habitation} onChange={handleChange} />
+                  <input name="habitation" value={formData.habitation} onChange={handleChange} disabled={isTransferApplication} />
                 </Field>
               </div>
             )}
@@ -831,14 +950,14 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
             {step === 3 && (
               <div className="applicant-org-panel">
                 <Field label="Connection Type" required>
-                  <select name="type_of_connection" value={formData.type_of_connection} onChange={handleChange}>
+                  <select name="type_of_connection" value={formData.type_of_connection} onChange={handleChange} disabled={isTransferApplication}>
                     <option value="">Type of Connection</option>
                     <option value="Single Tap">Single Tap</option>
                     <option value="More than one tap">More than one tap</option>
                   </select>
                 </Field>
                 <Field label="Water Requirement (Litre/Day)" required>
-                  <input name="water_requirement" value={formData.water_requirement} onChange={handleChange} />
+                  <input name="water_requirement" value={formData.water_requirement} onChange={handleChange} disabled={isTransferApplication} />
                 </Field>
               </div>
             )}
@@ -911,38 +1030,18 @@ function ApplicantOrganisationRegistrationPage({ embedded = false, onBack }) {
         {pdfPreview && (
           <div className="pv-preview-overlay">
             <div className="pv-preview-card">
-              <div className="pv-preview-header">
-                <h2 className="pv-preview-header__title">{pdfPreview.title}</h2>
-                <div className="pv-preview-header__actions">
-                  {pdfPreview.url && (
-                    <a href={pdfPreview.url}
-                      download={pdfPreview.fileName}
-                      className="pv-preview-btn-download"
-                    >
-                      <Download size={14} />
-                      Download PDF
-                    </a>
-                  )}
-                  <button
-                    type="button"
-                    className="pv-preview-btn-close"
-                    onClick={() => {
-                      if (pdfPreview.url) URL.revokeObjectURL(pdfPreview.url);
-                      setPdfPreview(null);
-                    }}
-                    title="Close Preview"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-              </div>
+              <PdfPreviewHeader
+                title={pdfPreview.title}
+                url={pdfPreview.url}
+                fileName={pdfPreview.fileName}
+                onClose={() => {
+                  if (pdfPreview.url) URL.revokeObjectURL(pdfPreview.url);
+                  setPdfPreview(null);
+                }}
+              />
               <div className="pv-preview-content">
                 {pdfPreview.url ? (
-                  <iframe
-                    src={`${pdfPreview.url}#toolbar=0`}
-                    className="pv-preview-frame"
-                    title="PDF Preview"
-                  />
+                  <PdfPreviewViewer url={pdfPreview.url} title={pdfPreview.title} />
                 ) : (
                   <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>
                     Preview unavailable.

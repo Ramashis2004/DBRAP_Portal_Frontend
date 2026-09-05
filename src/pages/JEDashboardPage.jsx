@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import PdfPreviewViewer from "../components/PdfPreviewViewer";
+import PdfPreviewHeader from "../components/PdfPreviewHeader";
 import Swal from "sweetalert2";
 import {
   ChevronDown,
@@ -15,6 +17,7 @@ import {
   Download,
   FileCheck,
 Settings2,  X,
+  Unplug,
 } from "lucide-react";
 import {
   createOfficerUser,
@@ -29,6 +32,7 @@ import {
   getOfficerUsers,
   logoutOfficer,
   uploadSiteVisitReport,
+  updateOrganisationStatusWithRemarks,
 } from "../api/api";
 import {
   formatApplicationStatus,
@@ -187,11 +191,11 @@ const [remarks, setRemarks] = useState("");
   const getActionStatusMeta = (app) => {
     const status = String(app.application_status || "").toUpperCase();
     const referenceDate =
-      status === "APPLICATION_FORWARDED_TO_JE"
+      ["APPLICATION_FORWARDED_TO_JE", "CANCELLATION_FORWARDED_TO_JE", "TRANSFER_FORWARDED_TO_JE", "AMENDMENT_FORWARDED_TO_JE"].includes(status)
         ? app.forward_on || app.forwardOn || app.created_at || app.createdAt
         : app.site_visit_report_upload_on || app.siteVisitReportUploadOn || app.created_at || app.createdAt;
 
-    if (status === "APPLICATION_FORWARDED_TO_JE") {
+    if (["APPLICATION_FORWARDED_TO_JE", "CANCELLATION_FORWARDED_TO_JE", "TRANSFER_FORWARDED_TO_JE", "AMENDMENT_FORWARDED_TO_JE"].includes(status)) {
       return {
         background: "#fef3c7",
         color: "#92400e",
@@ -199,7 +203,7 @@ const [remarks, setRemarks] = useState("");
       };
     }
 
-    if (status === "JE_VERIFIED_REPORT_UPLOADED") {
+    if (["JE_VERIFIED_REPORT_UPLOADED", "CANCELLATION_SITE_VISIT_REPORT_UPLOADED", "TRANSFER_SITE_VISIT_REPORT_UPLOADED", "AMENDMENT_DOCUMENTS_VERIFIED_BY_JE"].includes(status)) {
       return {
         background: "#dcfce7",
         color: "#166534",
@@ -254,6 +258,45 @@ return (
   const handleActionClick = async (app) => {
     if (actionMode !== "upload") {
       setDetailView(app);
+      return;
+    }
+
+    if (app.application_status === "AMENDMENT_FORWARDED_TO_JE") {
+      const confirmation = await Swal.fire({
+        title: "Verify amendment documents?",
+        text: `Mark amendment documents as verified for ${app.application_id}?`,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "Verify",
+        cancelButtonText: "Cancel",
+        reverseButtons: true,
+      });
+
+      if (!confirmation.isConfirmed) return;
+
+      try {
+        await updateOrganisationStatusWithRemarks(
+          app.application_id,
+          "APPLICATION_APPROVED",
+          "Amendment documents verified by JE",
+          false,
+          userId
+        );
+        setApplications((current) => current.filter((item) => item.application_id !== app.application_id));
+        await Swal.fire({
+          title: "Verified",
+          text: "Amendment documents verified successfully. Application forwarded to SE for approval.",
+          icon: "success",
+          confirmButtonText: "OK",
+        });
+      } catch (err) {
+        await Swal.fire({
+          title: "Failed",
+          text: err.response?.data?.error || "Unable to verify amendment documents.",
+          icon: "error",
+          confirmButtonText: "OK",
+        });
+      }
       return;
     }
 
@@ -367,6 +410,12 @@ if (!inspectionTime) {
 
   if (detailView) {
     const app = detailView;
+    const requestType = String(app.request_type || "").toUpperCase();
+    const applicationStatus = String(app.application_status || "").toUpperCase();
+    const isCancellationRequest =
+      requestType === "CANCELLATION" || applicationStatus.includes("CANCELLATION");
+    const isAmendmentRequest =
+      requestType === "AMENDMENT" || applicationStatus.includes("AMENDMENT");
     const fields = [
       ["Application ID", app.application_id],
       ["Organisation Name", app.organisation_name],
@@ -483,6 +532,22 @@ value={`${app.water_requirement} L/Day`}
 />
 </SectionBox>
 
+{isCancellationRequest ? (
+<SectionBox title="Cancellation Details">
+<Row label="Reason" value={app.request_reason}/>
+<Row label="Preferred Disconnection Date" value={formatDisplayDate(app.preferred_disconnection_date)}/>
+<Row label="Outstanding Tariff Paid" value={app.outstanding_tariff_paid}/>
+</SectionBox>
+) : isAmendmentRequest ? (
+<SectionBox title="Amendment Details">
+<Row label="New Organisation Name" value={app.new_organisation_name}/>
+<Row label="New Establishment Type" value={app.new_establishment_type}/>
+<Row label="New Connection Type" value={app.new_type_of_connection}/>
+<Row label="New Water Requirement" value={app.new_water_requirement ? `${app.new_water_requirement} L/Day` : null}/>
+<Row label="Reason" value={app.amendment_reason}/>
+</SectionBox>
+) : null}
+
 
 
  <SectionBox title="Site Visit Report">
@@ -532,37 +597,10 @@ value={`${app.water_requirement} L/Day`}
  {pdfPreview && (
         <div className="pv-preview-overlay">
           <div className="pv-preview-card">
-            <div className="pv-preview-header">
-              <h2 className="pv-preview-header__title">{pdfPreview.title}</h2>
-              <div className="pv-preview-header__actions">
-                {pdfPreview.url && (
-                  <a
-                    href={pdfPreview.url}
-                    download
-                    className="pv-preview-btn-download"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <Download size={14} />
-                    Download PDF
-                  </a>
-                )}
-                <button
-                  className="pv-preview-btn-close"
-                  onClick={() => setPdfPreview(null)}
-                  title="Close Preview"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
+            <PdfPreviewHeader title={pdfPreview.title} url={pdfPreview.url} onClose={() => setPdfPreview(null)} />
             <div className="pv-preview-content">
               {pdfPreview.url ? (
-                <iframe
-                  src={`${pdfPreview.url}#toolbar=0`}
-                  className="pv-preview-frame"
-                  title="PDF Preview"
-                />
+                <PdfPreviewViewer url={pdfPreview.url} title={pdfPreview.title} />
               ) : (
                 <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>
                   Preview unavailable.
@@ -727,7 +765,7 @@ value={`${app.water_requirement} L/Day`}
                       fontSize: "0.75rem",
                       fontWeight: 600,
                     }}>
-                      APPLICATION FORWARDED TO JE
+                      {formatApplicationStatus(app.application_status)}
                     </span>
                   </td>
                   <td style={{ padding: "12px 16px", color: "#475569", whiteSpace: "nowrap" }}>
@@ -765,7 +803,9 @@ value={`${app.water_requirement} L/Day`}
                       }}
                     >
                       {actionMode === "upload" ? null : <Eye size={13} />}
-                      {actionMode === "upload" ? "Upload" : "View"}
+                      {actionMode === "upload"
+                        ? app.application_status === "AMENDMENT_FORWARDED_TO_JE" ? "Verify" : "Upload"
+                        : "View"}
                     </button>
                   </td>
                 </tr>
@@ -1147,6 +1187,14 @@ const handleDashboardHomeClick = () => {
   }
 
   if (
+    optionUrl.includes("disconnect") ||
+    optionLabel.includes("disconnect water connection")
+  ) {
+    navigate("/je-disconnect-connection");
+    return;
+  }
+
+  if (
     optionUrl.includes("updateconnectiondetails") ||
     optionLabel.includes("update connection details")
   ) {
@@ -1497,6 +1545,23 @@ const handleDashboardHomeClick = () => {
     Update tapping and connection details after payment verification.
   </p>
 </div>             
+
+<div
+  className="je-dashboard-card"
+  onClick={() => navigate("/je-disconnect-connection")}
+>
+  <div className="je-dashboard-card__icon je-dashboard-card__icon--red">
+    <Unplug size={30} />
+  </div>
+
+  <h3 className="je-dashboard-card__title">
+    Disconnect Water Connection
+  </h3>
+
+  <p className="je-dashboard-card__description">
+    Disconnect water connections after cancellation payment receipt verification.
+  </p>
+</div>
             </section>
           ) : null}
 

@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import PdfPreviewViewer from "../components/PdfPreviewViewer";
+import PdfPreviewHeader from "../components/PdfPreviewHeader";
 import Swal from "sweetalert2";
 import {
   ArrowLeft,
@@ -60,8 +62,10 @@ const getStatusStyle = (status) => {
     case "JE_VERIFIED_REPORT_UPLOADED": return { background: "#ede9fe", color: "#6d28d9" };
     case "APPLICATION_APPROVED":        return { background: "#dcfce7", color: "#166534" };
     case "APPLICATION_REJECTED":        return { background: "#fee2e2", color: "#b91c1c" };
-    case "PAYMENT_RECEIPT_UPLOADED":    return { background: "#fef3c7", color: "#92400e" };
-    case "PAYMENT_RECEIPT_VERIFIED":    return { background: "#dcfce7", color: "#166534" };
+    case "PAYMENT_RECEIPT_UPLOADED":
+    case "PAYMENT_RECEIPT_UPLOADED_FOR_CANCELLATION": return { background: "#fef3c7", color: "#92400e" };
+    case "PAYMENT_RECEIPT_VERIFIED":
+    case "PAYMENT_RECEIPT_VERIFIED_FOR_CANCELLATION": return { background: "#dcfce7", color: "#166534" };
     case "CONNECTION_DETAILS_UPDATED":  return { background: "#dcfce7", color: "#166534" };
     default:                            return { background: "#e2e8f0", color: "#475569" };
   }
@@ -247,9 +251,21 @@ function AEEDashboardPage() {
     <option value="APPLICATION_FORWARDED_TO_JE">Application Forwarded To JE</option>
     <option value="JE_VERIFIED_REPORT_UPLOADED">Verify JE Upload Report</option>
     <option value="APPLICATION_APPROVED">Application Approved</option>
+    <option value="APPLICATION_SUBMITTED_FOR_CANCELLATION">Cancellation Submitted</option>
+    <option value="CANCELLATION_FORWARDED_TO_JE">Cancellation Forwarded To JE</option>
+    <option value="CANCELLATION_SITE_VISIT_REPORT_UPLOADED">Cancellation Report Uploaded</option>
+    <option value="CANCELLATION_APPROVED">Cancellation Approved</option>
+    <option value="DISCONNECTION_INSTRUCTION_ASSIGNED_TO_JE">Disconnection Assigned To JE</option>
+    <option value="CONNECTION_DISCONNECTED">Connection Disconnected</option>
+    <option value="APPLICATION_SUBMITTED_FOR_AMENDMENT">Amendment Submitted</option>
+    <option value="AMENDMENT_FORWARDED_TO_JE">Amendment Forwarded To JE</option>
+    <option value="AMENDMENT_DOCUMENTS_VERIFIED_BY_JE">Amendment Documents Verified</option>
+    <option value="AMENDMENT_APPROVED">Amendment Approved</option>
     <option value="APPLICATION_REJECTED">Application Rejected</option>
     <option value="PAYMENT_RECEIPT_UPLOADED">Payment Receipt Uploaded</option>
     <option value="PAYMENT_RECEIPT_VERIFIED">Payment Receipt Verified</option>
+    <option value="PAYMENT_RECEIPT_UPLOADED_FOR_CANCELLATION">Cancellation Payment Uploaded</option>
+    <option value="PAYMENT_RECEIPT_VERIFIED_FOR_CANCELLATION">Cancellation Payment Verified</option>
     <option value="CONNECTION_DETAILS_UPDATED">Connection Details Updated</option>
   </select>
 ) : (
@@ -390,19 +406,9 @@ function AEEDashboardPage() {
       {pdfPreview && (
         <div className="pv-preview-overlay">
           <div className="pv-preview-card">
-            <div className="pv-preview-header">
-              <h2 className="pv-preview-header__title">{pdfPreview.title}</h2>
-              <div className="pv-preview-header__actions">
-                <a href={pdfPreview.url} download className="pv-preview-btn-download" target="_blank" rel="noreferrer">
-                  <Download size={14} /> Download PDF
-                </a>
-                <button className="pv-preview-btn-close" onClick={() => setPdfPreview(null)} title="Close Preview">
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
+            <PdfPreviewHeader title={pdfPreview.title} url={pdfPreview.url} onClose={() => setPdfPreview(null)} />
             <div className="pv-preview-content">
-              <iframe src={`${pdfPreview.url}#toolbar=0`} className="pv-preview-frame" title="PDF Preview" />
+              <PdfPreviewViewer url={pdfPreview.url} title={pdfPreview.title} />
             </div>
           </div>
         </div>

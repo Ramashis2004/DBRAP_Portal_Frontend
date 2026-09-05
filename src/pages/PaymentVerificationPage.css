@@ -283,7 +283,7 @@
   overflow: hidden;
 }
 
-.pv-preview-frame {
+.pv-preview-content .pdf-preview-viewer {
   width: 100%;
   height: 100%;
   background: #fff;

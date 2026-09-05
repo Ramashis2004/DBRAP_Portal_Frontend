@@ -1,9 +1,14 @@
-import { useState, useEffect } from "react";
-import { BookOpen, Download, X, LoaderCircle, FileText } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
+import { Download, X, LoaderCircle, FileText } from "lucide-react";
+import { Document, Page, pdfjs } from "react-pdf";
 import { getUserManualViewUrl, getUserManualDownloadUrl } from "../api/api";
 import "./UserManualButton.css";
-import { useMemo } from "react";
-
+//import { useMemo } from "react";
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url
+).toString();
 const ALLOWED_MANUAL_PATH_PREFIXES = [
   "/api/user-manual/view",
   "/api/user-manual/download",
@@ -33,6 +38,13 @@ function isSafeManualUrl(candidate) {
 
 // ── Shared modal — used by both dashboard button and landing page card ────────
 export function UserManualModal({ open, onClose, viewUrl, downloadUrl, loaded, error, onLoad, onError }) {
+  const [numPages, setNumPages] = useState(null);
+
+useEffect(() => {
+  if (open) {
+    setNumPages(null);
+  }
+}, [open]);
   useEffect(() => {
     if (!open) return;
     const handler = (e) => { if (e.key === "Escape") onClose(); };
@@ -52,18 +64,7 @@ const validatedDownloadUrl = downloadUrl || "";
 const urlsInvalid =
   (viewUrl || downloadUrl) &&
   (!validatedViewUrl || !validatedDownloadUrl);
-const iframeSrc = useMemo(() => {
-    if (!validatedViewUrl) return "";
 
-    try {
-        const safe = new URL(validatedViewUrl, window.location.origin);
-        safe.hash = "toolbar=0&navpanes=0&scrollbar=1";
-        return safe.toString();
-    } catch (e) {
-       // console.error("Invalid preview URL:", validatedViewUrl);
-        return "";
-    }
-}, [validatedViewUrl]);
 
 const downloadHref = useMemo(() => {
     if (!validatedDownloadUrl) return "";
@@ -80,7 +81,7 @@ const downloadHref = useMemo(() => {
 }, [validatedDownloadUrl]);
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div
       className="user-manual-overlay"
       role="dialog"
@@ -141,19 +142,68 @@ const downloadHref = useMemo(() => {
               )}
             </div>
           )}
-          {validatedViewUrl && !urlsInvalid && (
-            <iframe
-              //src={`${validatedViewUrl}#toolbar=0&navpanes=0&scrollbar=1`}
-                  src={iframeSrc}
-              title="User Manual PDF Preview"
-              className={`user-manual-modal__iframe${loaded && !error ? " is-loaded" : ""}`}
-              onLoad={onLoad}
-              onError={onError}
-            />
-          )}
+         {validatedViewUrl && !urlsInvalid && (
+  <div className="user-manual-pdf-viewer">
+    <Document
+  file={validatedViewUrl}
+  onLoadSuccess={(pdf) => {
+    //console.log("PDF loaded successfully. Pages:", pdf.numPages);
+    setNumPages(pdf.numPages);
+    onLoad();
+  }}
+  onLoadError={(err) => {
+   // console.error("PDF LOAD ERROR:", err);
+    onError();
+  }}
+  loading={
+    <div className="user-manual-modal__state">
+      <LoaderCircle
+        size={28}
+        className="user-manual-modal__spinner"
+      />
+      <span>Loading manual...</span>
+    </div>
+  }
+  error={
+    <div className="user-manual-modal__state user-manual-modal__state--error">
+      <FileText
+        size={40}
+        className="user-manual-modal__error-icon"
+      />
+      <p>Preview unavailable — please download instead.</p>
+
+      {validatedDownloadUrl && (
+        <a
+          href={downloadHref}
+          download="DBRAP_Officer_User_Manual.pdf"
+          className="user-manual-download-btn"
+        >
+          <Download size={14} />
+          Download PDF
+        </a>
+      )}
+    </div>
+  }
+>
+  {Array.from(
+    { length: numPages || 0 },
+    (_, index) => (
+      <Page
+        key={`page_${index + 1}`}
+        pageNumber={index + 1}
+        renderTextLayer={false}
+        renderAnnotationLayer={false}
+        width={850}
+      />
+    )
+  )}
+</Document>
+  </div>
+)}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -221,4 +271,3 @@ const validatedDownloadUrl = useMemo(() => {
 }
 
 export default UserManualButton;
-

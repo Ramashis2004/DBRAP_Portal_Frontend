@@ -1,30 +1,37 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import PdfPreviewViewer from "../components/PdfPreviewViewer";
+import PdfPreviewHeader from "../components/PdfPreviewHeader";
 import Swal from "sweetalert2";
 import {
-  ChevronDown, ChevronRight, Droplet, FileText,
-  LoaderCircle, LogOut, Search, Send, Users,
-  Download, X,
+  LoaderCircle, FileText, Search, Send, Users,
+  ChevronDown, ChevronRight, Droplet, LogOut,
 } from "lucide-react";
-import {
-  fetchPendingForwardToJE,
-  fetchPendingApproval,
-  fetchOfficerDashboardConfig,
-  getOrganisationDocumentUrl,
-  getSiteVisitReportUrl,
-  logoutOfficer,
-  updateOrganisationStatusWithRemarks,
-} from "../api/api";
-import {
-  formatApplicationStatus,
-  formatDisplayDate,
-} from "../utils/applicationStatus";
-import "./OfficerDashboardPage.css";
-import "./PaymentVerificationPage.css";
-import  UserManualButton from "../components/UserManualButton";
+  import {
+    fetchPendingForwardToJE,
+    fetchPendingApproval,
+    fetchOfficerDashboardConfig,
+    updateOrganisationStatusWithRemarks,
+    getOrganisationDocumentUrl,
+    getSiteVisitReportUrl,
+    logoutOfficer, // add this
+  } from "../api/api";
 
-// ─── Helpers (same as ApplicationReceivedPage) ────────────────────────────────
+  const getReceivedDate = (app) => app.created_at || app.application_submitted_on || null;
 
+const formatDisplayDate = (dateString) => {
+  if (!dateString) return null;
+  const d = new Date(dateString);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+};
+
+const formatApplicationStatus = (status) =>
+  String(status || "")
+    .toLowerCase()
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 const daysBetween = (from, to) => {
   if (!from) return 0;
   const s = new Date(from); s.setHours(0, 0, 0, 0);
@@ -42,66 +49,38 @@ const getApplicationStatusStyle = (status) => {
     case "APPLICATION_SUBMITTED":       return { background: "#dbeafe", color: "#1d4ed8" };
     case "APPLICATION_RETURNED_TO_APPLICANT": return { background: "#fee2e2", color: "#991b1b" };
     case "APPLICATION_FORWARDED_TO_JE": return { background: "#fef3c7", color: "#92400e" };
+    case "TRANSFER_FORWARDED_TO_JE": return { background: "#fef3c7", color: "#92400e" };
     case "JE_VERIFIED_REPORT_UPLOADED": return { background: "#ede9fe", color: "#6d28d9" };
+    case "TRANSFER_SITE_VISIT_REPORT_UPLOADED": return { background: "#ede9fe", color: "#6d28d9" };
     case "APPLICATION_APPROVED":        return { background: "#dcfce7", color: "#166534" };
     default:                            return { background: "#e2e8f0", color: "#475569" };
   }
 };
-
-// const getActionStatusMeta = (app) => {
-//   const status = String(app.application_status || "").toUpperCase();
-//   if (status === "APPLICATION_SUBMITTED")
-//     return { background: "#fef3c7", color: "#92400e",
-//       text: buildDayLabel("Pending since", app.created_at) };
-//   if (status === "APPLICATION_FORWARDED_TO_JE")
-//     return { background: "#dcfce7", color: "#166534",
-//       text: buildDayLabel("Action taken in", app.created_at, app.forward_on) };
-//   if (status === "JE_VERIFIED_REPORT_UPLOADED")
-//     return { background: "#fef3c7", color: "#92400e",
-//       text: buildDayLabel("Pending since", app.site_visit_report_upload_on) };
-//   if (status === "APPLICATION_APPROVED")
-//     return { background: "#dcfce7", color: "#166534",
-//       text: buildDayLabel("Action taken in", app.site_visit_report_upload_on, app.approved_on) };
-//   return { background: "#e2e8f0", color: "#475569", text: "—" };
-// };
-
 const getActionStatusMeta = (app) => {
   const status = String(app.application_status || "").toUpperCase();
 
-  if (status === "CONNECTION_DETAILS_UPDATED") {
-    return {
-      background: "#dcfce7",
-      color: "#166534",
-      text: buildDayLabel("Action taken in", app.created_at, app.update_on),
-    };
+  if (status === "APPLICATION_SUBMITTED" || status === "CONNECTION_DETAILS_UPDATED") {
+    return { background: "#fef3c7", color: "#92400e",
+      text: buildDayLabel("Pending since", app.created_at) };
   }
-
-  if (status === "APPLICATION_REJECTED") {
-    return {
-      background: "#fee2e2",
-      color: "#991b1b",
-      text: buildDayLabel("Action taken in", app.created_at, app.rejected_on),
-    };
+  if (status === "APPLICATION_FORWARDED_TO_JE" || status === "TRANSFER_FORWARDED_TO_JE") {
+    return { background: "#dcfce7", color: "#166534",
+      text: buildDayLabel("Action taken in", app.created_at, app.forward_on) };
   }
-
-  // All pending statuses — Pending since update_on, fallback to created_at
-  return {
-    background: "#fef3c7",
-    color: "#92400e",
-    text: buildDayLabel("Pending since", app.update_on || app.created_at),
-  };
-};
-const getReceivedDate = (app) => {
-  const status = String(app.application_status || "").toUpperCase();
-  if (status === "APPLICATION_SUBMITTED") {
-    return app.created_at || null;
+  if (status === "JE_VERIFIED_REPORT_UPLOADED" || status === "TRANSFER_SITE_VISIT_REPORT_UPLOADED") {
+    return { background: "#fef3c7", color: "#92400e",
+      text: buildDayLabel("Pending since", app.site_visit_report_upload_on) };
   }
-  return app.update_on || app.created_at || null;
+  if (status === "APPLICATION_APPROVED") {
+    return { background: "#dcfce7", color: "#166534",
+      text: buildDayLabel("Action taken in", app.site_visit_report_upload_on, app.approved_on) };
+  }
+  return { background: "#e2e8f0", color: "#475569", text: "—" };
 };
 
 const getActionTakenDate = (app) => {
   const status = String(app.application_status || "").toUpperCase();
-  if (status === "APPLICATION_FORWARDED_TO_JE") return app.forward_on ?? null;
+  if (status === "APPLICATION_FORWARDED_TO_JE" || status === "TRANSFER_FORWARDED_TO_JE") return app.forward_on ?? null;
   if (status === "APPLICATION_APPROVED")        return app.approved_on ?? null;
   return null;
 };
@@ -278,6 +257,20 @@ function PendingApplicationsPage({ mode }) {
 
   const renderActionButton = (app) => {
     if (!config.showApproveButton) {
+      const requestType = String(app.request_type || "").toUpperCase();
+      if (requestType === "CANCELLATION" || requestType === "AMENDMENT") {
+        const isActioning = sendingAppId === app.application_id;
+        return (
+          <button
+            onClick={() => handleSendToJe(app)}
+            disabled={isActioning}
+            style={btnStyle(isActioning ? "#94a3b8" : "#166634", isActioning)}
+          >
+            <Send size={13} /> {isActioning ? "Sending..." : "Forward to JE"}
+          </button>
+        );
+      }
+
       return (
         <select
           defaultValue=""
@@ -303,6 +296,25 @@ function PendingApplicationsPage({ mode }) {
           style={btnStyle(isActioning ? "#94a3b8" : "#166634", isActioning)}>
           <Send size={13} /> {isActioning ? "Sending…" : "Forward to JE"}
         </button>
+      );
+    }
+
+    const requestType = String(app.request_type || "").toUpperCase();
+    if (requestType === "CANCELLATION" || requestType === "AMENDMENT") {
+      return (
+        <select
+          defaultValue=""
+          onChange={(e) => {
+            if (!e.target.value) return;
+            setActionModal({ app, action: e.target.value });
+            setRemarkInput("");
+            e.target.value = "";
+          }}
+          style={selectActionStyle}
+        >
+          <option value="">Select Action</option>
+          <option value="APPLICATION_APPROVED">Approve</option>
+        </select>
       );
     }
 
@@ -361,10 +373,25 @@ function PendingApplicationsPage({ mode }) {
       setRemarkInput("");
 
       const applicantName = app.name || "applicant";
+      const requestType = String(app.request_type || "").toUpperCase();
+      const applicationStatus = String(app.application_status || "").toUpperCase();
+      const isCancellationApproval =
+        requestType === "CANCELLATION" || applicationStatus === "CANCELLATION_SITE_VISIT_REPORT_UPLOADED";
+      const isAmendmentApproval =
+        requestType === "AMENDMENT" || applicationStatus.includes("AMENDMENT");
+      const isAmendmentForward = applicationStatus === "APPLICATION_SUBMITTED_FOR_AMENDMENT";
       const labels = {
-        APPLICATION_APPROVED:        "Application approved successfully. Application forwarded to applicant:  " + applicantName + " for money receipt upload.",
+        APPLICATION_APPROVED:        isCancellationApproval
+          ? "Application Cancellation approved successfully. Application forwarded to applicant: " + applicantName + " for money receipt upload."
+          : isAmendmentApproval
+            ? "Application Ammendement Approved Successfully"
+          : "Application approved successfully. Application forwarded to applicant:  " + applicantName + " for money receipt upload.",
         APPLICATION_REJECTED:        "Application rejected.",
-        APPLICATION_FORWARDED_TO_JE: config.showApproveButton ? "Application returned to JE." : "Application forwarded to "+app.block+" JE for site visit.",
+        APPLICATION_FORWARDED_TO_JE: config.showApproveButton
+          ? "Application returned to JE."
+          : isAmendmentForward
+            ? "Application forward to " + app.block + " JE for Verify."
+            : "Application forwarded to " + app.block + " JE for site visit.",
         APPLICATION_RETURNED_TO_APPLICANT: "Application returned to applicant: " + applicantName + ".",
       };
       await Swal.fire({ title: "Done", text: labels[action], icon: "success", confirmButtonText: "OK" });
@@ -480,6 +507,32 @@ function PendingApplicationsPage({ mode }) {
           <Row label="Connection Type"            value={detailView.type_of_connection} />
           <Row label="Water Requirement (L/Day)"  value={`${detailView.water_requirement} L/Day`} />
         </SectionBox>
+        {detailView.request_type === "CANCELLATION" ? (
+          <>
+          <SectionBox title="Cancellation Details">
+            <Row label="Reason" value={detailView.request_reason} />
+            <Row label="Preferred Disconnection Date" value={formatDisplayDate(detailView.preferred_disconnection_date)} />
+            <Row label="Outstanding Tariff Paid" value={detailView.outstanding_tariff_paid} />
+          </SectionBox>
+          {detailView.transfer_user_flag ? (
+            <SectionBox title="New User Details">
+              <Row label="Name" value={detailView.transfer_user_name} />
+              <Row label="Mobile Number" value={detailView.transfer_user_mobile} />
+              <Row label="Email" value={detailView.transfer_user_email} />
+              <Row label="Gender" value={detailView.transfer_user_gender} />
+              <Row label="Organisation Details" value={detailView.transfer_user_organisation} />
+            </SectionBox>
+          ) : null}
+          </>
+        ) : detailView.request_type === "AMENDMENT" ? (
+          <SectionBox title="Amendment Details">
+            <Row label="New Organisation Name" value={detailView.new_organisation_name} />
+            <Row label="New Establishment Type" value={detailView.new_establishment_type} />
+              <Row label="New Connection Type" value={detailView.new_type_of_connection} />
+              <Row label="New Water Requirement" value={detailView.new_water_requirement ? `${detailView.new_water_requirement} L/Day` : null} />
+            <Row label="Reason" value={detailView.amendment_reason} />
+          </SectionBox>
+        ) : null}
         <SectionBox title="Site Visit Report">
           <Row label="Site Visit Report" value={
             detailView.site_visit_report
@@ -723,7 +776,7 @@ function PendingApplicationsPage({ mode }) {
               <h1>{config.h1}</h1>
             </div>
             <div className="officer-dashboard-user">
-                            <UserManualButton /> 
+                            {/* <UserManualButton />  */}
 
               <div><span>Logged in as</span><strong>{user.loginId}</strong></div>
               <button type="button" className="officer-dashboard-logout" onClick={handleLogout}>
@@ -831,34 +884,9 @@ function PendingApplicationsPage({ mode }) {
       {pdfPreview && (
         <div className="pv-preview-overlay">
           <div className="pv-preview-card">
-            <div className="pv-preview-header">
-              <h2 className="pv-preview-header__title">{pdfPreview.title}</h2>
-              <div className="pv-preview-header__actions">
-                <a
-                  href={pdfPreview.url}
-                  download
-                  className="pv-preview-btn-download"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <Download size={14} />
-                  Download PDF
-                </a>
-                <button
-                  className="pv-preview-btn-close"
-                  onClick={() => setPdfPreview(null)}
-                  title="Close Preview"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
+            <PdfPreviewHeader title={pdfPreview.title} url={pdfPreview.url} onClose={() => setPdfPreview(null)} />
             <div className="pv-preview-content">
-              <iframe
-                src={`${pdfPreview.url}#toolbar=0`}
-                className="pv-preview-frame"
-                title="PDF Preview"
-              />
+              <PdfPreviewViewer url={pdfPreview.url} title={pdfPreview.title} />
             </div>
           </div>
         </div>

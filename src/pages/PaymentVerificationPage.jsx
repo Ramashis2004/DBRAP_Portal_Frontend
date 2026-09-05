@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import PdfPreviewViewer from "../components/PdfPreviewViewer";
+import PdfPreviewHeader from "../components/PdfPreviewHeader";
 import Swal from "sweetalert2";
 import {
   ChevronDown,
@@ -34,10 +36,20 @@ import  UserManualButton from "../components/UserManualButton";
 
 const getApplicationStatusStyle = (status) => {
   switch (status) {
-    case "PAYMENT_RECEIPT_UPLOADED":  return { background: "#ede9fe", color: "#6d28d9" };
-    case "PAYMENT_RECEIPT_VERIFIED":  return { background: "#dcfce7", color: "#166534" };
-    case "PAYMENT_RECEIPT_REJECTED":      return { background: "#fee2e2", color: "#991b1b" };
-    default:                          return { background: "#e2e8f0", color: "#475569" };
+    case "PAYMENT_RECEIPT_UPLOADED":
+    case "PAYMENT_RECEIPT_UPLOADED_FOR_CANCELLATION":
+    case "PAYMENT_RECEIPT_UPLOADED_FOR_TRANSFER":
+      return { background: "#ede9fe", color: "#6d28d9" };
+    case "PAYMENT_RECEIPT_VERIFIED":
+    case "PAYMENT_RECEIPT_VERIFIED_FOR_CANCELLATION":
+    case "PAYMENT_RECEIPT_VERIFIED_FOR_TRANSFER":
+      return { background: "#dcfce7", color: "#166534" };
+    case "PAYMENT_RECEIPT_REJECTED":
+    case "PAYMENT_RECEIPT_REJECTED_FOR_CANCELLATION":
+    case "PAYMENT_RECEIPT_REJECTED_FOR_TRANSFER":
+      return { background: "#fee2e2", color: "#991b1b" };
+    default:
+      return { background: "#e2e8f0", color: "#475569" };
   }
 };
 
@@ -51,17 +63,29 @@ const DOCUMENT_ROWS = [
 
 const ACTION_LABELS = {
   PAYMENT_RECEIPT_VERIFIED: "✅ Verify Payment",
-  PAYMENT_RECEIPT_REJECTED:     "❌ Mark as Rejected",
+  PAYMENT_RECEIPT_REJECTED: "❌ Mark as Rejected",
+  PAYMENT_RECEIPT_VERIFIED_FOR_CANCELLATION: "✅ Verify Cancellation Payment",
+  PAYMENT_RECEIPT_REJECTED_FOR_CANCELLATION: "❌ Reject Cancellation Payment",
+  PAYMENT_RECEIPT_VERIFIED_FOR_TRANSFER: "✅ Verify Transfer Payment",
+  PAYMENT_RECEIPT_REJECTED_FOR_TRANSFER: "❌ Reject Transfer Payment",
 };
 
 const ACTION_MESSAGES = {
   PAYMENT_RECEIPT_VERIFIED: "Payment receipt will be marked as Accepted.",
-  PAYMENT_RECEIPT_REJECTED:     "Payment receipt will be marked as Rejected.",
+  PAYMENT_RECEIPT_REJECTED: "Payment receipt will be marked as Rejected.",
+  PAYMENT_RECEIPT_VERIFIED_FOR_CANCELLATION: "Cancellation payment receipt will be marked as Accepted.",
+  PAYMENT_RECEIPT_REJECTED_FOR_CANCELLATION: "Cancellation payment receipt will be marked as Rejected.",
+  PAYMENT_RECEIPT_VERIFIED_FOR_TRANSFER: "Transfer payment receipt will be marked as Accepted.",
+  PAYMENT_RECEIPT_REJECTED_FOR_TRANSFER: "Transfer payment receipt will be marked as Rejected.",
 };
 
 const SUCCESS_MESSAGES = {
   PAYMENT_RECEIPT_VERIFIED: "Payment receipt accepted successfully.",
-  PAYMENT_RECEIPT_REJECTED:     "Payment receipt rejected successfully.",
+  PAYMENT_RECEIPT_REJECTED: "Payment receipt rejected successfully.",
+  PAYMENT_RECEIPT_VERIFIED_FOR_CANCELLATION: "Cancellation payment accepted successfully.",
+  PAYMENT_RECEIPT_REJECTED_FOR_CANCELLATION: "Cancellation payment rejected successfully.",
+  PAYMENT_RECEIPT_VERIFIED_FOR_TRANSFER: "Transfer payment accepted successfully.",
+  PAYMENT_RECEIPT_REJECTED_FOR_TRANSFER: "Transfer payment rejected successfully.",
 };
 
 const tableColumns = [
@@ -162,7 +186,8 @@ function PaymentVerificationPage() {
 
     if (url === "/applicationreceived" || label === "application received")            { navigate("/je-application-received"); return; }
     if (url.includes("paymentverification") || label.includes("payment verification")) { navigate("/je-payment-verification"); return; }
-    if (url.includes("updateconnectiondetails") || label.includes("update connection details")) { navigate("/je-update-connection"); return; }
+    if (url.includes("disconnect") || label.includes("disconnect"))                    { navigate("/je-disconnect-connection"); return; }
+    if (url.includes("updateconnectiondetails") || url.includes("updateconnection") || label.includes("update connection details") || label.includes("connection")) { navigate("/je-update-connection"); return; }
   };
 
   const handleActionSubmit = async () => {
@@ -216,8 +241,8 @@ function PaymentVerificationPage() {
       }}
     >
       <option value="">Select Action</option>
-      <option value="PAYMENT_RECEIPT_VERIFIED">Accept</option>
-      <option value="PAYMENT_RECEIPT_REJECTED">Reject</option>
+      <option value={app?.application_status === "PAYMENT_RECEIPT_UPLOADED_FOR_TRANSFER" ? "PAYMENT_RECEIPT_VERIFIED_FOR_TRANSFER" : app?.application_status === "PAYMENT_RECEIPT_UPLOADED_FOR_CANCELLATION" ? "PAYMENT_RECEIPT_VERIFIED_FOR_CANCELLATION" : "PAYMENT_RECEIPT_VERIFIED"}>Accept</option>
+      <option value={app?.application_status === "PAYMENT_RECEIPT_UPLOADED_FOR_TRANSFER" ? "PAYMENT_RECEIPT_REJECTED_FOR_TRANSFER" : app?.application_status === "PAYMENT_RECEIPT_UPLOADED_FOR_CANCELLATION" ? "PAYMENT_RECEIPT_REJECTED_FOR_CANCELLATION" : "PAYMENT_RECEIPT_REJECTED"}>Reject</option>
     </select>
   );
 
@@ -728,7 +753,7 @@ function PaymentVerificationPage() {
             <div
               className="pv-modal__banner"
               style={
-                actionModal.action === "PAYMENT_RECEIPT_VERIFIED"
+                actionModal.action.includes("PAYMENT_RECEIPT_VERIFIED")
                   ? { background: "#dcfce7", color: "#166534" }
                   : { background: "#fee2e2", color: "#991b1b" }
               }
@@ -766,7 +791,7 @@ function PaymentVerificationPage() {
                 style={{
                   background: (isSubmittingAction || !remarkInput.trim())
                     ? "#94a3b8"
-                    : actionModal.action === "PAYMENT_RECEIPT_VERIFIED"
+                    : actionModal.action.includes("PAYMENT_RECEIPT_VERIFIED")
                     ? "#166534"
                     : "#dc2626",
                 }}
@@ -782,34 +807,9 @@ function PaymentVerificationPage() {
       {pdfPreview && (
         <div className="pv-preview-overlay">
           <div className="pv-preview-card">
-            <div className="pv-preview-header">
-              <h2 className="pv-preview-header__title">{pdfPreview.title}</h2>
-              <div className="pv-preview-header__actions">
-                <a
-                  href={pdfPreview.url}
-                  download
-                  className="pv-preview-btn-download"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <Download size={14} />
-                  Download PDF
-                </a>
-                <button
-                  className="pv-preview-btn-close"
-                  onClick={() => setPdfPreview(null)}
-                  title="Close Preview"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
+            <PdfPreviewHeader title={pdfPreview.title} url={pdfPreview.url} onClose={() => setPdfPreview(null)} />
             <div className="pv-preview-content">
-              <iframe
-                src={`${pdfPreview.url}#toolbar=0`}
-                className="pv-preview-frame"
-                title="PDF Preview"
-              />
+              <PdfPreviewViewer url={pdfPreview.url} title={pdfPreview.title} />
             </div>
           </div>
         </div>

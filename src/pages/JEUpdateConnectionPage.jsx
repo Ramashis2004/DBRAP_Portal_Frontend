@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import Swal from "sweetalert2";
 import {
   ChevronDown,
@@ -21,6 +21,8 @@ import {
   fetchJEPaymentBlocks,
   fetchConnectionApplications,
   submitConnectionDetails,
+  fetchDisconnectionApplications,
+  submitDisconnection,
 } from "../api/api";
 
 import "./OfficerDashboardPage.css";
@@ -36,6 +38,8 @@ const initialForm = {
   meterId: "",
   initialMeterReading: "",
   meterMake: "",
+  disconnectionDate: "",
+  disconnectionRemarks: "",
 };
 
 const tableColumns = [
@@ -52,6 +56,8 @@ const tableColumns = [
 
 function JEUpdateConnectionPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isDisconnectionMode = location.pathname === "/je-disconnect-connection";
 
   const [session,       setSession]       = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
@@ -93,6 +99,8 @@ function JEUpdateConnectionPage() {
         const loadedBlocks = blocksRes.data || [];
         setDashboardData(dashboardRes.data);
         setBlocks(loadedBlocks);
+        setActiveMenuKey("");
+        setActiveOptionKey("");
 
         if (loadedBlocks.length) {
           await loadApplications(loadedBlocks[0].block_code);
@@ -106,13 +114,15 @@ function JEUpdateConnectionPage() {
     };
 
     init();
-  }, [navigate]);
+  }, [navigate, isDisconnectionMode]);
 
   // ─── Load applications ─────────────────────────────────────────────────────
   const loadApplications = async (blockCode) => {
     setLoadingApps(true);
     try {
-      const appRes = await fetchConnectionApplications(blockCode);
+      const appRes = await (isDisconnectionMode
+        ? fetchDisconnectionApplications(blockCode)
+        : fetchConnectionApplications(blockCode));
       const list   = Array.isArray(appRes.data?.data) ? appRes.data.data : [];
       setApplications(list);
     } catch (err) {
@@ -124,13 +134,38 @@ function JEUpdateConnectionPage() {
   };
 
   // ─── Sidebar ───────────────────────────────────────────────────────────────
-  const handleMenuClick   = (menuKey) => setActiveMenuKey(menuKey === activeMenuKey ? "" : menuKey);
+  const handleMenuClick = (menuKey) => {
+    if (menuKey === activeMenuKey) {
+      setActiveMenuKey("");
+      setActiveOptionKey("");
+      return;
+    }
+    setActiveMenuKey(menuKey);
+    setActiveOptionKey("");
+  };
+
   const handleOptionClick = (option) => {
-    const label = option.label.toLowerCase();
-    if (label.includes("application"))          navigate("/je-application-received");
-    if (label.includes("payment verification")) navigate("/je-payment-verification");
-    if (label.includes("connection"))           navigate("/je-update-connection");
+    const label = String(option.label || "").toLowerCase();
+    const url   = String(option.url || "").toLowerCase();
+    setActiveMenuKey("");
     setActiveOptionKey(option.key);
+
+    if (url === "/applicationreceived" || label.includes("application")) {
+      navigate("/je-application-received");
+      return;
+    }
+    if (url.includes("paymentverification") || label.includes("payment verification")) {
+      navigate("/je-payment-verification");
+      return;
+    }
+    if (url.includes("disconnect") || label.includes("disconnect")) {
+      navigate("/je-disconnect-connection");
+      return;
+    }
+    if (url.includes("updateconnection") || label.includes("connection")) {
+      navigate("/je-update-connection");
+      return;
+    }
   };
 
   // ─── Logout ────────────────────────────────────────────────────────────────
@@ -169,6 +204,32 @@ function JEUpdateConnectionPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!modalApp) return;
+
+    if (isDisconnectionMode) {
+      if (!form.disconnectionDate) {
+        Swal.fire("Validation", "Please select the disconnection date.", "warning");
+        return;
+      }
+
+      setSubmitting(true);
+      try {
+        await submitDisconnection({
+          applicationId: modalApp.application_id,
+          disconnectionDate: form.disconnectionDate,
+          disconnectionRemarks: form.disconnectionRemarks || null,
+          officerId: session?.id || null,
+        });
+        const blockCode = assignedBlock?.block_code || blocks[0]?.block_code;
+        closeModal();
+        await Swal.fire("Success", "Water connection disconnected successfully.", "success");
+        await loadApplications(blockCode);
+      } catch (err) {
+        Swal.fire("Error", err?.response?.data?.error || "Failed to disconnect water connection.", "error");
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
 
     // Validation
     if (isSingleTap) {
@@ -343,7 +404,7 @@ function JEUpdateConnectionPage() {
         <main className="officer-dashboard-main">
           <header className="officer-dashboard-header">
             <div className="officer-dashboard-header__copy">
-              <h1>Update Connection Details</h1>
+              <h1>{isDisconnectionMode ? "Disconnect Water Connection" : "Update Connection Details"}</h1>
             </div>
             <div className="officer-dashboard-user">
                             <UserManualButton /> 
@@ -369,7 +430,7 @@ function JEUpdateConnectionPage() {
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <Settings size={20} style={{ color: "#b45309" }} />
                 <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700, color: "#1e293b" }}>
-                  Connection Applications
+                  {isDisconnectionMode ? "Cancellation Applications for Disconnection" : "Connection Applications"}
                 </h2>
                 <span style={{
                   background: "#fef3c7", color: "#92400e", borderRadius: "999px",
@@ -444,7 +505,9 @@ function JEUpdateConnectionPage() {
                     {filtered.length === 0 ? (
                       <tr>
                         <td colSpan={tableColumns.length} style={{ padding: "40px", textAlign: "center", color: "#94a3b8" }}>
-                          No applications pending for connection update.
+                          {isDisconnectionMode
+                            ? "No cancellation applications pending for disconnection."
+                            : "No applications pending for connection update."}
                         </td>
                       </tr>
                     ) : (
@@ -522,7 +585,9 @@ function JEUpdateConnectionPage() {
                   <Settings size={20} />
                 </div>
                 <div>
-                  <p className="juc-modal__label">Update Connection Details</p>
+                  <p className="juc-modal__label">
+                    {isDisconnectionMode ? "Disconnect Water Connection" : "Update Connection Details"}
+                  </p>
                   <h3 className="juc-modal__title">
                     <span className="juc-modal__app-id">{modalApp.application_id}</span>
                   </h3>
@@ -565,8 +630,36 @@ function JEUpdateConnectionPage() {
             {/* Form */}
             <form onSubmit={handleSubmit} className="juc-modal__form">
 
+              {isDisconnectionMode && (
+                <>
+                  <div className="juc-form-field">
+                    <label>
+                      <span>Disconnection Date <em>*</em></span>
+                      <input
+                        type="date"
+                        className="juc-form-input"
+                        value={form.disconnectionDate}
+                        onChange={handleFieldChange("disconnectionDate")}
+                        required
+                      />
+                    </label>
+                  </div>
+                  <div className="juc-form-field">
+                    <label>
+                      <span>Disconnection Remarks</span>
+                      <textarea
+                        className="juc-form-input"
+                        value={form.disconnectionRemarks}
+                        onChange={handleFieldChange("disconnectionRemarks")}
+                        rows="3"
+                      />
+                    </label>
+                  </div>
+                </>
+              )}
+
               {/* ── SINGLE TAP → always Unmetered ── */}
-              {isSingleTap && (
+              {!isDisconnectionMode && isSingleTap && (
                 <>
                   <div className="juc-form-field">
                     <label>
@@ -604,7 +697,7 @@ function JEUpdateConnectionPage() {
               )}
 
               {/* ── MULTIPLE TAP → Metered or Unmetered ── */}
-              {!isSingleTap && (
+              {!isDisconnectionMode && !isSingleTap && (
                 <>
                   <div className="juc-form-field">
                     <label>
@@ -714,7 +807,7 @@ function JEUpdateConnectionPage() {
                   className="juc-modal__btn juc-modal__btn--submit"
                   disabled={submitting}
                 >
-                  {submitting ? "Submitting…" : "Submit Connection Details"}
+                  {submitting ? "Submitting…" : isDisconnectionMode ? "Submit Disconnection" : "Submit Connection Details"}
                 </button>
               </div>
             </form>

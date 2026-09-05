@@ -9,7 +9,7 @@ import {
   Users,
 } from "lucide-react";
 import Swal from "sweetalert2";
-import { logoutOfficer,fetchApplicantNavigation} from "../api/api";
+import { fetchApplicantNavigation, logoutOfficer } from "../api/api";
 import "./ApplicantDashboardPage.css";
 
 function ApplicantLayout() {
@@ -40,7 +40,7 @@ function ApplicantLayout() {
       try {
         const response = await fetchApplicantNavigation(applicantSession?.roleId || 7);
         setMenus(response.data?.menus || []);
-      } catch (error) {
+      } catch {
        // console.error("Applicant navigation load failed:", error);
         setMenus([]);
       }
@@ -68,6 +68,16 @@ function ApplicantLayout() {
 
   if (normalizedLabel === "apply for water connection") {
     navigate("/applicant-organisation-registration");
+    return;
+  }
+
+  if (normalizedLabel.includes("cancellation") || normalizedUrl.includes("applicant-cancellation")) {
+    navigate("/applicant-cancellation");
+    return;
+  }
+
+  if (normalizedLabel === "apply for amendment" || normalizedLabel === "apply for ammendment") {
+    navigate("/applicant-amendment");
     return;
   }
 
@@ -105,7 +115,7 @@ const handleLogout = async () => {
   } catch (error) {
     console.error("Logout failed:", error);
   } finally {
-    localStorage.removeItem("applicantSession"); // ✅ correct key
+   // localStorage.removeItem("applicantSession"); // ✅ correct key
     navigate("/applicant-login");                // ✅ correct route
   }
 };
@@ -158,8 +168,27 @@ const handleLogout = async () => {
 
             {menus.map((menu) => {
               const isActive = menu.key === activeMenuKey;
+              const seenServiceRequests = new Set();
               const filteredOptions = menu.options.filter(
-                (option) => String(option.label || "").toLowerCase() !== "apply connection"
+                (option) => {
+                  const label = String(option.label || "").toLowerCase();
+                  const isCancellation = label.includes("cancellation");
+                  const isAmendment =
+                    label === "apply for amendment" || label === "apply for ammendment";
+                  const isServiceRequest = isCancellation || isAmendment;
+                  const serviceRequestKey = isCancellation
+                    ? "cancellation"
+                    : isAmendment
+                      ? "amendment"
+                      : null;
+
+                  if (serviceRequestKey && seenServiceRequests.has(serviceRequestKey)) {
+                    return false;
+                  }
+                  if (serviceRequestKey) seenServiceRequests.add(serviceRequestKey);
+
+                  return label !== "apply connection";
+                }
               );
               return (
                 <div key={menu.key} className="applicant-dashboard-nav__group">

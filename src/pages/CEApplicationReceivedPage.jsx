@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router";
+import PdfPreviewViewer from "../components/PdfPreviewViewer";
+import PdfPreviewHeader from "../components/PdfPreviewHeader";
 import Swal from "sweetalert2";
 import {
   ChevronDown,
@@ -46,7 +48,19 @@ const ALL_STATUSES =
   "APPLICATION_REJECTED," +
   "PAYMENT_RECEIPT_UPLOADED," +
   "PAYMENT_RECEIPT_VERIFIED," +
-  "CONNECTION_DETAILS_UPDATED";
+  "PAYMENT_RECEIPT_UPLOADED_FOR_CANCELLATION," +
+  "PAYMENT_RECEIPT_VERIFIED_FOR_CANCELLATION," +
+  "CONNECTION_DETAILS_UPDATED," +
+  "APPLICATION_SUBMITTED_FOR_CANCELLATION," +
+  "CANCELLATION_FORWARDED_TO_JE," +
+  "CANCELLATION_SITE_VISIT_REPORT_UPLOADED," +
+  "CANCELLATION_APPROVED," +
+  "DISCONNECTION_INSTRUCTION_ASSIGNED_TO_JE," +
+  "CONNECTION_DISCONNECTED," +
+  "APPLICATION_SUBMITTED_FOR_AMENDMENT," +
+  "AMENDMENT_FORWARDED_TO_JE," +
+  "AMENDMENT_DOCUMENTS_VERIFIED_BY_JE," +
+  "AMENDMENT_APPROVED";
 const TABLE_COLUMNS = [
   { label: "Application ID",       width: 130 },
   { label: "Organisation Name",    width: 180 },
@@ -126,15 +140,17 @@ const buildDayLabel = (prefix, from, to) => {
 
 const getApplicationStatusStyle = (status) => {
   switch (String(status).toUpperCase()) {
-    case "APPLICATION_SUBMITTED":        return { background: "#dbeafe", color: "#1d4ed8" };
-    case "APPLICATION_FORWARDED_TO_JE":  return { background: "#fef3c7", color: "#92400e" };
-    case "JE_VERIFIED_REPORT_UPLOADED":  return { background: "#ede9fe", color: "#6d28d9" };
-    case "APPLICATION_APPROVED":         return { background: "#dcfce7", color: "#166534" };
-    case "APPLICATION_REJECTED":         return { background: "#fee2e2", color: "#b91c1c" };
-    case "PAYMENT_RECEIPT_UPLOADED":     return { background: "#fef3c7", color: "#92400e" };
-    case "PAYMENT_RECEIPT_VERIFIED":     return { background: "#dcfce7", color: "#166534" };
-    case "CONNECTION_DETAILS_UPDATED":   return { background: "#fef3c7", color: "#166534" };
-    default:                             return { background: "#e2e8f0", color: "#475569" };
+    case "APPLICATION_SUBMITTED": return { background: "#dbeafe", color: "#1d4ed8" };
+    case "APPLICATION_FORWARDED_TO_JE": return { background: "#fef3c7", color: "#92400e" };
+    case "JE_VERIFIED_REPORT_UPLOADED": return { background: "#ede9fe", color: "#6d28d9" };
+    case "APPLICATION_APPROVED": return { background: "#dcfce7", color: "#166534" };
+    case "APPLICATION_REJECTED": return { background: "#fee2e2", color: "#b91c1c" };
+    case "PAYMENT_RECEIPT_UPLOADED":
+    case "PAYMENT_RECEIPT_UPLOADED_FOR_CANCELLATION": return { background: "#fef3c7", color: "#92400e" };
+    case "PAYMENT_RECEIPT_VERIFIED":
+    case "PAYMENT_RECEIPT_VERIFIED_FOR_CANCELLATION": return { background: "#dcfce7", color: "#166534" };
+    case "CONNECTION_DETAILS_UPDATED": return { background: "#fef3c7", color: "#166534" };
+    default: return { background: "#e2e8f0", color: "#475569" };
   }
 };
 // const getActionStatusMeta = (app) => {
@@ -189,7 +205,9 @@ const getPendingWith = (app) => {
     // Pending with JE
     case "APPLICATION_FORWARDED_TO_JE":
     case "PAYMENT_RECEIPT_UPLOADED":
-          case "PAYMENT_RECEIPT_VERIFIED":
+    case "PAYMENT_RECEIPT_VERIFIED":
+    case "PAYMENT_RECEIPT_UPLOADED_FOR_CANCELLATION":
+    case "PAYMENT_RECEIPT_VERIFIED_FOR_CANCELLATION":
       return app.block
         ? `${app.block} : JE`
         : "JE";
@@ -358,7 +376,9 @@ function CEApplicationReceivedPage({ rolePrefix = "CE" }) {
 
     setIsLoadingDistricts(true);
     try   { setDistricts(await loadDistricts(val)); }
-    catch (err) { console.error(err); }
+    catch (err) { 
+      //console.error(err);
+     }
     finally { setIsLoadingDistricts(false); }
   }, []);
 
@@ -374,7 +394,9 @@ function CEApplicationReceivedPage({ rolePrefix = "CE" }) {
     if (!val) return;
     setIsLoadingDivisions(true);
     try   { setDivisions(await loadDivisions(val)); }
-    catch (err) { console.error(err); }
+    catch (err) {
+       //console.error(err); 
+      }
     finally { setIsLoadingDivisions(false); }
   }, []);
 
@@ -390,7 +412,9 @@ function CEApplicationReceivedPage({ rolePrefix = "CE" }) {
     if (!val) return;
     setIsLoadingBlocks(true);
     try   { setBlocks(await loadBlocks(val)); }
-    catch (err) { console.error(err); }
+    catch (err) { 
+      //console.error(err); 
+    }
     finally { setIsLoadingBlocks(false); }
   }, []);
 
@@ -676,6 +700,16 @@ function CEApplicationReceivedPage({ rolePrefix = "CE" }) {
   <option value="PAYMENT_RECEIPT_UPLOADED">Payment Receipt Uploaded</option>
   <option value="PAYMENT_RECEIPT_VERIFIED">Payment Receipt Verified</option>
   <option value="CONNECTION_DETAILS_UPDATED">Connection Details Updated</option>
+          <option value="APPLICATION_SUBMITTED_FOR_CANCELLATION">Cancellation Submitted</option>
+          <option value="CANCELLATION_FORWARDED_TO_JE">Cancellation Forwarded To JE</option>
+          <option value="CANCELLATION_SITE_VISIT_REPORT_UPLOADED">Cancellation Report Uploaded</option>
+          <option value="CANCELLATION_APPROVED">Cancellation Approved</option>
+          <option value="DISCONNECTION_INSTRUCTION_ASSIGNED_TO_JE">Disconnection Assigned To JE</option>
+          <option value="CONNECTION_DISCONNECTED">Connection Disconnected</option>
+          <option value="APPLICATION_SUBMITTED_FOR_AMENDMENT">Amendment Submitted</option>
+          <option value="AMENDMENT_FORWARDED_TO_JE">Amendment Forwarded To JE</option>
+          <option value="AMENDMENT_DOCUMENTS_VERIFIED_BY_JE">Amendment Documents Verified</option>
+          <option value="AMENDMENT_APPROVED">Amendment Approved</option>
 </select>
                 <div className="ce-search-wrap">
                   <Search size={14} />
@@ -821,15 +855,9 @@ function CEApplicationReceivedPage({ rolePrefix = "CE" }) {
       {pdfPreview && (
         <div className="pv-preview-overlay">
           <div className="pv-preview-card">
-            <div className="pv-preview-header">
-              <h2 className="pv-preview-header__title">{pdfPreview.title}</h2>
-              <div className="pv-preview-header__actions">
-                <a href={pdfPreview.url} download className="pv-preview-btn-download" target="_blank" rel="noreferrer"><Download size={14} />Download PDF</a>
-                <button className="pv-preview-btn-close" onClick={() => setPdfPreview(null)} title="Close Preview"><X size={18} /></button>
-              </div>
-            </div>
+            <PdfPreviewHeader title={pdfPreview.title} url={pdfPreview.url} onClose={() => setPdfPreview(null)} />
             <div className="pv-preview-content">
-              <iframe src={`${pdfPreview.url}#toolbar=0`} className="pv-preview-frame" title="PDF Preview" />
+              <PdfPreviewViewer url={pdfPreview.url} title={pdfPreview.title} />
             </div>
           </div>
         </div>

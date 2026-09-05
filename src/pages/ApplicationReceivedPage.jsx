@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import PdfPreviewViewer from "../components/PdfPreviewViewer";
+import PdfPreviewHeader from "../components/PdfPreviewHeader";
 import Swal from "sweetalert2";
 import {
   ChevronDown,
@@ -15,6 +17,7 @@ import {
   Download,
   FileCheck,
 Settings2,  X,
+  Unplug,
 } from "lucide-react";
 import {
   createOfficerUser,
@@ -482,6 +485,33 @@ value={`${app.water_requirement} L/Day`}
 />
 </SectionBox>
 
+{app.request_type === "CANCELLATION" ? (
+<>
+<SectionBox title="Cancellation Details">
+<Row label="Reason" value={app.request_reason}/>
+<Row label="Preferred Disconnection Date" value={formatDisplayDate(app.preferred_disconnection_date)}/>
+<Row label="Outstanding Tariff Paid" value={app.outstanding_tariff_paid}/>
+</SectionBox>
+{app.transfer_user_flag ? (
+<SectionBox title="New User Details">
+<Row label="Name" value={app.transfer_user_name}/>
+<Row label="Mobile Number" value={app.transfer_user_mobile}/>
+<Row label="Email" value={app.transfer_user_email}/>
+<Row label="Gender" value={app.transfer_user_gender}/>
+<Row label="Organisation Details" value={app.transfer_user_organisation}/>
+</SectionBox>
+) : null}
+</>
+) : app.request_type === "AMENDMENT" ? (
+<SectionBox title="Amendment Details">
+<Row label="New Organisation Name" value={app.new_organisation_name}/>
+<Row label="New Establishment Type" value={app.new_establishment_type}/>
+<Row label="New Connection Type" value={app.new_type_of_connection}/>
+<Row label="New Water Requirement" value={app.new_water_requirement ? `${app.new_water_requirement} L/Day` : null}/>
+<Row label="Reason" value={app.amendment_reason}/>
+</SectionBox>
+) : null}
+
 
 
  <SectionBox title="Site Visit Report">
@@ -531,37 +561,10 @@ value={`${app.water_requirement} L/Day`}
  {pdfPreview && (
         <div className="pv-preview-overlay">
           <div className="pv-preview-card">
-            <div className="pv-preview-header">
-              <h2 className="pv-preview-header__title">{pdfPreview.title}</h2>
-              <div className="pv-preview-header__actions">
-                {pdfPreview.url && (
-                  <a
-                    href={pdfPreview.url}
-                    download
-                    className="pv-preview-btn-download"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <Download size={14} />
-                    Download PDF
-                  </a>
-                )}
-                <button
-                  className="pv-preview-btn-close"
-                  onClick={() => setPdfPreview(null)}
-                  title="Close Preview"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
+            <PdfPreviewHeader title={pdfPreview.title} url={pdfPreview.url} onClose={() => setPdfPreview(null)} />
             <div className="pv-preview-content">
               {pdfPreview.url ? (
-                <iframe
-                  src={`${pdfPreview.url}#toolbar=0`}
-                  className="pv-preview-frame"
-                  title="PDF Preview"
-                />
+                <PdfPreviewViewer url={pdfPreview.url} title={pdfPreview.title} />
               ) : (
                 <div style={{ padding: "40px", textAlign: "center", color: "#64748b" }}>
                   Preview unavailable.
@@ -1146,6 +1149,22 @@ const handleDashboardHomeClick = () => {
   }
 
   if (
+    optionUrl.includes("disconnect") ||
+    optionLabel.includes("disconnect water connection")
+  ) {
+    navigate("/je-disconnect-connection");
+    return;
+  }
+
+  if (
+    optionUrl.includes("disconnect") ||
+    optionLabel.includes("disconnect water connection")
+  ) {
+    navigate("/je-disconnect-connection");
+    return;
+  }
+
+  if (
     optionUrl.includes("updateconnectiondetails") ||
     optionLabel.includes("update connection details")
   ) {
@@ -1496,6 +1515,23 @@ const handleDashboardHomeClick = () => {
     Update tapping and connection details after payment verification.
   </p>
 </div>             
+
+<div
+  className="je-dashboard-card"
+  onClick={() => navigate("/je-disconnect-connection")}
+>
+  <div className="je-dashboard-card__icon je-dashboard-card__icon--red">
+    <Unplug size={30} />
+  </div>
+
+  <h3 className="je-dashboard-card__title">
+    Disconnect Water Connection
+  </h3>
+
+  <p className="je-dashboard-card__description">
+    Disconnect water connections after cancellation approval.
+  </p>
+</div>
             </section>
           ) : null}
 

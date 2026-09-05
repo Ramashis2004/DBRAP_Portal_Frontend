@@ -1,5 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Document, Page, pdfjs } from "react-pdf";
 import { ArrowLeft, FileText, LoaderCircle, Search, Download, X } from "lucide-react";
+import { downloadPdfFile } from "./PdfPreviewHeader";
 import {
   fetchCEDashboardApplicationSummary,
   fetchCEDashboardApplications,
@@ -16,6 +19,45 @@ import {
   formatDayProgress,
 } from "../utils/applicationStatus";
 import "./CEDashboardApplications.css";
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url
+).toString();
+
+// ── PDF preview URL safety check ────────────────────────────────────────────
+// Same pattern as `isSafeManualUrl` in UserManualButton.jsx: only allow
+// same-origin URLs so we never hand react-pdf (or a download link) a
+// cross-origin / attacker-controlled address. `getOrganisationDocumentUrl`
+// and `getSiteVisitReportUrl` already come from api/api.js and are trusted
+// to build correct, token-authenticated paths — this is a defence-in-depth
+// check, not a replacement for that logic.
+//
+// NOTE: tighten ALLOWED_DOCUMENT_PATH_PREFIXES to the exact route prefixes
+// your api/api.js uses for these two endpoints (mirroring
+// ALLOWED_MANUAL_PATH_PREFIXES in UserManualButton.jsx) if you want the same
+// strictness as the User Manual viewer.
+const ALLOWED_DOCUMENT_PATH_PREFIXES = ["/api/"];
+
+function isSafePreviewUrl(candidate) {
+  if (!candidate || typeof candidate !== "string") return false;
+  try {
+    const resolved = new URL(candidate, window.location.origin);
+    if (resolved.origin !== window.location.origin) return false;
+    return ALLOWED_DOCUMENT_PATH_PREFIXES.some((prefix) =>
+      resolved.pathname.startsWith(prefix)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function safeHref(candidate) {
+  try {
+    return new URL(candidate, window.location.origin).toString();
+  } catch {
+    return "";
+  }
+}
 
 const reportColumns = [
   "Total Application",
@@ -24,7 +66,7 @@ const reportColumns = [
   "Application Pending",
 ];
 
-const APPROVED_STATUSES = ["CONNECTION_DETAILS_UPDATED"];
+const APPROVED_STATUSES = ["CONNECTION_DISCONNECTED"];
 const REJECTED_STATUSES = ["APPLICATION_REJECTED"];
 const PENDING_STATUSES = [
   "APPLICATION_SUBMITTED",
@@ -33,6 +75,17 @@ const PENDING_STATUSES = [
   "APPLICATION_APPROVED",
   "PAYMENT_RECEIPT_UPLOADED",
   "PAYMENT_RECEIPT_VERIFIED",
+  "PAYMENT_RECEIPT_UPLOADED_FOR_CANCELLATION",
+  "PAYMENT_RECEIPT_VERIFIED_FOR_CANCELLATION",
+  "APPLICATION_SUBMITTED_FOR_CANCELLATION",
+  "CANCELLATION_FORWARDED_TO_JE",
+  "CANCELLATION_SITE_VISIT_REPORT_UPLOADED",
+  "CANCELLATION_APPROVED",
+  "DISCONNECTION_INSTRUCTION_ASSIGNED_TO_JE",
+  "APPLICATION_SUBMITTED_FOR_AMENDMENT",
+  "AMENDMENT_FORWARDED_TO_JE",
+  "AMENDMENT_DOCUMENTS_VERIFIED_BY_JE",
+  "AMENDMENT_APPROVED",
 ];
 
 const applicationColumns = [
@@ -81,8 +134,10 @@ const getApplicationStatusStyle = (applicationStatus) => {
     case "JE_VERIFIED_REPORT_UPLOADED": return { background: "#ede9fe", color: "#6d28d9" };
     case "APPLICATION_APPROVED":        return { background: "#dcfce7", color: "#166534" };
     case "APPLICATION_REJECTED":        return { background: "#fee2e2", color: "#b91c1c" };
-    case "PAYMENT_RECEIPT_UPLOADED":    return { background: "#fef3c7", color: "#92400e" };
-    case "PAYMENT_RECEIPT_VERIFIED":    return { background: "#dcfce7", color: "#166534" };
+    case "PAYMENT_RECEIPT_UPLOADED":
+    case "PAYMENT_RECEIPT_UPLOADED_FOR_CANCELLATION": return { background: "#fef3c7", color: "#92400e" };
+    case "PAYMENT_RECEIPT_VERIFIED":
+    case "PAYMENT_RECEIPT_VERIFIED_FOR_CANCELLATION": return { background: "#dcfce7", color: "#166534" };
     case "CONNECTION_DETAILS_UPDATED":  return { background: "#fef3c7", color: "#166534" };
     default:                            return { background: "#e2e8f0", color: "#475569" };
   }
@@ -117,6 +172,8 @@ const getPendingWith = (app) => {
     case "APPLICATION_FORWARDED_TO_JE":
     case "PAYMENT_RECEIPT_UPLOADED":
     case "PAYMENT_RECEIPT_VERIFIED":
+    case "PAYMENT_RECEIPT_UPLOADED_FOR_CANCELLATION":
+    case "PAYMENT_RECEIPT_VERIFIED_FOR_CANCELLATION":
       return app.block ? `${app.block} : JE` : "JE";
     case "APPLICATION_APPROVED":
       return app.applicant_user_id ? `${app.applicant_user_id} : Applicant` : "Applicant";
@@ -549,6 +606,26 @@ function ApplicationTable({
           <option value="PAYMENT_RECEIPT_UPLOADED">Payment Receipt Uploaded</option>
           <option value="PAYMENT_RECEIPT_VERIFIED">Payment Receipt Verified</option>
           <option value="CONNECTION_DETAILS_UPDATED">Connection Details Updated</option>
+          <option value="APPLICATION_SUBMITTED_FOR_CANCELLATION">Cancellation Submitted</option>
+          <option value="CANCELLATION_FORWARDED_TO_JE">Cancellation Forwarded To JE</option>
+          <option value="CANCELLATION_SITE_VISIT_REPORT_UPLOADED">Cancellation Report Uploaded</option>
+          <option value="CANCELLATION_APPROVED">Cancellation Approved</option>
+          <option value="DISCONNECTION_INSTRUCTION_ASSIGNED_TO_JE">Disconnection Assigned To JE</option>
+          <option value="CONNECTION_DISCONNECTED">Connection Disconnected</option>
+          <option value="APPLICATION_SUBMITTED_FOR_AMENDMENT">Amendment Submitted</option>
+          <option value="AMENDMENT_FORWARDED_TO_JE">Amendment Forwarded To JE</option>
+          <option value="AMENDMENT_DOCUMENTS_VERIFIED_BY_JE">Amendment Documents Verified</option>
+          <option value="AMENDMENT_APPROVED">Amendment Approved</option>
+          <option value="APPLICATION_SUBMITTED_FOR_CANCELLATION">Cancellation Submitted</option>
+          <option value="CANCELLATION_FORWARDED_TO_JE">Cancellation Forwarded To JE</option>
+          <option value="CANCELLATION_SITE_VISIT_REPORT_UPLOADED">Cancellation Report Uploaded</option>
+          <option value="CANCELLATION_APPROVED">Cancellation Approved</option>
+          <option value="DISCONNECTION_INSTRUCTION_ASSIGNED_TO_JE">Disconnection Assigned To JE</option>
+          <option value="CONNECTION_DISCONNECTED">Connection Disconnected</option>
+          <option value="APPLICATION_SUBMITTED_FOR_AMENDMENT">Amendment Submitted</option>
+          <option value="AMENDMENT_FORWARDED_TO_JE">Amendment Forwarded To JE</option>
+          <option value="AMENDMENT_DOCUMENTS_VERIFIED_BY_JE">Amendment Documents Verified</option>
+          <option value="AMENDMENT_APPROVED">Amendment Approved</option>
         </select>
         <div className="ce-dashboard-report__search">
           <Search size={15} />
@@ -645,14 +722,81 @@ function ApplicationTable({
 // ─── Application Detail ──────────────────────────────────────────────────────
 
 function ApplicationDetail({ app }) {
-  const [pdfPreview, setPdfPreview] = useState(null);
+  const [pdfPreview, setPdfPreview] = useState(null); // { url, title } | null
+  const [numPages, setNumPages] = useState(null);
+  const previewBodyRef = useRef(null);
+  const firstPageRef = useRef(null);
+
+  // Same-origin guard, mirroring isSafeManualUrl in UserManualButton.jsx.
+  const urlInvalid = pdfPreview && !isSafePreviewUrl(pdfPreview.url);
+  const downloadHref = pdfPreview ? (safeHref(pdfPreview.url) || pdfPreview.url) : "";
+
+  const resetPreviewScroll = () => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        firstPageRef.current?.scrollIntoView({ block: "start", inline: "nearest" });
+        previewBodyRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      });
+    });
+  };
+
+  useEffect(() => {
+    if (!pdfPreview) return;
+
+    const resetPdfScroll = () => {
+      if (previewBodyRef.current) {
+        previewBodyRef.current.scrollTop = 0;
+        previewBodyRef.current.scrollLeft = 0;
+      }
+    };
+
+    // Reset immediately
+    resetPdfScroll();
+
+    // Reset after React-PDF starts rendering
+    requestAnimationFrame(resetPdfScroll);
+
+    // Reset once more after layout/paint
+    const timer = setTimeout(resetPdfScroll, 100);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [pdfPreview]);
+
+  useEffect(() => {
+    if (pdfPreview) resetPreviewScroll();
+  }, [pdfPreview]);
+
+  useEffect(() => {
+    if (pdfPreview && numPages) resetPreviewScroll();
+  }, [numPages, pdfPreview]);
+
+  // Escape-to-close + body scroll lock while the preview overlay is open —
+  // same UX as UserManualModal in UserManualButton.jsx.
+  useEffect(() => {
+    if (!pdfPreview) return;
+    const handler = (e) => { if (e.key === "Escape") setPdfPreview(null); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [pdfPreview]);
+
+  useEffect(() => {
+    document.body.style.overflow = pdfPreview ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [pdfPreview]);
+
+  const openPreview = (url, title) => {
+    setNumPages(null);
+    setPdfPreview({ url, title });
+  };
 
   const renderDocumentLink = (app, documentType, label = "View File") => {
     if (!app?.[documentType]) return "NA";
     const url = getOrganisationDocumentUrl(app.application_id, documentType);
     return (
       <button
-        onClick={() => setPdfPreview({ url, title: label })}
+        onClick={() => openPreview(url, label)}
         style={{
           background: "none", border: "none", color: "#2563eb",
           textDecoration: "underline", cursor: "pointer", padding: 0,
@@ -712,10 +856,7 @@ function ApplicationDetail({ app }) {
               app.site_visit_report ? (
                 <button
                   onClick={() =>
-                    setPdfPreview({
-                      url: getSiteVisitReportUrl(app.application_id),
-                      title: "Site Visit Report",
-                    })
+                    openPreview(getSiteVisitReportUrl(app.application_id), "Site Visit Report")
                   }
                   style={{
                     background: "none", border: "none", color: "#2563eb",
@@ -737,24 +878,38 @@ function ApplicationDetail({ app }) {
         </SectionBox>
       </div>
 
-      {pdfPreview && (
-        <div className="pv-preview-overlay">
-          <div className="pv-preview-card">
-            <div className="pv-preview-header">
-              <h2 className="pv-preview-header__title">{pdfPreview.title}</h2>
-              <div className="pv-preview-header__actions">
+      {pdfPreview && createPortal(
+        <div className="ce-dashboard-pdf-preview-overlay" role="dialog" aria-modal="true" aria-label={pdfPreview.title}>
+          <div className="ce-dashboard-pdf-preview">
+            <div className="ce-dashboard-pdf-preview__header">
+              <div className="ce-dashboard-pdf-preview__header-left">
+                <div className="ce-dashboard-pdf-preview__icon">
+                  <FileText size={16} />
+                </div>
+                <div className="ce-dashboard-pdf-preview__title-group">
+                  <p className="ce-dashboard-pdf-preview__title">{pdfPreview.title}</p>
+                  <p className="ce-dashboard-pdf-preview__subtitle">Click × to close</p>
+                </div>
+              </div>
+              <div className="ce-dashboard-pdf-preview__header-actions">
                 <a
-                  href={pdfPreview.url}
+                  href={downloadHref}
                   download
-                  className="pv-preview-btn-download"
-                  target="_blank"
-                  rel="noreferrer"
+                  className="ce-dashboard-pdf-preview__download"
+                  onClick={async (event) => {
+                    event.preventDefault();
+                    try {
+                      await downloadPdfFile(downloadHref, `${pdfPreview.title || "document"}.pdf`);
+                    } catch (error) {
+                     // console.error("PDF download failed:", error);
+                    }
+                  }}
                 >
                   <Download size={14} />
                   Download PDF
                 </a>
                 <button
-                  className="pv-preview-btn-close"
+                  className="ce-dashboard-pdf-preview__close"
                   onClick={() => setPdfPreview(null)}
                   title="Close Preview"
                 >
@@ -762,15 +917,79 @@ function ApplicationDetail({ app }) {
                 </button>
               </div>
             </div>
-            <div className="pv-preview-content">
-              <iframe
-                src={`${pdfPreview.url}#toolbar=0`}
-                className="pv-preview-frame"
-                title="PDF Preview"
-              />
+            <div ref={previewBodyRef} className="ce-dashboard-pdf-preview__body">
+              {urlInvalid ? (
+                <div className="ce-dashboard-pdf-preview__state ce-dashboard-pdf-preview__state--error">
+                  <FileText size={40} className="ce-dashboard-pdf-preview__error-icon" />
+                  <p>Preview unavailable — please download instead.</p>
+                  {downloadHref && (
+                    <a href={downloadHref} download className="ce-dashboard-pdf-preview__download">
+                      <Download size={14} />
+                      Download PDF
+                    </a>
+                  )}
+                </div>
+              ) : (
+                <Document
+                  key={pdfPreview.url}
+                  file={pdfPreview.url}
+                  onLoadSuccess={(pdf) => {
+                    setNumPages(pdf.numPages);
+
+                    requestAnimationFrame(() => {
+                      if (previewBodyRef.current) {
+                        previewBodyRef.current.scrollTop = 0;
+                        previewBodyRef.current.scrollLeft = 0;
+                      }
+                    });
+
+                    setTimeout(() => {
+                      if (previewBodyRef.current) {
+                        previewBodyRef.current.scrollTop = 0;
+                        previewBodyRef.current.scrollLeft = 0;
+                      }
+                    }, 100);
+                  }}
+                  onLoadError={(err) => {
+                    //.error("PDF preview error:", err);
+                  }}
+                  loading={
+                    <div className="ce-dashboard-pdf-preview__state">
+                      <LoaderCircle size={28} className="ce-dashboard-pdf-preview__spinner" />
+                      <span>Loading document...</span>
+                    </div>
+                  }
+                  error={
+                    <div className="ce-dashboard-pdf-preview__state ce-dashboard-pdf-preview__state--error">
+                      <FileText size={40} className="ce-dashboard-pdf-preview__error-icon" />
+                      <p>Preview unavailable — please download instead.</p>
+                      {downloadHref && (
+                        <a href={downloadHref} download className="ce-dashboard-pdf-preview__download">
+                          <Download size={14} />
+                          Download PDF
+                        </a>
+                      )}
+                    </div>
+                  }
+                >
+                  {Array.from(
+                    { length: numPages || 0 },
+                    (_, index) => (
+                      <Page
+                        key={`page_${index + 1}`}
+                        pageNumber={index + 1}
+                        width={850}
+                        renderTextLayer={false}
+                        renderAnnotationLayer={false}
+                      />
+                    )
+                  )}
+                </Document>
+              )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
@@ -793,4 +1012,3 @@ function Row({ label, value }) {
     </div>
   );
 }
-

@@ -3,6 +3,8 @@
 
 import { useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate } from "react-router";
+import PdfPreviewViewer from "../components/PdfPreviewViewer";
+import PdfPreviewHeader from "../components/PdfPreviewHeader";
 import Swal from "sweetalert2";
 import { Download, ExternalLink, ReceiptText, Upload, X } from "lucide-react";
 import { fetchPaymentDetails, uploadPaymentReceipt, getReceiptUrl, fetchOdishaOneSession, postOdishaOneRequiredCorrection } from "../api/api";
@@ -12,8 +14,16 @@ import "./ApplicantPaymentPage.css";
 const statusBadge = (status) => {
   const s = String(status || "").toUpperCase();
   let cls = "appl-status-badge--default";
-  if (s === "PAYMENT_RECEIPT_UPLOADED") cls = "appl-status-badge--uploaded";
-  else if (s === "PAYMENT_RECEIPT_VERIFIED") cls = "appl-status-badge--verified";
+  if (
+    s === "PAYMENT_RECEIPT_UPLOADED" ||
+    s === "PAYMENT_RECEIPT_UPLOADED_FOR_CANCELLATION" ||
+    s === "PAYMENT_RECEIPT_UPLOADED_FOR_TRANSFER"
+  ) cls = "appl-status-badge--uploaded";
+  else if (
+    s === "PAYMENT_RECEIPT_VERIFIED" ||
+    s === "PAYMENT_RECEIPT_VERIFIED_FOR_CANCELLATION"
+    || s === "PAYMENT_RECEIPT_VERIFIED_FOR_TRANSFER"
+  ) cls = "appl-status-badge--verified";
   else if (s.includes("PENDING") || s.includes("SUBMITTED")) cls = "appl-status-badge--pending";
   return <span className={`appl-status-badge ${cls}`}>{s.replace(/_/g, " ")}</span>;
 };
@@ -45,17 +55,29 @@ function ApplicantPaymentPage() {
 
   const appStatus = String(appData?.application_status || "").toUpperCase();
 
-  const isVerified          = appStatus === "PAYMENT_RECEIPT_VERIFIED";
-  const isPendingVerify     = appStatus === "PAYMENT_RECEIPT_UPLOADED";
-  const isFirstRejection    = appStatus === "PAYMENT_RECEIPT_REJECTED";
-  const isPermanentReject   = appStatus === "APPLICATION_REJECTED";
+  const isVerified =
+    appStatus === "PAYMENT_RECEIPT_VERIFIED" ||
+    appStatus === "PAYMENT_RECEIPT_VERIFIED_FOR_CANCELLATION" ||
+    appStatus === "PAYMENT_RECEIPT_VERIFIED_FOR_TRANSFER";
+  const isPendingVerify =
+    appStatus === "PAYMENT_RECEIPT_UPLOADED" ||
+    appStatus === "PAYMENT_RECEIPT_UPLOADED_FOR_CANCELLATION" ||
+    appStatus === "PAYMENT_RECEIPT_UPLOADED_FOR_TRANSFER";
+  const isFirstRejection =
+    appStatus === "PAYMENT_RECEIPT_REJECTED" ||
+    appStatus === "PAYMENT_RECEIPT_REJECTED_FOR_CANCELLATION" ||
+    appStatus === "PAYMENT_RECEIPT_REJECTED_FOR_TRANSFER";
+  const isPermanentReject = appStatus === "APPLICATION_REJECTED";
 
   // Uploaded & awaiting / already verified — no more upload
   const alreadyUploaded = isVerified || isPendingVerify;
 
-  // Can upload on first approval OR re-upload on first rejection
+  // Can upload on first approval OR cancellation approval OR re-upload on first rejection
   const canUploadReceipt =
-    appStatus === "APPLICATION_APPROVED" || isFirstRejection;
+    appStatus === "APPLICATION_APPROVED" ||
+    appStatus === "CANCELLATION_APPROVED" ||
+    appStatus === "TRANSFER_APPROVED" ||
+    isFirstRejection;
 
   useEffect(() => {
     const initSessionAndLoad = async () => {
@@ -81,7 +103,7 @@ function ApplicantPaymentPage() {
             setSessionUser(activeSession);
           }
         } catch (ooErr) {
-          console.error("Failed to load Odisha One session on Payment Page:", ooErr);
+          //console.error("Failed to load Odisha One session on Payment Page:", ooErr);
         }
       }
 
@@ -139,7 +161,7 @@ function ApplicantPaymentPage() {
     setSubmitting(true);
     try {
       const fd = new FormData();
-      fd.append("userId",        applicantSession.id);
+      fd.append("userId",        sessionUser?.id || "");
       fd.append("applicationId", appData.application_id);
       fd.append("amount",        amount);
       fd.append("dateOfPayment", dateOfPayment);
@@ -178,13 +200,13 @@ function ApplicantPaymentPage() {
             return;
           }
         } catch (api12Err) {
-          console.error("API-12 redirect error:", api12Err);
+          //console.error("API-12 redirect error:", api12Err);
         }
       }
 
       await Swal.fire("Success", "Payment receipt uploaded successfully. Application forwarded to " + appData.block + " JE for verification.", "success");
 
-      const refreshed = await fetchPaymentDetails(applicantSession.id);
+      const refreshed = await fetchPaymentDetails(sessionUser?.id);
       setAppData(refreshed.data?.data || appData);
       setReceiptFile(null);
       if (fileRef.current) fileRef.current.value = "";
@@ -412,8 +434,8 @@ function ApplicantPaymentPage() {
   </div>
 )}
 
-{/* ── Normal first-time upload (APPLICATION_APPROVED) ── */}
-{appStatus === "APPLICATION_APPROVED" && (
+{/* ── Normal first-time upload ── */}
+{(appStatus === "APPLICATION_APPROVED" || appStatus === "CANCELLATION_APPROVED" || appStatus === "TRANSFER_APPROVED") && (
   <div className="appl-payment-card">
     <div className="appl-payment-card__header">
       <Upload size={22} />
@@ -502,34 +524,9 @@ function ApplicantPaymentPage() {
       {pdfPreview && (
         <div className="pv-preview-overlay">
           <div className="pv-preview-card">
-            <div className="pv-preview-header">
-              <h2 className="pv-preview-header__title">{pdfPreview.title}</h2>
-              <div className="pv-preview-header__actions">
-                <a
-                  href={pdfPreview.url}
-                  download
-                  className="pv-preview-btn-download"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <Download size={14} />
-                  Download PDF
-                </a>
-                <button
-                  className="pv-preview-btn-close"
-                  onClick={() => setPdfPreview(null)}
-                  title="Close Preview"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-            </div>
+            <PdfPreviewHeader title={pdfPreview.title} url={pdfPreview.url} onClose={() => setPdfPreview(null)} />
             <div className="pv-preview-content">
-              <iframe
-                src={`${pdfPreview.url}#toolbar=0`}
-                className="pv-preview-frame"
-                title="PDF Preview"
-              />
+              <PdfPreviewViewer url={pdfPreview.url} title={pdfPreview.title} />
             </div>
           </div>
         </div>

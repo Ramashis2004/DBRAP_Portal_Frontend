@@ -3,6 +3,8 @@ import { Download,
   X, } from "lucide-react";
 import "./RegistrationPreview.css";
 import "../pages/officerDashboardPage.css";
+import PdfPreviewViewer from "./PdfPreviewViewer";
+import PdfPreviewHeader from "./PdfPreviewHeader";
 function RegistrationPreview({ sections, onEdit }) {
   const [activeDocument, setActiveDocument] = useState(null);
 const [pdfPreview, setPdfPreview] = useState(null);
@@ -90,34 +92,9 @@ const closeDocument = () => {
       {pdfPreview && (
         <div className="pv-preview-overlay">
           <div className="pv-preview-card">
-            <div className="pv-preview-header">
-              <h2 className="pv-preview-header__title">{pdfPreview.title}</h2>
-              <div className="pv-preview-header__actions">
-                <a
-  href={pdfPreview.url}
-  download={pdfPreview.fileName}
-  className="pv-preview-btn-download"
->
-  <Download size={14} />
-  Download PDF
-</a>
-
-                <button
-  className="pv-preview-btn-close"
-  onClick={closeDocument}
-  title="Close Preview"
->
-  <X size={18} />
-</button>
-
-              </div>
-            </div>
+            <PdfPreviewHeader title={pdfPreview.title} url={pdfPreview.url} fileName={pdfPreview.fileName} onClose={closeDocument} />
             <div className="pv-preview-content">
-              <iframe
-                src={`${pdfPreview.url}#toolbar=0`}
-                className="pv-preview-frame"
-                title="PDF Preview"
-              />
+              <PdfPreviewViewer url={pdfPreview.url} title={pdfPreview.title} />
             </div>
           </div>
         </div>

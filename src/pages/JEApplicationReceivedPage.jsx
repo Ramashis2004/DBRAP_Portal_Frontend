@@ -133,15 +133,25 @@ const handleMenuClick = (menuKey) => {
   //   return;
   // }
 
-  if (optionUrl.includes("paymentverification") || optionLabel.includes("payment verification")) {
-  navigate("/je-payment-verification");
-  return;
-}
+    if (optionUrl.includes("paymentverification") || optionLabel.includes("payment verification")) {
+      navigate("/je-payment-verification");
+      return;
+    }
 
-if (optionUrl.includes("updateConnectionDetails") || optionLabel.includes("update connection details")) {
-  navigate("/je-update-connection");
-  return;
-}
+    if (optionUrl.includes("disconnect") || optionLabel.includes("disconnect")) {
+      navigate("/je-disconnect-connection");
+      return;
+    }
+
+    if (
+      optionUrl.includes("updateconnectiondetails") ||
+      optionUrl.includes("updateconnection") ||
+      optionLabel.includes("update connection details") ||
+      optionLabel.includes("connection")
+    ) {
+      navigate("/je-update-connection");
+      return;
+    }
   };
 
   if (isLoading) {
@@ -287,7 +297,7 @@ if (optionUrl.includes("updateConnectionDetails") || optionLabel.includes("updat
             <ForwardedApplicationsTable
               key={tableKey}   
               userId={session?.id}
-              applicationStatus="APPLICATION_FORWARDED_TO_JE"
+              applicationStatus="APPLICATION_FORWARDED_TO_JE,CANCELLATION_FORWARDED_TO_JE,TRANSFER_FORWARDED_TO_JE,AMENDMENT_FORWARDED_TO_JE"
               actionMode="upload"
             />
           </section>

@@ -47,7 +47,7 @@ export const secureStorage = {
       const decoder = new TextDecoder();
       return decoder.decode(bytes);
     } catch (e) {
-      console.error("Decryption failed", e);
+      //console.error("Decryption failed", e);
       return value; // fallback to original value
     }
   }
@@ -81,7 +81,6 @@ Storage.prototype.getItem = function (key) {
   }
   return value;
 };
-
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />

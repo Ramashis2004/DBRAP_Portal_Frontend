@@ -11,6 +11,7 @@ import ApplicantLoginPage from "./pages/ApplicantLoginPage";
 import ApplicantLayout from "./pages/ApplicantLayout";                              // NEW
 import ApplicantDashboardPage from "./pages/ApplicantDashboardPage";
 import ApplicantOrganisationRegistrationPage from "./pages/ApplicantOrganisationRegistrationPage";
+import ApplicantServiceRequestPage from "./pages/ApplicantServiceRequestPage";
 import RegisterForm from "./components/RegisterForm";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
@@ -38,6 +39,8 @@ function App() {
         <Route element={<ApplicantLayout />}>
           <Route path="/applicant-dashboard" element={<ApplicantDashboardPage />} />
           <Route path="/applicant-organisation-registration" element={<ApplicantOrganisationRegistrationPage />} />
+          <Route path="/applicant-cancellation" element={<ApplicantServiceRequestPage type="cancellation" />} />
+          <Route path="/applicant-amendment" element={<ApplicantServiceRequestPage type="amendment" />} />
          <Route path="/applicant-payment" element={<ApplicantPaymentPage />} />
         </Route>
 
@@ -68,6 +71,7 @@ function App() {
   element={<PendingApplicationsPage mode="pending-approval" />} />
   <Route path="/je-payment-verification" element={<PaymentVerificationPage />} />
 <Route path="/je-update-connection" element={<JEUpdateConnectionPage />} />
+  <Route path="/je-disconnect-connection" element={<JEUpdateConnectionPage />} />
 
         <Route path="/sla-config" element={<SLAConfigPage />} />
         <Route path="/slaconfig" element={<SLAConfigPage />} />

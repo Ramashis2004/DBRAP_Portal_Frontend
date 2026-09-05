@@ -30,6 +30,19 @@
   border-bottom: 1px solid #d8ccc4;
 }
 
+.pv-preview-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pv-preview-content .pdf-preview-viewer {
+  flex: 1;
+  min-height: 0;
+  align-items: flex-start;
+}
+
 .applicant-org-steps {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -92,13 +105,21 @@
 }
 
 .applicant-org-field input,
-.applicant-org-field select {
+.applicant-org-field select,
+.applicant-org-field textarea {
   width: 100%;
   min-height: 42px;
   border: 1px solid #d3d3d3;
   border-radius: 4px;
-  /* padding: 0 12px; */
+  padding: 0 12px;
   font-size: 0.98rem;
+}
+
+.applicant-org-field textarea {
+  min-height: 96px;
+  padding: 10px 12px;
+  resize: vertical;
+  font-family: inherit;
 }
 
 .applicant-org-field input:disabled {
@@ -109,6 +130,78 @@
 .applicant-org-field small {
   grid-column: 2;
   color: #7f6658;
+}
+
+.applicant-service-transfer-choice {
+  grid-template-columns: 220px 1fr;
+}
+
+.applicant-service-choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.applicant-service-choice label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  min-height: 30px;
+  padding: 0 12px;
+  border: 1px solid #d8ccc4;
+  border-radius: 4px;
+  background: #fff;
+  color: #5b382f;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.86rem;
+}
+
+.applicant-service-choice label.selected {
+  border-color: #3d1f0f;
+  background: #3d1f0f;
+  color: #fff;
+}
+
+.applicant-service-choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.applicant-service-transfer-fields {
+  border-top: 1px solid #eee5df;
+  background: #fffaf6;
+}
+
+.applicant-service-otp-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.applicant-service-otp-row button,
+.applicant-service-transfer-fields > button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 4px;
+  background: #3d1f0f;
+  color: #fff;
+  cursor: pointer;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.applicant-service-otp-row button:disabled,
+.applicant-service-transfer-fields > button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.applicant-service-error {
+  color: #c0392b !important;
 }
 
 .applicant-org-actions {
@@ -186,6 +279,60 @@
 .applicant-org-preview strong {
   color: #1a3c5a;
   text-align: right;
+}
+
+.applicant-service-state {
+  padding: 40px;
+  text-align: center;
+  color: #7f6658;
+}
+
+.applicant-service-empty {
+  padding-bottom: 24px;
+}
+
+.applicant-service-warning {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #9a3412;
+}
+
+.applicant-service-review-grid {
+  padding: 0 20px;
+}
+
+.applicant-service-file-picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.applicant-service-file-picker button,
+.applicant-service-file-view {
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 5px 12px;
+  background: #f9f9f9;
+  color: #374151;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+
+.applicant-service-file-picker span {
+  color: #374151;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+
+.applicant-service-file-picker input {
+  display: none;
+}
+
+.applicant-service-file-view {
+  background: #3d1f0f;
+  color: #fff;
+  border: none;
 }
 /* ── Existing application banner ─────────────────────────────────────────── */
 .aor-existing-banner {

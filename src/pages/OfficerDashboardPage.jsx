@@ -502,12 +502,18 @@ const checkAndAutoFill = async (overrides = {}) => {
       setExistingUser(u);
       setIsUpdateMode(true);
 
+      // await Swal.fire({
+      //   icon: "info",
+      //   title: "User Already Exists",
+      //   html: `A user <strong>${u.userName}</strong> (${u.loginId}) already exists for this location.<br/>You can update their details below.`,
+      //   confirmButtonText: "OK",
+      // });
       await Swal.fire({
-        icon: "info",
-        title: "User Already Exists",
-        html: `A user <strong>${u.userName}</strong> (${u.loginId}) already exists for this location.<br/>You can update their details below.`,
-        confirmButtonText: "OK",
-      });
+  icon: "info",
+  title: "User Already Exists",
+  text: `A user ${u.userName} (${u.loginId}) already exists for this location.\n\nYou can update their details below.`,
+  confirmButtonText: "OK",
+});
     } else {
       setExistingUser(null);
       setIsUpdateMode(false);
@@ -783,14 +789,22 @@ const handleCreateUserBlockChange = async (event) => {
 
   // Confirm update if in update mode
   if (isUpdateMode && existingUser) {
+    // const confirm = await Swal.fire({
+    //   icon: "warning",
+    //   title: "Update User?",
+    //   html: `This will deactivate <strong>${existingUser.userName}</strong> (${existingUser.loginId}) and create a new user. Continue?`,
+    //   showCancelButton: true,
+    //   confirmButtonText: "Yes, Update",
+    //   cancelButtonText: "Cancel",
+    // });
     const confirm = await Swal.fire({
-      icon: "warning",
-      title: "Update User?",
-      html: `This will deactivate <strong>${existingUser.userName}</strong> (${existingUser.loginId}) and create a new user. Continue?`,
-      showCancelButton: true,
-      confirmButtonText: "Yes, Update",
-      cancelButtonText: "Cancel",
-    });
+  icon: "warning",
+  title: "Update User?",
+  text: `This will deactivate ${existingUser.userName} (${existingUser.loginId}) and create a new user. Continue?`,
+  showCancelButton: true,
+  confirmButtonText: "Yes, Update",
+  cancelButtonText: "Cancel",
+});
     if (!confirm.isConfirmed) return;
   }
 
