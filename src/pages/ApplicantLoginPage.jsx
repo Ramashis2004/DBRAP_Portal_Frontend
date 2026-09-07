@@ -36,6 +36,18 @@ const TABS = [
   { key: "password", label: "User ID & Password" },
 ];
 
+// ─── Testing-mode flag ────────────────────────────────────────────────────────
+// Set VITE_DISABLE_LOGIN_SECURITY=true in a local/test/.env.test file (NEVER in
+// production env config) to skip captcha verification and skip actually
+// dispatching the OTP SMS during blackbox/E2E testing.
+//
+// NOTE: this only relaxes the frontend. The real login call to the backend
+// (loginApplicant) still sends whatever OTP is in the field, so your test/
+// staging backend also needs to accept the placeholder OTP below (or you'll
+// need a matching test bypass server-side) for the OTP tab to fully log in.
+const IS_TESTING_MODE = import.meta.env.VITE_DISABLE_LOGIN_SECURITY === "true";
+const TEST_OTP_PLACEHOLDER = "000000";
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 function ApplicantLoginPage() {
@@ -135,38 +147,44 @@ function ApplicantLoginPage() {
 
   
   const sendOTP = async () => {
-    const err = validateMobile(mobileNumber);
-    if (err) { setMobileError(err); return; }
+  const err = validateMobile(mobileNumber);
+  if (err) { setMobileError(err); return; }
 
-    setIsSubmitting(true);
-    try {
-      await checkApplicantLoginMobile(mobileNumber);
+  setIsSubmitting(true);
+  try {
+    await checkApplicantLoginMobile(mobileNumber);
+    await sendApplicantOtp(mobileNumber); // always call this now
 
-      
-      await sendApplicantOtp(mobileNumber);
-
-      setIsOtpSent(true);
-      await swalSuccess("OTP Sent", `OTP has been sent to ${mobileNumber}.`);
-    } catch (error) {
-      if (error.response?.status === 404) {
-        await swalError("Applicant Not Found", error.response.data?.error || "Applicant not found. Please register first.");
-        return;
-      }
-      if (error.response?.data?.error) {
-        await swalError("Unable to Send OTP", error.response.data.error);
-        return;
-      }
-      await swalError("Unable to Send OTP", "Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
+    setIsOtpSent(true);
+    if (IS_TESTING_MODE) {
+      setOtpInput(TEST_OTP_PLACEHOLDER); // "000000"
     }
-  };
+    await swalSuccess(
+      "OTP Sent",
+      IS_TESTING_MODE
+        ? "Testing mode: OTP delivery skipped, placeholder OTP filled in."
+        : `OTP has been sent to ${mobileNumber}.`
+    );
+  } catch (error) {
+    if (error.response?.status === 404) {
+      await swalError("Applicant Not Found", error.response.data?.error || "Applicant not found. Please register first.");
+      return;
+    }
+    if (error.response?.data?.error) {
+      await swalError("Unable to Send OTP", error.response.data.error);
+      return;
+    }
+    await swalError("Unable to Send OTP", "Something went wrong. Please try again.");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const handleOtpSubmit = async (e) => {
     e.preventDefault();
 
     if (!isOtpSent) { await swalWarning("OTP Required", "Please send OTP first."); return; }
-    if (captchaInput.trim() !== captcha.answer) {
+    if (!IS_TESTING_MODE && captchaInput.trim() !== captcha.answer) {
       await swalError("Invalid Captcha", "Please enter the correct captcha answer.");
       refreshCaptcha(); return;
     }
@@ -221,7 +239,7 @@ function ApplicantLoginPage() {
     } else {
       setPasswordError("");
     }
-    if (captchaInput.trim() !== captcha.answer) {
+    if (!IS_TESTING_MODE && captchaInput.trim() !== captcha.answer) {
       await swalError("Invalid Captcha", "Please enter the correct captcha answer.");
       refreshCaptcha(); return;
     }
@@ -383,22 +401,24 @@ function ApplicantLoginPage() {
                     </div>
                   </label>
 
-                  <label className="applicant-login-field">
-                    <span>Captcha: What is {captcha.question}?</span>
-                    <div className="applicant-login-captcha">
-                      <div className="applicant-login-captcha__question">{captcha.question}</div>
-                      <input
-                        type="text"
-                        value={captchaInput}
-                        onChange={(e) => setCaptchaInput(e.target.value.replace(/\D/g, "").slice(0, 3))}
-                        placeholder="Answer"
-                        disabled={isSubmitting}
-                      />
-                      <button type="button" onClick={refreshCaptcha} aria-label="Refresh captcha">
-                        <RefreshCw size={17} />
-                      </button>
-                    </div>
-                  </label>
+                  {!IS_TESTING_MODE && (
+                    <label className="applicant-login-field">
+                      <span>Captcha: What is {captcha.question}?</span>
+                      <div className="applicant-login-captcha">
+                        <div className="applicant-login-captcha__question">{captcha.question}</div>
+                        <input
+                          type="text"
+                          value={captchaInput}
+                          onChange={(e) => setCaptchaInput(e.target.value.replace(/\D/g, "").slice(0, 3))}
+                          placeholder="Answer"
+                          disabled={isSubmitting}
+                        />
+                        <button type="button" onClick={refreshCaptcha} aria-label="Refresh captcha">
+                          <RefreshCw size={17} />
+                        </button>
+                      </div>
+                    </label>
+                  )}
 
                   <button type="submit" className="applicant-login-submit" disabled={isSubmitting}>
                     <LogIn size={18} />
@@ -466,22 +486,24 @@ function ApplicantLoginPage() {
               </label>
 
               {/* Captcha */}
-              <label className="applicant-login-field">
-                <span>Captcha: What is {captcha.question}?</span>
-                <div className="applicant-login-captcha">
-                  <div className="applicant-login-captcha__question">{captcha.question}</div>
-                  <input
-                    type="text"
-                    value={captchaInput}
-                    onChange={(e) => setCaptchaInput(e.target.value.replace(/\D/g, "").slice(0, 3))}
-                    placeholder="Answer"
-                    disabled={isSubmitting}
-                  />
-                  <button type="button" onClick={refreshCaptcha} aria-label="Refresh captcha">
-                    <RefreshCw size={17} />
-                  </button>
-                </div>
-              </label>
+              {!IS_TESTING_MODE && (
+                <label className="applicant-login-field">
+                  <span>Captcha: What is {captcha.question}?</span>
+                  <div className="applicant-login-captcha">
+                    <div className="applicant-login-captcha__question">{captcha.question}</div>
+                    <input
+                      type="text"
+                      value={captchaInput}
+                      onChange={(e) => setCaptchaInput(e.target.value.replace(/\D/g, "").slice(0, 3))}
+                      placeholder="Answer"
+                      disabled={isSubmitting}
+                    />
+                    <button type="button" onClick={refreshCaptcha} aria-label="Refresh captcha">
+                      <RefreshCw size={17} />
+                    </button>
+                  </div>
+                </label>
+              )}
 
               <button type="submit" className="applicant-login-submit" disabled={isSubmitting}>
                 <LogIn size={18} />
@@ -509,4 +531,3 @@ const broadcastLogout = (userId) => {
   channel.close();
 };
 export default ApplicantLoginPage;
-

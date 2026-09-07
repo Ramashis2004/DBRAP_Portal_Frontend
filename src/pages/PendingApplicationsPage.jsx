@@ -44,6 +44,18 @@ const buildDayLabel = (prefix, from, to) => {
   return `${prefix} ${d} ${d === 1 ? "day" : "days"}`;
 };
 
+// Prefer the backend-computed `pending_since_days` (derived from update_on,
+// i.e. days since the CURRENT status began) over recomputing on the client
+// from created_at — created_at reflects when the application was originally
+// received, not when the current pending status started, and can be stale
+// for amendment/transfer/cancellation rows. Falls back to computing from
+// app.update_on directly if the field isn't present.
+const buildPendingSinceLabel = (app, prefix = "Pending since") => {
+  const days = app?.pending_since_days ?? daysBetween(app?.update_on);
+  const n = Math.max(0, Number(days) || 0);
+  return `${prefix} ${n} ${n === 1 ? "day" : "days"}`;
+};
+
 const getApplicationStatusStyle = (status) => {
   switch (status) {
     case "APPLICATION_SUBMITTED":       return { background: "#dbeafe", color: "#1d4ed8" };
@@ -61,7 +73,7 @@ const getActionStatusMeta = (app) => {
 
   if (status === "APPLICATION_SUBMITTED" || status === "CONNECTION_DETAILS_UPDATED") {
     return { background: "#fef3c7", color: "#92400e",
-      text: buildDayLabel("Pending since", app.created_at) };
+      text: buildPendingSinceLabel(app) };
   }
   if (status === "APPLICATION_FORWARDED_TO_JE" || status === "TRANSFER_FORWARDED_TO_JE") {
     return { background: "#dcfce7", color: "#166534",
@@ -69,7 +81,7 @@ const getActionStatusMeta = (app) => {
   }
   if (status === "JE_VERIFIED_REPORT_UPLOADED" || status === "TRANSFER_SITE_VISIT_REPORT_UPLOADED") {
     return { background: "#fef3c7", color: "#92400e",
-      text: buildDayLabel("Pending since", app.site_visit_report_upload_on) };
+      text: buildPendingSinceLabel(app) };
   }
   if (status === "APPLICATION_APPROVED") {
     return { background: "#dcfce7", color: "#166534",
@@ -939,5 +951,3 @@ function Row({ label, value }) {
     </div>
   );
 }
-
-
