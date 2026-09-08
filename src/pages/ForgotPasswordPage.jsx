@@ -35,6 +35,18 @@ const SAFE_UI = Object.freeze({
 
 });
 
+// ─── Testing-mode flag ────────────────────────────────────────────────────────
+// Set VITE_DISABLE_LOGIN_SECURITY=true in a local/test/.env.test file (NEVER in
+// production env config) to auto-fill the fixed test OTP after requesting one,
+// so blackbox/E2E tests don't need to read an SMS.
+//
+// This still calls the real sendOtp endpoint every time — the backend's own
+// LOGIN_TEST_MODE flag is what makes it store the fixed value below and skip
+// the SMS dispatch. Both flags need to be on (frontend .env + backend .env)
+// for this to actually work end-to-end.
+const IS_TESTING_MODE = import.meta.env.VITE_DISABLE_LOGIN_SECURITY === "true";
+const TEST_OTP_PLACEHOLDER = "000000";
+
 // ── Step indicator ────────────────────────────────────────────────────────────
 function StepDots({ current }) {
 const SAFE_LABELS = Object.freeze([
@@ -133,7 +145,7 @@ function StepSendOtp({ onNext }) {
 
 // ── Step 2: Enter OTP ─────────────────────────────────────────────────────────
 function StepVerifyOtp({ data, onNext, onBack }) {
-  const [otp, setOtp] = useState("");
+  const [otp, setOtp] = useState(IS_TESTING_MODE ? TEST_OTP_PLACEHOLDER : "");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [error, setError] = useState("");
@@ -252,7 +264,7 @@ const handleBackClick = () => {
       setResendBlocked(isBlocked);
       setLockoutMessage(isBlocked ? "You have exceed your time limit of send OTP try after 30 minutes." : "");
       setSuccess("A new OTP has been sent to your mobile.");
-      setOtp("");
+      setOtp(IS_TESTING_MODE ? TEST_OTP_PLACEHOLDER : "");
     } catch (err) {
       const retryAfterSeconds = Number(err.response?.data?.retryAfterSeconds || 0);
       const isBlocked = Boolean(err.response?.data?.resendBlocked);
@@ -511,4 +523,3 @@ const safeStep = Number(step);
     </div>
   );
 }
-
