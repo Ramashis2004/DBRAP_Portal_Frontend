@@ -30,7 +30,8 @@ API.interceptors.response.use(
         "/applicant-auth/login",
         "/applicant-auth/login-password",
         "/password/change",
-        "/odisha-one"
+        "/odisha-one",
+        "/notification/public", 
       ];
       const shouldBypass = bypassUrls.some((path) => url.includes(path));
 
@@ -68,6 +69,15 @@ export const SAFE_ENDPOINTS = Object.freeze({
 
     USER_MANUAL_PUBLIC_DOWNLOAD:
         "/api/user-manual/public/download",
+
+    NOTIFICATION_PUBLIC_LIST:
+        "/api/notification/public/list",
+
+    NOTIFICATION_PUBLIC_VIEW:
+        "/api/notification/public/view",
+
+    NOTIFICATION_PUBLIC_DOWNLOAD:
+        "/api/notification/public/download",
 
     SITE_VISIT_REPORT:
         "/api/organisation/organisations",
@@ -428,6 +438,7 @@ const ALLOWED_API_PATH_PREFIXES = [
   "/api/payment-verification/",       // money receipt
   "/api/applicant-payment/receipt/",  // applicant payment receipt
   "/api/user-manual/",                // user manual (view/download/public)
+  "/api/notification/", 
 ];
 
 function isSafeApiUrl(candidate) {
@@ -547,8 +558,11 @@ export const fetchApplicantApplicationCount = (userId) =>
 export const fetchApplicantApplication = (userId) =>
   API.get(`/applicant-application/application/${userId}`);
 
-export const checkSessionValid = (userId) =>
-  API.get(`/applicant-application/check-session`, { params: { userId } });
+// export const checkSessionValid = (userId) =>
+//   API.get(`/applicant-application/check-session`, { params: { userId } });
+
+export const checkSessionValid = () =>
+  API.get("/auth/check-session");
 
 // ── Pending / Approval ────────────────────────────────────────────────────────
 export const fetchPendingForwardToJE = (userId) =>
@@ -663,6 +677,18 @@ export const getPublicUserManualViewUrl = () =>
 
 export const getPublicUserManualDownloadUrl = () =>
     SAFE_ENDPOINTS.USER_MANUAL_PUBLIC_DOWNLOAD;
+
+// ── Public Notifications (landing page) ───────────────────────────────────────
+// Mirrors the public user-manual endpoints: no auth, no token needed. The
+// list endpoint returns whatever PDFs currently exist in NOTIFICATION_PATH.
+export const fetchPublicNotifications = () =>
+  API.get("/notification/public/list");
+
+export const getPublicNotificationViewUrl = (filename) =>
+  `${SAFE_ENDPOINTS.NOTIFICATION_PUBLIC_VIEW}/${encodeURIComponent(filename)}`;
+
+export const getPublicNotificationDownloadUrl = (filename) =>
+  `${SAFE_ENDPOINTS.NOTIFICATION_PUBLIC_DOWNLOAD}/${encodeURIComponent(filename)}`;
 
 export const checkExistingUserByType = (params) =>
   API.get("/auth/users/check-existing", { params });

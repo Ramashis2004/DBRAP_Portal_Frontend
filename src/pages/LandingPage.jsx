@@ -25,6 +25,7 @@ import {
 import { fetchPublicDashboardSummary, logoutOfficer } from '../api/api';
 import './LandingPage.css';
 import LandingUserManualCard from "../components/LandingUserManualCard";
+import NotificationNavLink from "../components/NotificationCenter";
 
 const FeatureCard = ({ icon: Icon, title, description, delay }) => (
   <motion.div
@@ -210,6 +211,7 @@ const LandingPage = () => {
           </div>
         </div>
         <div className="landing-nav__links">
+          <NotificationNavLink label="Notification" />
           <a href="#services" className="hover:text-accent-blue">Services</a>
           <a href="#process" className="hover:text-accent-blue">Process</a>
           <a href="#transparency" className="hover:text-accent-blue">Transparency</a>
@@ -497,4 +499,3 @@ Empowering through digital governance.
 }
 
 export default LandingPage;
-
